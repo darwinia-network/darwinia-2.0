@@ -8,7 +8,7 @@ pub use sc_rpc::{DenyUnsafe, SubscriptionTaskExecutor};
 // std
 use std::sync::Arc;
 // darwinia
-use darwinia_runtime::{opaque::Block, AccountId, Balance, Index as Nonce};
+use dc_primitives::*;
 // substrate
 use sc_client_api::AuxStore;
 use sc_transaction_pool_api::TransactionPool;

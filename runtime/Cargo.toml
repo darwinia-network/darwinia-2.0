@@ -34,6 +34,9 @@ parachain-info                  = { default-features = false, git = "https://git
 # cumulus optional
 cumulus-pallet-session-benchmarking = { optional = true, default-features = false, git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.30" }
 
+# darwinia
+dc-primitives = { default-features = false, path = "../core/primitives" }
+
 # polkadot
 pallet-xcm              = { default-features = false, git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.30" }
 polkadot-parachain      = { default-features = false, git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.30" }
@@ -94,6 +97,9 @@ std = [
 	"parachain-info/std",
 	# cumulus optional
 	"cumulus-pallet-session-benchmarking?/std",
+
+	# darwinia
+	"dc-primitives/std",
 
 	# polkadot
 	"pallet-xcm/std",

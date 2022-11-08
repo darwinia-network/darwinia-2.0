@@ -5,7 +5,8 @@ use serde::{Deserialize, Serialize};
 // cumulus
 use cumulus_primitives_core::ParaId;
 // darwinia
-use darwinia_runtime::{AccountId, AuraId, Signature, EXISTENTIAL_DEPOSIT};
+use darwinia_runtime::{AuraId, EXISTENTIAL_DEPOSIT};
+use dc_primitives::*;
 // substrate
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
 use sc_service::ChainType;

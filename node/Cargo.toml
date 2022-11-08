@@ -35,6 +35,7 @@ cumulus-relay-chain-rpc-interface       = { git = "https://github.com/paritytech
 
 # darwinia
 darwinia-runtime = { path = "../runtime" }
+dc-primitives    = { path = "../core/primitives" }
 
 # polkadot
 polkadot-cli        = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.30" }
