@@ -1,4 +1,4 @@
-//! Darwinia parachain node CLI.
+//! Darwinia node CLI.
 
 #![warn(missing_docs)]
 
