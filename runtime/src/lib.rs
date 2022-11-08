@@ -218,7 +218,7 @@ pub fn native_version() -> NativeVersion {
 
 frame_support::parameter_types! {
 	pub const Version: RuntimeVersion = VERSION;
-	pub const SS58Prefix: u16 = 42;
+	pub const SS58Prefix: u16 = 18;
 
 	// This part is copied from Substrate's `bin/node/runtime/src/lib.rs`.
 	//  The `RuntimeBlockLength` and `RuntimeBlockWeights` exist here because the
