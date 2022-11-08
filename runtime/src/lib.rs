@@ -218,6 +218,7 @@ pub fn native_version() -> NativeVersion {
 
 frame_support::parameter_types! {
 	pub const Version: RuntimeVersion = VERSION;
+	pub const SS58Prefix: u16 = 42;
 
 	// This part is copied from Substrate's `bin/node/runtime/src/lib.rs`.
 	//  The `RuntimeBlockLength` and `RuntimeBlockWeights` exist here because the
@@ -243,11 +244,7 @@ frame_support::parameter_types! {
 		})
 		.avg_block_initialization(AVERAGE_ON_INITIALIZE_RATIO)
 		.build_or_panic();
-	pub const SS58Prefix: u16 = 42;
 }
-
-// Configure FRAME pallets to include in runtime.
-
 impl frame_system::Config for Runtime {
 	/// The data to be stored in an account.
 	type AccountData = pallet_balances::AccountData<Balance>;
@@ -301,7 +298,6 @@ impl frame_system::Config for Runtime {
 frame_support::parameter_types! {
 	pub const MinimumPeriod: u64 = SLOT_DURATION / 2;
 }
-
 impl pallet_timestamp::Config for Runtime {
 	type MinimumPeriod = MinimumPeriod;
 	/// A timestamp: milliseconds since the unix epoch.
@@ -313,7 +309,6 @@ impl pallet_timestamp::Config for Runtime {
 frame_support::parameter_types! {
 	pub const UncleGenerations: u32 = 0;
 }
-
 impl pallet_authorship::Config for Runtime {
 	type EventHandler = (CollatorSelection,);
 	type FilterUncle = ();
@@ -326,7 +321,6 @@ frame_support::parameter_types! {
 	pub const MaxLocks: u32 = 50;
 	pub const MaxReserves: u32 = 50;
 }
-
 impl pallet_balances::Config for Runtime {
 	type AccountStore = System;
 	/// The type for recording an account's balance.
@@ -346,7 +340,6 @@ frame_support::parameter_types! {
 	pub const TransactionByteFee: Balance = 10 * MICROUNIT;
 	pub const OperationalFeeMultiplier: u8 = 5;
 }
-
 impl pallet_transaction_payment::Config for Runtime {
 	type FeeMultiplierUpdate = SlowAdjustingFeeUpdate<Self>;
 	type LengthToFee = ConstantMultiplier<Balance, TransactionByteFee>;
@@ -360,7 +353,6 @@ frame_support::parameter_types! {
 	pub const ReservedXcmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT.saturating_div(4);
 	pub const ReservedDmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT.saturating_div(4);
 }
-
 impl cumulus_pallet_parachain_system::Config for Runtime {
 	type CheckAssociatedRelayNumber = RelayNumberStrictlyIncreases;
 	type DmpMessageHandler = DmpQueue;
@@ -399,7 +391,6 @@ frame_support::parameter_types! {
 	pub const Offset: u32 = 0;
 	pub const MaxAuthorities: u32 = 100_000;
 }
-
 impl pallet_session::Config for Runtime {
 	type Keys = SessionKeys;
 	type NextSessionRotation = pallet_session::PeriodicSessions<Period, Offset>;
@@ -420,6 +411,8 @@ impl pallet_aura::Config for Runtime {
 	type MaxAuthorities = MaxAuthorities;
 }
 
+// We allow root only to execute privileged collator selection operations.
+pub type CollatorSelectionUpdateOrigin = EnsureRoot<AccountId>;
 frame_support::parameter_types! {
 	pub const PotId: PalletId = PalletId(*b"PotStake");
 	pub const MaxCandidates: u32 = 1000;
@@ -428,9 +421,6 @@ frame_support::parameter_types! {
 	pub const MaxInvulnerables: u32 = 100;
 	pub const ExecutiveBody: BodyId = BodyId::Executive;
 }
-
-// We allow root only to execute privileged collator selection operations.
-pub type CollatorSelectionUpdateOrigin = EnsureRoot<AccountId>;
 
 impl pallet_collator_selection::Config for Runtime {
 	type Currency = Balances;
@@ -483,19 +473,13 @@ frame_support::construct_runtime! {
 }
 
 #[cfg(feature = "runtime-benchmarks")]
-#[macro_use]
-extern crate frame_benchmarking;
-
-#[cfg(feature = "runtime-benchmarks")]
-mod benches {
-	define_benchmarks!(
-		[frame_system, SystemBench::<Runtime>]
-		[pallet_balances, Balances]
-		[pallet_session, SessionBench::<Runtime>]
-		[pallet_timestamp, Timestamp]
-		[pallet_collator_selection, CollatorSelection]
-		[cumulus_pallet_xcmp_queue, XcmpQueue]
-	);
+frame_benchmarking::define_benchmarks! {
+	[frame_system, SystemBench::<Runtime>]
+	[pallet_balances, Balances]
+	[pallet_session, SessionBench::<Runtime>]
+	[pallet_timestamp, Timestamp]
+	[pallet_collator_selection, CollatorSelection]
+	[cumulus_pallet_xcmp_queue, XcmpQueue]
 }
 
 sp_api::impl_runtime_apis! {
@@ -622,48 +606,32 @@ sp_api::impl_runtime_apis! {
 		}
 	}
 
-	#[cfg(feature = "try-runtime")]
-	impl frame_try_runtime::TryRuntime<Block> for Runtime {
-		fn on_runtime_upgrade() -> (Weight, Weight) {
-			frame_support::log::info!("try-runtime::on_runtime_upgrade parachain-template.");
-			let weight = Executive::try_runtime_upgrade().unwrap();
-			(weight, RuntimeBlockWeights::get().max_block)
-		}
-
-		fn execute_block(block: Block, state_root_check: bool, select: frame_try_runtime::TryStateSelect) -> Weight {
-			frame_support::log::info!(
-				target: "runtime::parachain-template", "try-runtime: executing block #{} ({:?}) / root checks: {:?} / sanity-checks: {:?}",
-				block.header.number,
-				block.header.hash(),
-				state_root_check,
-				select,
-			);
-			Executive::try_execute_block(block, state_root_check, select).expect("try_execute_block failed")
-		}
-	}
-
 	#[cfg(feature = "runtime-benchmarks")]
 	impl frame_benchmarking::Benchmark<Block> for Runtime {
 		fn benchmark_metadata(extra: bool) -> (
 			Vec<frame_benchmarking::BenchmarkList>,
 			Vec<frame_support::traits::StorageInfo>,
 		) {
-			use frame_benchmarking::{Benchmarking, BenchmarkList};
+			// substrate
+			use frame_benchmarking::*;
 			use frame_support::traits::StorageInfoTrait;
 			use frame_system_benchmarking::Pallet as SystemBench;
 			use cumulus_pallet_session_benchmarking::Pallet as SessionBench;
 
 			let mut list = Vec::<BenchmarkList>::new();
+
 			list_benchmarks!(list, extra);
 
 			let storage_info = AllPalletsWithSystem::storage_info();
+
 			(list, storage_info)
 		}
 
 		fn dispatch_benchmark(
 			config: frame_benchmarking::BenchmarkConfig
 		) -> Result<Vec<frame_benchmarking::BenchmarkBatch>, sp_runtime::RuntimeString> {
-			use frame_benchmarking::{Benchmarking, BenchmarkBatch, TrackedStorageKey};
+			// substrate
+			use frame_benchmarking::*;
 
 			use frame_system_benchmarking::Pallet as SystemBench;
 			impl frame_system_benchmarking::Config for Runtime {}
@@ -686,16 +654,46 @@ sp_api::impl_runtime_apis! {
 
 			let mut batches = Vec::<BenchmarkBatch>::new();
 			let params = (&config, &whitelist);
+
 			add_benchmarks!(params, batches);
 
 			if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
+
 			Ok(batches)
+		}
+	}
+
+	#[cfg(feature = "try-runtime")]
+	impl frame_try_runtime::TryRuntime<Block> for Runtime {
+		fn on_runtime_upgrade() -> (Weight, Weight) {
+			// substrate
+			use frame_support::log;
+
+			log::info!("try-runtime::on_runtime_upgrade parachain-template.");
+
+			let weight = Executive::try_runtime_upgrade().unwrap();
+
+			(weight, RuntimeBlockWeights::get().max_block)
+		}
+
+		fn execute_block(block: Block, state_root_check: bool, select: frame_try_runtime::TryStateSelect) -> Weight {
+			// substrate
+			use frame_support::log;
+
+			log::info!(
+				target: "runtime::parachain-template", "try-runtime: executing block #{} ({:?}) / root checks: {:?} / sanity-checks: {:?}",
+				block.header.number,
+				block.header.hash(),
+				state_root_check,
+				select,
+			);
+
+			Executive::try_execute_block(block, state_root_check, select).expect("try_execute_block failed")
 		}
 	}
 }
 
 struct CheckInherents;
-
 impl cumulus_pallet_parachain_system::CheckInherents<Block> for CheckInherents {
 	fn check_inherents(
 		block: &Block,
@@ -716,7 +714,6 @@ impl cumulus_pallet_parachain_system::CheckInherents<Block> for CheckInherents {
 		inherent_data.check_extrinsics(block)
 	}
 }
-
 cumulus_pallet_parachain_system::register_validate_block! {
 	Runtime = Runtime,
 	BlockExecutor = cumulus_pallet_aura_ext::BlockExecutor::<Runtime, Executive>,
