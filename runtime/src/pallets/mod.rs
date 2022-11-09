@@ -18,3 +18,6 @@ pub use parachain_system::*;
 
 pub mod parachain_info;
 pub use parachain_info::*;
+
+pub mod aura_ext;
+pub use aura_ext::*;
