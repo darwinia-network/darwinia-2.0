@@ -9,3 +9,6 @@ pub use authorship::*;
 
 pub mod balances;
 pub use balances::*;
+
+pub mod transaction_payment;
+pub use transaction_payment::*;
