@@ -18,7 +18,7 @@
 
 //! Darwinia node CLI.
 
-#![warn(missing_docs)]
+#![deny(missing_docs)]
 
 mod chain_spec;
 mod cli;
