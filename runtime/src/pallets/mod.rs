@@ -15,3 +15,6 @@ pub use transaction_payment::*;
 
 pub mod parachain_system;
 pub use parachain_system::*;
+
+pub mod parachain_info;
+pub use parachain_info::*;
