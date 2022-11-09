@@ -1,42 +1,29 @@
-// --- paritytech ---
-use frame_support::{
-	weights::{constants::WEIGHT_PER_SECOND, Weight},
-};
-use frame_system::{
-	limits::{BlockLength, BlockWeights},
-};
-use sp_runtime::{
-	Perbill,
-};
-// --- darwinia-network ---
-use crate::{
-	weights::{frame_system::WeightInfo, BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight},
-	*,
-};
+use crate::*;
 
 /// The existential deposit. Set to 1/10 of the Connected Relay Chain.
 pub const EXISTENTIAL_DEPOSIT: Balance = MILLIUNIT;
 
 /// We assume that ~5% of the block weight is consumed by `on_initialize` handlers. This is
 /// used to limit the maximal weight of a single extrinsic.
-const AVERAGE_ON_INITIALIZE_RATIO: Perbill = Perbill::from_percent(5);
+const AVERAGE_ON_INITIALIZE_RATIO: sp_runtime::Perbill = sp_runtime::Perbill::from_percent(5);
 
 /// We allow `Normal` extrinsics to fill up the block up to 75%, the rest can be used by
 /// `Operational` extrinsics.
-const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
+const NORMAL_DISPATCH_RATIO: sp_runtime::Perbill = sp_runtime::Perbill::from_percent(75);
 
 /// We allow for 0.5 of a second of compute with a 12 second average block time.
-const MAXIMUM_BLOCK_WEIGHT: Weight = WEIGHT_PER_SECOND.saturating_div(2);
+const MAXIMUM_BLOCK_WEIGHT: frame_support::weights::Weight =
+	frame_support::weights::constants::WEIGHT_PER_SECOND.saturating_div(2);
 
 frame_support::parameter_types! {
 	pub const BlockHashCount: BlockNumber = 2400;
 	pub const Version: sp_version::RuntimeVersion = VERSION;
-	pub RuntimeBlockLength: BlockLength =
-		BlockLength::max_with_normal_ratio(5 * 1024 * 1024, NORMAL_DISPATCH_RATIO);
-	pub RuntimeBlockWeights: BlockWeights = BlockWeights::builder()
-		.base_block(BlockExecutionWeight::get())
+	pub RuntimeBlockLength: frame_system::limits::BlockLength =
+		frame_system::limits::BlockLength::max_with_normal_ratio(5 * 1024 * 1024, NORMAL_DISPATCH_RATIO);
+	pub RuntimeBlockWeights: frame_system::limits::BlockWeights = frame_system::limits::BlockWeights::builder()
+		.base_block(weights::BlockExecutionWeight::get())
 		.for_class(DispatchClass::all(), |weights| {
-			weights.base_extrinsic = ExtrinsicBaseWeight::get();
+			weights.base_extrinsic = weights::ExtrinsicBaseWeight::get();
 		})
 		.for_class(DispatchClass::Normal, |weights| {
 			weights.max_total = Some(NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT);
@@ -70,7 +57,7 @@ impl frame_system::Config for Runtime {
 	/// Block & extrinsics weights: base values and limits.
 	type BlockWeights = RuntimeBlockWeights;
 	/// The weight of database operations that the runtime can invoke.
-	type DbWeight = RocksDbWeight;
+	type DbWeight = weights::RocksDbWeight;
 	/// The type for hashing blocks and tries.
 	type Hash = Hash;
 	/// The hashing algorithm used.
