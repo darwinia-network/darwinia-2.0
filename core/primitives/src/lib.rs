@@ -57,3 +57,40 @@ pub type Header = sp_runtime::generic::Header<BlockNumber, sp_runtime::traits::B
 
 /// Block type.
 pub type Block = sp_runtime::generic::Block<Header, sp_runtime::OpaqueExtrinsic>;
+
+/// This determines the average expected block time that we are targeting.
+/// Blocks will be produced at a minimum duration defined by `SLOT_DURATION`.
+/// `SLOT_DURATION` is picked up by `pallet_timestamp` which is in turn picked
+/// up by `pallet_aura` to implement `fn slot_duration()`.
+///
+/// Change this to adjust the block time.
+pub const MILLISECS_PER_BLOCK: u64 = 6_000;
+
+// NOTE: Currently it is not possible to change the slot duration after the chain has started.
+//       Attempting to do so will brick block production.
+/// Slot duration.
+pub const SLOT_DURATION: u64 = MILLISECS_PER_BLOCK;
+
+// Time is measured by number of blocks.
+/// 10 blocks.
+pub const MINUTES: BlockNumber = 60_000 / (MILLISECS_PER_BLOCK as BlockNumber);
+/// 600 blocks.
+pub const HOURS: BlockNumber = MINUTES * 60;
+/// 14,400 blocks.
+pub const DAYS: BlockNumber = HOURS * 24;
+
+// Unit = the base number of indivisible units for balances
+/// 1e18 wei — 1,000,000,000,000,000,000
+pub const UNIT: Balance = 1_000 * MILLIUNIT;
+/// 1e15 wei — 1,000,000,000,000,000
+pub const MILLIUNIT: Balance = 1_000 * MICROUNIT;
+/// 1e12 wei — 1,000,000,000,000
+pub const MICROUNIT: Balance = 1_000 * GWEI;
+/// 1e9 wei — 1,000,000,000
+pub const GWEI: Balance = 1_000 * MWEI;
+/// 1e6 wei — 1,000,000
+pub const MWEI: Balance = 1_000 * KWEI;
+/// 1e3 wei — 1,000
+pub const KWEI: Balance = 1_000 * WEI;
+/// 1 wei — 1
+pub const WEI: Balance = 1;
