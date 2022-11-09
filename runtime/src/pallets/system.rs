@@ -12,7 +12,7 @@ const AVERAGE_ON_INITIALIZE_RATIO: sp_runtime::Perbill = sp_runtime::Perbill::fr
 const NORMAL_DISPATCH_RATIO: sp_runtime::Perbill = sp_runtime::Perbill::from_percent(75);
 
 /// We allow for 0.5 of a second of compute with a 12 second average block time.
-const MAXIMUM_BLOCK_WEIGHT: frame_support::weights::Weight =
+pub const MAXIMUM_BLOCK_WEIGHT: frame_support::weights::Weight =
 	frame_support::weights::constants::WEIGHT_PER_SECOND.saturating_div(2);
 
 frame_support::parameter_types! {
