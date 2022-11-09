@@ -9,9 +9,11 @@ use cumulus_primitives_core::ParaId;
 use crate::{
 	chain_spec,
 	cli::{Cli, RelayChainCli, Subcommand},
-	service::{self, DarwiniaRuntimeExecutor},
+	service::{self, db_config_dir, DarwiniaRuntimeExecutor},
 };
 use darwinia_runtime::{Block, RuntimeApi};
+// Frontier
+use fc_db::frontier_database_dir;
 // substrate
 use frame_benchmarking_cli::{BenchmarkCmd, SUBSTRATE_REFERENCE_HARDWARE};
 use sc_cli::{
@@ -20,7 +22,7 @@ use sc_cli::{
 };
 use sc_service::{
 	config::{BasePath, PrometheusConfig},
-	TaskManager,
+	DatabaseSource, TaskManager,
 };
 use sp_core::hexdisplay::HexDisplay;
 use sp_runtime::traits::{AccountIdConversion, Block as BlockT};
@@ -169,6 +171,21 @@ pub fn run() -> Result<()> {
 			let runner = cli.create_runner(cmd)?;
 
 			runner.sync_run(|config| {
+				// Remove Frontier offchain db
+				let db_config_dir = db_config_dir(&config);
+				let frontier_database_config = match config.database {
+					DatabaseSource::RocksDb { .. } => DatabaseSource::RocksDb {
+						path: frontier_database_dir(&db_config_dir, "db"),
+						cache_size: 0,
+					},
+					DatabaseSource::ParityDb { .. } => DatabaseSource::ParityDb {
+						path: frontier_database_dir(&db_config_dir, "paritydb"),
+					},
+					_ =>
+						return Err(format!("Cannot purge `{:?}` database", config.database).into()),
+				};
+				cmd.base.run(frontier_database_config)?;
+
 				let polkadot_cli = RelayChainCli::new(
 					&config,
 					[RelayChainCli::executable_name()].iter().chain(cli.relay_chain_args.iter()),
@@ -259,6 +276,15 @@ pub fn run() -> Result<()> {
 			} else {
 				Err("Try-runtime must be enabled by `--features try-runtime`.".into())
 			}
+		},
+		Some(Subcommand::FrontierDb(cmd)) => {
+			let runner = cli.create_runner(cmd)?;
+			// runner.sync_run(|config| {
+			// 	let PartialComponents { client, other, .. } = service::new_partial(&config, &cli)?;
+			// 	let frontier_backend = other.2;
+			// 	cmd.run::<_, frontier_template_runtime::opaque::Block>(client, frontier_backend)
+			// })
+			todo!();
 		},
 		None => {
 			let runner = cli.create_runner(&cli.run.normalize())?;

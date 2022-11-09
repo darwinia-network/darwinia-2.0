@@ -38,6 +38,9 @@ pub enum Subcommand {
 
 	/// Try some testing command against a specified runtime state.
 	TryRuntime(try_runtime_cli::TryRuntimeCmd),
+
+	/// Db meta columns information.
+	FrontierDb(fc_cli::FrontierDbCmd),
 }
 
 #[derive(Debug, clap::Parser)]
