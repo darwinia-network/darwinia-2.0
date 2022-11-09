@@ -162,16 +162,6 @@ pub fn native_version() -> NativeVersion {
 }
 
 frame_support::parameter_types! {
-	pub const UncleGenerations: u32 = 0;
-}
-impl pallet_authorship::Config for Runtime {
-	type EventHandler = (CollatorSelection,);
-	type FilterUncle = ();
-	type FindAuthor = pallet_session::FindAccountFromAuthorIndex<Self, Aura>;
-	type UncleGenerations = UncleGenerations;
-}
-
-frame_support::parameter_types! {
 	pub const ExistentialDeposit: Balance = EXISTENTIAL_DEPOSIT;
 	pub const MaxLocks: u32 = 50;
 	pub const MaxReserves: u32 = 50;
