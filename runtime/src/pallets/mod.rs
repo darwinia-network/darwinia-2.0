@@ -33,3 +33,6 @@ pub use session::*;
 
 pub mod aura;
 pub use aura::*;
+
+pub mod collator_selection;
+pub use collator_selection::*;
