@@ -16,7 +16,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Darwinia. If not, see <https://www.gnu.org/licenses/>.
 
-// --- darwinia-network ---
+// darwinia
 use crate::*;
 
 impl parachain_info::Config for Runtime {}

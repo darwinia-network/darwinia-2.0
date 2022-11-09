@@ -16,7 +16,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Darwinia. If not, see <https://www.gnu.org/licenses/>.
 
-// --- darwinia-network ---
+// darwinia
 use crate::*;
 
 /// We assume that ~5% of the block weight is consumed by `on_initialize` handlers. This is
