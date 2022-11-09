@@ -24,3 +24,6 @@ pub use aura_ext::*;
 
 pub mod xcmp_queue;
 pub use xcmp_queue::*;
+
+pub mod dmp_queue;
+pub use dmp_queue::*;
