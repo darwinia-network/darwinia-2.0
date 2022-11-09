@@ -278,7 +278,7 @@ impl pallet_timestamp::Config for Runtime {
 	/// A timestamp: milliseconds since the unix epoch.
 	type Moment = u64;
 	type OnTimestampSet = ();
-	type WeightInfo = ();
+	type WeightInfo = weights::pallet_timestamp::WeightInfo<Self>;
 }
 
 frame_support::parameter_types! {
@@ -307,7 +307,7 @@ impl pallet_balances::Config for Runtime {
 	type ReserveIdentifier = [u8; 8];
 	/// The ubiquitous event type.
 	type RuntimeEvent = RuntimeEvent;
-	type WeightInfo = pallet_balances::weights::SubstrateWeight<Runtime>;
+	type WeightInfo = weights::pallet_balances::WeightInfo<Self>;
 }
 
 frame_support::parameter_types! {
@@ -336,7 +336,7 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 	type ReservedDmpWeight = ReservedDmpWeight;
 	type ReservedXcmpWeight = ReservedXcmpWeight;
 	type RuntimeEvent = RuntimeEvent;
-	type SelfParaId = parachain_info::Pallet<Runtime>;
+	type SelfParaId = parachain_info::Pallet<Self>;
 	type XcmpMessageHandler = XcmpQueue;
 }
 
@@ -351,7 +351,7 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
 	type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
 	type RuntimeEvent = RuntimeEvent;
 	type VersionWrapper = ();
-	type WeightInfo = ();
+	type WeightInfo = weights::cumulus_pallet_xcmp_queue::WeightInfo<Self>;
 	type XcmExecutor = XcmExecutor<XcmConfig>;
 }
 
@@ -377,7 +377,7 @@ impl pallet_session::Config for Runtime {
 	type ValidatorId = <Self as frame_system::Config>::AccountId;
 	// we don't have stash and controller, thus we don't need the convert as well.
 	type ValidatorIdOf = pallet_collator_selection::IdentityCollator;
-	type WeightInfo = ();
+	type WeightInfo = weights::pallet_session::WeightInfo<Self>;
 }
 
 impl pallet_aura::Config for Runtime {
@@ -410,7 +410,7 @@ impl pallet_collator_selection::Config for Runtime {
 	type ValidatorId = <Self as frame_system::Config>::AccountId;
 	type ValidatorIdOf = pallet_collator_selection::IdentityCollator;
 	type ValidatorRegistration = Session;
-	type WeightInfo = ();
+	type WeightInfo = weights::pallet_collator_selection::WeightInfo<Self>;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
