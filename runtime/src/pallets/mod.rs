@@ -1,38 +1,38 @@
-pub mod system;
+mod system;
 pub use system::*;
 
-pub mod timestamp;
+mod timestamp;
 pub use timestamp::*;
 
-pub mod authorship;
+mod authorship;
 pub use authorship::*;
 
-pub mod balances;
+mod balances;
 pub use balances::*;
 
-pub mod transaction_payment;
+mod transaction_payment;
 pub use transaction_payment::*;
 
-pub mod parachain_system;
+mod parachain_system;
 pub use parachain_system::*;
 
-pub mod parachain_info_;
+mod parachain_info_;
 pub use parachain_info_::*;
 
-pub mod aura_ext;
+mod aura_ext;
 pub use aura_ext::*;
 
-pub mod xcmp_queue;
+mod xcmp_queue;
 pub use xcmp_queue::*;
 
-pub mod dmp_queue;
+mod dmp_queue;
 pub use dmp_queue::*;
 
-pub mod session;
+mod session;
 pub use session::*;
 
-pub mod aura;
+mod aura;
 pub use aura::*;
 
-pub mod collator_selection;
+mod collator_selection;
 pub use collator_selection::*;

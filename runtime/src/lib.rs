@@ -22,8 +22,8 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
-pub mod pallets;
-pub use pallets::*;
+mod pallets;
+use pallets::*;
 
 mod weights;
 
