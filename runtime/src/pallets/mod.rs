@@ -30,3 +30,6 @@ pub use dmp_queue::*;
 
 pub mod session;
 pub use session::*;
+
+pub mod aura;
+pub use aura::*;
