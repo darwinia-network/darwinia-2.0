@@ -44,7 +44,7 @@ jobs:
 
     steps:
       - name: Setup build environment
-        run: apt install -y protobuf-compiler
+        run: sudo apt install -y protobuf-compiler
       - name: Install Rust ${{ env.RUST_TOOLCHAIN }} toolchain
         uses: actions-rs/toolchain@v1
         with:
