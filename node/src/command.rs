@@ -31,7 +31,7 @@ use crate::{
 	service::{self, DarwiniaRuntimeExecutor},
 };
 use darwinia_runtime::{Block, RuntimeApi};
-// Frontier
+// frontier
 use fc_db::frontier_database_dir;
 // substrate
 use frame_benchmarking_cli::{BenchmarkCmd, SUBSTRATE_REFERENCE_HARDWARE};

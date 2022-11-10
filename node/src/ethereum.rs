@@ -19,23 +19,37 @@
 //! Service and service factory implementation. Specialized wrapper over substrate service.
 
 // std
-use std::{path::PathBuf, sync::Arc, time::Duration};
+use std::{collections::BTreeMap, path::PathBuf, sync::Arc, time::Duration};
+
 // rpc
 use futures::{future, StreamExt};
 // darwinia
 use crate::cli::Cli;
-use dc_primitives::{BlockNumber, Hash};
+use dc_primitives::{Block, BlockNumber, Hash};
 // frontier
 use fc_consensus::FrontierBlockImport;
 use fc_db::Backend as FrontierBackend;
 use fc_mapping_sync::{MappingSyncWorker, SyncStrategy};
-use fc_rpc::{EthTask, OverrideHandle};
+use fc_rpc::{
+	EthBlockDataCacheTask, EthTask, OverrideHandle, RuntimeApiStorageOverride, SchemaV1Override,
+	SchemaV2Override, SchemaV3Override, StorageOverride,
+};
 use fc_rpc_core::types::{FeeHistoryCache, FeeHistoryCacheLimit, FilterPool};
+use fp_rpc::{EthereumRuntimeRPCApi, NoTransactionConverter};
+use fp_storage::EthereumStorageSchema;
 // substrate
 // TODO: FIX ME
 use sc_cli::SubstrateCli;
+use sc_client_api::{
+	backend::{AuxStore, Backend, StateBackend, StorageProvider},
+	BlockchainEvents,
+};
 use sc_service::{BasePath, Configuration, TaskManager};
-use sp_runtime::traits::BlakeTwo256 as Hashing;
+use sp_api::ProvideRuntimeApi;
+use sp_blockchain::{
+	Backend as BlockchainBackend, Error as BlockChainError, HeaderBackend, HeaderMetadata,
+};
+use sp_runtime::traits::{BlakeTwo256 as Hashing, BlakeTwo256};
 
 pub fn spawn_frontier_tasks<B, BE, C>(
 	task_manager: &TaskManager,
@@ -62,16 +76,16 @@ pub fn spawn_frontier_tasks<B, BE, C>(
 {
 	task_manager.spawn_essential_handle().spawn(
 		"frontier-mapping-sync-worker",
-		None,
+		Some("frontier"),
 		MappingSyncWorker::new(
 			client.import_notification_stream(),
-			Duration::new(6, 0),  // TODO, check the block interval in parachain
+			Duration::new(6, 0),
 			client.clone(),
 			backend,
 			frontier_backend,
 			3,
 			0,
-			SyncStrategy::Normal,
+			SyncStrategy::Parachain,
 		)
 		.for_each(|()| future::ready(())),
 	);
@@ -90,7 +104,7 @@ pub fn spawn_frontier_tasks<B, BE, C>(
 	// Spawn Frontier FeeHistory cache maintenance task.
 	task_manager.spawn_essential_handle().spawn(
 		"frontier-fee-history",
-		None,
+		Some("frontier"),
 		EthTask::fee_history_task(client, overrides, fee_history_cache, fee_history_cache_limit),
 	);
 }
@@ -104,4 +118,38 @@ pub(crate) fn db_config_dir(config: &Configuration) -> PathBuf {
 			BasePath::from_project("", "", &Cli::executable_name())
 				.config_dir(config.chain_spec.id())
 		})
+}
+
+pub(crate) fn overrides_handle<C, BE>(client: Arc<C>) -> Arc<OverrideHandle<Block>>
+where
+	C: ProvideRuntimeApi<Block> + StorageProvider<Block, BE> + AuxStore,
+	C: HeaderBackend<Block> + HeaderMetadata<Block, Error = BlockChainError>,
+	C: Send + Sync + 'static,
+	C::Api: sp_api::ApiExt<Block>
+		+ fp_rpc::EthereumRuntimeRPCApi<Block>
+		+ fp_rpc::ConvertTransactionRuntimeApi<Block>,
+	BE: Backend<Block> + 'static,
+	BE::State: StateBackend<BlakeTwo256>,
+{
+	let mut overrides_map = BTreeMap::new();
+	overrides_map.insert(
+		EthereumStorageSchema::V1,
+		Box::new(SchemaV1Override::new(client.clone()))
+			as Box<dyn StorageOverride<_> + Send + Sync>,
+	);
+	overrides_map.insert(
+		EthereumStorageSchema::V2,
+		Box::new(SchemaV2Override::new(client.clone()))
+			as Box<dyn StorageOverride<_> + Send + Sync>,
+	);
+	overrides_map.insert(
+		EthereumStorageSchema::V3,
+		Box::new(SchemaV3Override::new(client.clone()))
+			as Box<dyn StorageOverride<_> + Send + Sync>,
+	);
+
+	Arc::new(OverrideHandle {
+		schemas: overrides_map,
+		fallback: Box::new(RuntimeApiStorageOverride::new(client)),
+	})
 }

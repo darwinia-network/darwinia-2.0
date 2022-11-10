@@ -338,7 +338,7 @@ where
 	let fee_history_cache: FeeHistoryCache = Arc::new(Mutex::new(BTreeMap::new()));
 	let fee_history_cache_limit: FeeHistoryCacheLimit = rpc_config.fee_history_limit;
 	let import_queue = cumulus_client_service::SharedImportQueue::new(params.import_queue);
-	let overrides = crate::rpc::overrides_handle(client.clone());
+	let overrides = crate::ethereum::overrides_handle(client.clone());
 	let block_data_cache = Arc::new(fc_rpc::EthBlockDataCacheTask::new(
 		task_manager.spawn_handle(),
 		overrides.clone(),

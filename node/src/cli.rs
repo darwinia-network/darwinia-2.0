@@ -130,8 +130,15 @@ impl RelayChainCli {
 }
 
 pub struct RpcConfig {
+	/// Size in bytes of the LRU cache for block data.
 	pub eth_log_block_cache: usize,
+
+	/// Size in bytes of the LRU cache for transactions statuses data.
 	pub eth_statuses_cache: usize,
+
+	/// Maximum fee history cache size.
 	pub fee_history_limit: u64,
+
+	/// Maximum fee history cache size.
 	pub max_past_logs: u32,
 }
