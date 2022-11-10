@@ -171,7 +171,7 @@ jobs:
   checks-cleaning:
     name: Task checks cleaning
     if: always()
-    needs: [code-checks, runtime-checks]
+    needs: [features-checks, runtime-checks]
     steps:
       - name: Clean artifacts
         uses: geekyeggo/delete-artifact@v1
