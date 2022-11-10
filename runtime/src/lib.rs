@@ -230,11 +230,6 @@ pub fn native_version() -> NativeVersion {
 	NativeVersion { runtime_version: VERSION, can_author_with: Default::default() }
 }
 
-frame_support::parameter_types! {
-	pub const Version: RuntimeVersion = VERSION;
-	pub const SS58Prefix: u16 = 18;
-}
-
 // Create the runtime by composing the FRAME pallets that were previously configured.
 frame_support::construct_runtime! {
 	pub enum Runtime where
