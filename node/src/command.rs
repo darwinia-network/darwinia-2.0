@@ -40,7 +40,7 @@ use sc_cli::{
 };
 use sc_service::{
 	config::{BasePath, PrometheusConfig},
-	DatabaseSource, TaskManager,
+	DatabaseSource, PartialComponents, TaskManager,
 };
 use sp_core::hexdisplay::HexDisplay;
 use sp_runtime::traits::{AccountIdConversion, Block as BlockT};
@@ -295,14 +295,14 @@ pub fn run() -> Result<()> {
 				Err("Try-runtime must be enabled by `--features try-runtime`.".into())
 			}
 		},
+		// TODO: FIX ME
 		Some(Subcommand::FrontierDb(cmd)) => {
 			let runner = cli.create_runner(cmd)?;
-			// runner.sync_run(|config| {
-			// 	let PartialComponents { client, other, .. } = service::new_partial(&config, &cli)?;
-			// 	let frontier_backend = other.2;
-			// 	cmd.run::<_, frontier_template_runtime::opaque::Block>(client, frontier_backend)
-			// })
-			todo!();
+			runner.sync_run(|config| {
+				let PartialComponents { client, other, .. } = service::new_partial(&config, &cli)?;
+				let frontier_backend = other.2;
+				cmd.run::<_, Block>(client, frontier_backend)
+			})
 		},
 		None => {
 			let runner = cli.create_runner(&cli.run.normalize())?;
