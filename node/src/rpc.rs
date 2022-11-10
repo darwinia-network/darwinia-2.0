@@ -33,7 +33,7 @@ use fc_rpc::{
 	SchemaV2Override, SchemaV3Override, StorageOverride,
 };
 use fc_rpc_core::types::{FeeHistoryCache, FeeHistoryCacheLimit, FilterPool};
-use fp_rpc::EthereumRuntimeRPCApi;
+use fp_rpc::{EthereumRuntimeRPCApi, NoTransactionConverter};
 use fp_storage::EthereumStorageSchema;
 // substrate
 use sc_client_api::{
@@ -106,7 +106,7 @@ where
 		+ fp_rpc::ConvertTransactionRuntimeApi<Block>
 		+ fp_rpc::EthereumRuntimeRPCApi<Block>
 		+ BlockBuilder<Block>,
-	P: TransactionPool + Sync + Send + 'static,
+	P: TransactionPool<Block = Block> + Sync + Send + 'static,
 	A: ChainApi<Block = Block> + 'static,
 {
 	// frontier
@@ -135,15 +135,15 @@ where
 		block_data_cache,
 	} = deps;
 
-	module.merge(System::new(client.clone(), pool, deny_unsafe).into_rpc())?;
-	module.merge(TransactionPayment::new(client).into_rpc())?;
+	module.merge(System::new(client.clone(), pool.clone(), deny_unsafe).into_rpc())?;
+	module.merge(TransactionPayment::new(client.clone()).into_rpc())?;
 
 	module.merge(
 		Eth::new(
 			client.clone(),
 			pool.clone(),
 			graph,
-			None, // TODO: check it again.
+			<Option<NoTransactionConverter>>::None, // TODO: check it again.
 			network.clone(),
 			vec![], // TODO: check it again.
 			overrides.clone(),

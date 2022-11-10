@@ -19,16 +19,32 @@
 //! Service and service factory implementation. Specialized wrapper over substrate service.
 
 // std
-use std::{path::PathBuf, sync::Arc, time::Duration};
+use std::{
+	collections::BTreeMap,
+	path::PathBuf,
+	sync::{Arc, Mutex},
+	time::Duration,
+};
 
 // rpc
+use futures::{future, StreamExt};
 use jsonrpsee::RpcModule;
 
 use cumulus_client_cli::CollatorOptions;
 // Local Runtime Types
-use crate::cli::Cli;
+use crate::{
+	cli::{Cli, RpcConfig},
+	ethereum::spawn_frontier_tasks,
+};
 use darwinia_runtime::RuntimeApi;
 use dc_primitives::*;
+
+// Frontier
+use fc_consensus::FrontierBlockImport;
+use fc_db::Backend as FrontierBackend;
+use fc_mapping_sync::{MappingSyncWorker, SyncStrategy};
+use fc_rpc::{EthTask, OverrideHandle};
+use fc_rpc_core::types::{FeeHistoryCache, FeeHistoryCacheLimit, FilterPool};
 
 // Cumulus Imports
 use cumulus_client_consensus_aura::{AuraConsensus, BuildAuraConsensusParams, SlotProportion};
@@ -43,7 +59,9 @@ use cumulus_relay_chain_interface::{RelayChainError, RelayChainInterface, RelayC
 use cumulus_relay_chain_rpc_interface::{create_client_and_start_worker, RelayChainRpcInterface};
 
 // Substrate Imports
+use polkadot_service::CollatorPair;
 use sc_cli::SubstrateCli;
+use sc_client_api::BlockchainEvents;
 use sc_executor::NativeElseWasmExecutor;
 use sc_network::NetworkService;
 use sc_network_common::service::NetworkBlock;
@@ -55,8 +73,6 @@ use sp_api::ConstructRuntimeApi;
 use sp_keystore::SyncCryptoStorePtr;
 use sp_runtime::traits::BlakeTwo256;
 use substrate_prometheus_endpoint::Registry;
-
-use polkadot_service::CollatorPair;
 
 /// Native executor instance.
 pub struct DarwiniaRuntimeExecutor;
@@ -72,6 +88,10 @@ impl sc_executor::NativeExecutionDispatch for DarwiniaRuntimeExecutor {
 		darwinia_runtime::native_version()
 	}
 }
+
+pub type FullClient<Executor, RuntimeApi> =
+	sc_service::TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>;
+type FullBackend = sc_service::TFullBackend<Block>;
 
 /// Starts a `ServiceBuilder` for a full service.
 ///
@@ -225,6 +245,7 @@ async fn start_node_impl<RuntimeApi, Executor, RB, BIQ, BIC>(
 	build_import_queue: BIQ,
 	build_consensus: BIC,
 	hwbench: Option<sc_sysinfo::HwBench>,
+	rpc_config: RpcConfig,
 ) -> sc_service::error::Result<(
 	TaskManager,
 	Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
@@ -244,6 +265,8 @@ where
 		+ sp_block_builder::BlockBuilder<Block>
 		+ cumulus_primitives_core::CollectCollationInfo<Block>
 		+ pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>
+		+ fp_rpc::EthereumRuntimeRPCApi<Block>
+		+ fp_rpc::ConvertTransactionRuntimeApi<Block>
 		+ substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>,
 	sc_client_api::StateBackendFor<TFullBackend<Block>, Block>: sp_api::StateBackend<BlakeTwo256>,
 	Executor: sc_executor::NativeExecutionDispatch + 'static,
@@ -310,7 +333,23 @@ where
 	let validator = parachain_config.role.is_authority();
 	let prometheus_registry = parachain_config.prometheus_registry().cloned();
 	let transaction_pool = params.transaction_pool.clone();
+	let frontier_backend = Arc::new(FrontierBackend::open(
+		Arc::clone(&client),
+		&parachain_config.database,
+		&db_config_dir(&parachain_config),
+	)?);
+	let filter_pool: Option<FilterPool> = Some(Arc::new(Mutex::new(BTreeMap::new())));
+	let fee_history_cache: FeeHistoryCache = Arc::new(Mutex::new(BTreeMap::new()));
+	let fee_history_cache_limit: FeeHistoryCacheLimit = rpc_config.fee_history_limit;
 	let import_queue = cumulus_client_service::SharedImportQueue::new(params.import_queue);
+	let overrides = crate::rpc::overrides_handle(client.clone());
+	let block_data_cache = Arc::new(fc_rpc::EthBlockDataCacheTask::new(
+		task_manager.spawn_handle(),
+		overrides.clone(),
+		50,
+		50,
+		prometheus_registry.clone(),
+	));
 	let (network, system_rpc_tx, tx_handler_controller, start_network) =
 		sc_service::build_network(sc_service::BuildNetworkParams {
 			config: &parachain_config,
@@ -326,16 +365,33 @@ where
 
 	let rpc_builder = {
 		let client = client.clone();
-		let transaction_pool = transaction_pool.clone();
+		let pool = transaction_pool.clone();
+		let network = network.clone();
+		let filter_pool = filter_pool.clone();
+		let frontier_backend = frontier_backend.clone();
+		let overrides = overrides.clone();
+		let fee_history_cache = fee_history_cache.clone();
+		let max_past_logs = rpc_config.max_past_logs;
+		let collator = parachain_config.role.is_authority();
 
-		Box::new(move |deny_unsafe, _| {
+		Box::new(move |deny_unsafe, subscription_task_executor| {
 			let deps = crate::rpc::FullDeps {
 				client: client.clone(),
-				pool: transaction_pool.clone(),
+				pool: pool.clone(),
+				graph: pool.pool().clone(),
 				deny_unsafe,
+				is_authority: collator,
+				network: network.clone(),
+				filter_pool: filter_pool.clone(),
+				backend: frontier_backend.clone(),
+				max_past_logs,
+				fee_history_cache: fee_history_cache.clone(),
+				fee_history_cache_limit,
+				overrides: overrides.clone(),
+				block_data_cache: block_data_cache.clone(),
 			};
 
-			crate::rpc::create_full(deps).map_err(Into::into)
+			crate::rpc::create_full(deps, subscription_task_executor).map_err(Into::into)
 		})
 	};
 
@@ -352,6 +408,17 @@ where
 		tx_handler_controller,
 		telemetry: telemetry.as_mut(),
 	})?;
+
+	spawn_frontier_tasks(
+		&task_manager,
+		client.clone(),
+		backend,
+		frontier_backend,
+		filter_pool,
+		overrides,
+		fee_history_cache,
+		fee_history_cache_limit,
+	);
 
 	if let Some(hwbench) = hwbench {
 		sc_sysinfo::print_hwbench(&hwbench);
@@ -474,6 +541,7 @@ pub async fn start_parachain_node(
 	collator_options: CollatorOptions,
 	id: ParaId,
 	hwbench: Option<sc_sysinfo::HwBench>,
+	rpc_config: RpcConfig,
 ) -> sc_service::error::Result<(
 	TaskManager,
 	Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<DarwiniaRuntimeExecutor>>>,
@@ -549,6 +617,7 @@ pub async fn start_parachain_node(
 			))
 		},
 		hwbench,
+		rpc_config,
 	)
 	.await
 }

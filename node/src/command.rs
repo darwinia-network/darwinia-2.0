@@ -26,7 +26,7 @@ use cumulus_primitives_core::ParaId;
 // darwinia
 use crate::{
 	chain_spec,
-	cli::{Cli, RelayChainCli, Subcommand},
+	cli::{Cli, RelayChainCli, RpcConfig, Subcommand},
 	service::{self, db_config_dir, DarwiniaRuntimeExecutor},
 };
 use darwinia_runtime::{Block, RuntimeApi};
@@ -343,6 +343,13 @@ pub fn run() -> Result<()> {
 					SubstrateCli::create_configuration(&polkadot_cli, &polkadot_cli, tokio_handle)
 						.map_err(|err| format!("Relay chain argument error: {}", err))?;
 
+				let rpc_config = RpcConfig {
+					eth_log_block_cache: cli.eth_log_block_cache,
+					eth_statuses_cache: cli.eth_statuses_cache,
+					fee_history_limit: cli.fee_history_limit,
+					max_past_logs: cli.max_past_logs,
+				};
+
 				info!("Parachain id: {:?}", id);
 				info!("Parachain Account: {}", parachain_account);
 				info!("Parachain genesis state: {}", genesis_state);
@@ -354,6 +361,7 @@ pub fn run() -> Result<()> {
 					collator_options,
 					id,
 					hwbench,
+					rpc_config,
 				)
 				.await
 				.map(|r| r.0)

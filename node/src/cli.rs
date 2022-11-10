@@ -87,6 +87,22 @@ pub struct Cli {
 	/// Relay chain arguments
 	#[clap(raw = true)]
 	pub relay_chain_args: Vec<String>,
+
+	/// Size in bytes of the LRU cache for block data.
+	#[clap(long, default_value = "300000000")]
+	pub eth_log_block_cache: usize,
+
+	/// Size in bytes of the LRU cache for transactions statuses data.
+	#[clap(long, default_value = "300000000")]
+	pub eth_statuses_cache: usize,
+
+	/// Maximum number of logs in a query.
+	#[clap(long, default_value = "10000")]
+	pub max_past_logs: u32,
+
+	/// Maximum fee history cache size.
+	#[clap(long, default_value = "2048")]
+	pub fee_history_limit: u64,
 }
 
 #[derive(Debug)]
@@ -111,4 +127,11 @@ impl RelayChainCli {
 		let base_path = para_config.base_path.as_ref().map(|x| x.path().join("polkadot"));
 		Self { base_path, chain_id, base: clap::Parser::parse_from(relay_chain_args) }
 	}
+}
+
+pub struct RpcConfig {
+	pub eth_log_block_cache: usize,
+	pub eth_statuses_cache: usize,
+	pub fee_history_limit: u64,
+	pub max_past_logs: u32,
 }

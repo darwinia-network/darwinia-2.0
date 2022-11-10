@@ -23,6 +23,7 @@
 mod chain_spec;
 mod cli;
 mod command;
+mod ethereum;
 mod rpc;
 mod service;
 

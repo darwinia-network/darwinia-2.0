@@ -1877,7 +1877,9 @@ dependencies = [
  "darwinia-runtime",
  "dc-primitives",
  "fc-cli",
+ "fc-consensus",
  "fc-db",
+ "fc-mapping-sync",
  "fc-rpc",
  "fc-rpc-core",
  "fp-evm",
@@ -1885,6 +1887,7 @@ dependencies = [
  "fp-storage",
  "frame-benchmarking",
  "frame-benchmarking-cli",
+ "futures",
  "jsonrpsee",
  "log",
  "pallet-transaction-payment-rpc",
@@ -2553,6 +2556,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "fc-consensus"
+version = "2.0.0-dev"
+source = "git+https://github.com/paritytech/frontier?branch=polkadot-v0.9.30#ce45aff1903e058f4cf6e660f2c9202847a15b25"
+dependencies = [
+ "async-trait",
+ "fc-db",
+ "fp-consensus",
+ "fp-rpc",
+ "sc-client-api",
+ "sc-consensus",
+ "sp-api",
+ "sp-block-builder",
+ "sp-blockchain",
+ "sp-consensus",
+ "sp-runtime",
+ "thiserror",
+]
+
+[[package]]
 name = "fc-db"
 version = "2.0.0-dev"
 source = "git+https://github.com/paritytech/frontier?branch=polkadot-v0.9.30#ce45aff1903e058f4cf6e660f2c9202847a15b25"
@@ -2567,6 +2589,23 @@ dependencies = [
  "sp-blockchain",
  "sp-core",
  "sp-database",
+ "sp-runtime",
+]
+
+[[package]]
+name = "fc-mapping-sync"
+version = "2.0.0-dev"
+source = "git+https://github.com/paritytech/frontier?branch=polkadot-v0.9.30#ce45aff1903e058f4cf6e660f2c9202847a15b25"
+dependencies = [
+ "fc-db",
+ "fp-consensus",
+ "fp-rpc",
+ "futures",
+ "futures-timer",
+ "log",
+ "sc-client-api",
+ "sp-api",
+ "sp-blockchain",
  "sp-runtime",
 ]
 
