@@ -43,9 +43,7 @@ use dc_primitives::*;
 // frontier
 use fp_rpc::TransactionStatus;
 use pallet_ethereum::{Call::transact, Transaction as EthereumTransaction};
-use pallet_evm::{
-	Account as EVMAccount, EnsureAddressTruncated, FeeCalculator, HashedAddressMapping, Runner,
-};
+use pallet_evm::{Account as EVMAccount, EnsureAddressTruncated, FeeCalculator, Runner};
 
 // polkadot
 use xcm::latest::prelude::BodyId;
@@ -71,8 +69,7 @@ pub use sp_runtime::BuildStorage;
 use sp_runtime::{
 	generic,
 	traits::{
-		BlakeTwo256, Block as BlockT, DispatchInfoOf, Dispatchable, PostDispatchInfoOf,
-		UniqueSaturatedInto,
+		Block as BlockT, DispatchInfoOf, Dispatchable, PostDispatchInfoOf, UniqueSaturatedInto,
 	},
 	transaction_validity::{TransactionSource, TransactionValidity},
 	ApplyExtrinsicResult,

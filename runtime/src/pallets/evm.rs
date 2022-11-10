@@ -18,8 +18,21 @@
 
 // darwinia
 use crate::*;
+// frontier
+use pallet_ethereum::EthereumBlockHashMapping;
+use pallet_evm::{
+	AddressMapping, FixedGasWeightMapping, Precompile, PrecompileHandle, PrecompileResult,
+	PrecompileSet,
+};
+use pallet_evm_precompile_blake2::Blake2F;
+use pallet_evm_precompile_bn128::{Bn128Add, Bn128Mul, Bn128Pairing};
+use pallet_evm_precompile_modexp::Modexp;
+use pallet_evm_precompile_simple::{ECRecover, Identity, Ripemd160, Sha256};
+// substrate
+use sp_core::{H160, U256};
+use sp_std::marker::PhantomData;
 
-const WEIGHT_PER_GAS: u64 = 20_000;
+const WEIGHT_PER_GAS: u64 = 40_000;
 frame_support::parameter_types! {
 	pub BlockGasLimit: U256 = U256::from(NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT.ref_time() / WEIGHT_PER_GAS);
 	pub PrecompilesValue: DarwiniaPrecompiles<Runtime> = DarwiniaPrecompiles::<_>::new();
@@ -41,16 +54,44 @@ impl<F: FindAuthor<u32>> FindAuthor<H160> for FindAuthorTruncated<F> {
 	}
 }
 
+pub struct FixedGasPrice;
+impl FeeCalculator for FixedGasPrice {
+	fn min_gas_price() -> (U256, Weight) {
+		(U256::from(GWEI), Weight::zero())
+	}
+}
+
+/// The address prefix for darwinia evm address
+const ADDR_PREFIX: &[u8] = b"dvm:";
+
+pub struct ConcatAddressMapping;
+impl<AccountId> AddressMapping<AccountId> for ConcatAddressMapping
+where
+	AccountId: From<[u8; 32]>,
+{
+	fn into_account_id(address: H160) -> AccountId {
+		let check_sum = |account_id: &[u8; 32]| -> u8 {
+			account_id[1..31].iter().fold(account_id[0], |sum, &byte| sum ^ byte)
+		};
+
+		let mut raw_account = [0u8; 32];
+		raw_account[0..4].copy_from_slice(ADDR_PREFIX);
+		raw_account[11..31].copy_from_slice(&address[..]);
+		raw_account[31] = check_sum(&raw_account);
+		raw_account.into()
+	}
+}
+
 impl pallet_evm::Config for Runtime {
-	type AddressMapping = HashedAddressMapping<BlakeTwo256>;
+	type AddressMapping = ConcatAddressMapping;
 	type BlockGasLimit = BlockGasLimit;
-	type BlockHashMapping = pallet_ethereum::EthereumBlockHashMapping<Self>;
+	type BlockHashMapping = EthereumBlockHashMapping<Self>;
 	type CallOrigin = EnsureAddressTruncated;
 	type ChainId = ChainId;
 	type Currency = Balances;
-	type FeeCalculator = BaseFee;
+	type FeeCalculator = FixedGasPrice;
 	type FindAuthor = FindAuthorTruncated<Aura>;
-	type GasWeightMapping = pallet_evm::FixedGasWeightMapping<Self>;
+	type GasWeightMapping = FixedGasWeightMapping<Self>;
 	type OnChargeTransaction = ();
 	type PrecompilesType = DarwiniaPrecompiles<Self>;
 	type PrecompilesValue = PrecompilesValue;
@@ -59,13 +100,6 @@ impl pallet_evm::Config for Runtime {
 	type WeightPerGas = WeightPerGas;
 	type WithdrawOrigin = EnsureAddressTruncated;
 }
-
-use pallet_evm::{Precompile, PrecompileHandle, PrecompileResult, PrecompileSet};
-use sp_core::H160;
-use sp_std::marker::PhantomData;
-
-use pallet_evm_precompile_modexp::Modexp;
-use pallet_evm_precompile_simple::{ECRecover, Identity, Ripemd160, Sha256};
 
 pub struct DarwiniaPrecompiles<R>(PhantomData<R>);
 
@@ -77,8 +111,8 @@ where
 		Self(Default::default())
 	}
 
-	pub fn used_addresses() -> [H160; 5] {
-		[hash(1), hash(2), hash(3), hash(4), hash(5)]
+	pub fn used_addresses() -> [H160; 9] {
+		[addr(1), addr(2), addr(3), addr(4), addr(5), addr(6), addr(7), addr(8), addr(9)]
 	}
 }
 impl<R> PrecompileSet for DarwiniaPrecompiles<R>
@@ -88,11 +122,15 @@ where
 	fn execute(&self, handle: &mut impl PrecompileHandle) -> Option<PrecompileResult> {
 		match handle.code_address() {
 			// Ethereum precompiles :
-			a if a == hash(1) => Some(ECRecover::execute(handle)),
-			a if a == hash(2) => Some(Sha256::execute(handle)),
-			a if a == hash(3) => Some(Ripemd160::execute(handle)),
-			a if a == hash(4) => Some(Identity::execute(handle)),
-			a if a == hash(5) => Some(Modexp::execute(handle)),
+			a if a == addr(1) => Some(ECRecover::execute(handle)),
+			a if a == addr(2) => Some(Sha256::execute(handle)),
+			a if a == addr(3) => Some(Ripemd160::execute(handle)),
+			a if a == addr(4) => Some(Identity::execute(handle)),
+			a if a == addr(5) => Some(Modexp::execute(handle)),
+			a if a == addr(6) => Some(Bn128Add::execute(handle)),
+			a if a == addr(7) => Some(Bn128Mul::execute(handle)),
+			a if a == addr(8) => Some(Bn128Pairing::execute(handle)),
+			a if a == addr(9) => Some(Blake2F::execute(handle)),
 			// Non-Frontier specific nor Ethereum precompiles :
 			_ => None,
 		}
@@ -103,6 +141,6 @@ where
 	}
 }
 
-fn hash(a: u64) -> H160 {
+fn addr(a: u64) -> H160 {
 	H160::from_low_u64_be(a)
 }

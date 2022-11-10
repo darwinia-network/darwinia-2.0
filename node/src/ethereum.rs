@@ -65,7 +65,7 @@ pub fn spawn_frontier_tasks<B, BE, C>(
 		None,
 		MappingSyncWorker::new(
 			client.import_notification_stream(),
-			Duration::new(6, 0),
+			Duration::new(6, 0),  // TODO, check the block interval in parachain
 			client.clone(),
 			backend,
 			frontier_backend,
