@@ -16,16 +16,20 @@
 // You should have received a copy of the GNU General Public License
 // along with Darwinia. If not, see <https://www.gnu.org/licenses/>.
 
-//! Darwinia node CLI.
+// darwinia
+use crate::*;
 
-#![deny(missing_docs)]
+frame_support::parameter_types! {
+	/// Relay Chain `TransactionByteFee` / 10
+	pub const TransactionByteFee: Balance = 10 * MICROUNIT;
+	pub const OperationalFeeMultiplier: u8 = 5;
+}
 
-mod chain_spec;
-mod cli;
-mod command;
-mod rpc;
-mod service;
-
-fn main() -> sc_cli::Result<()> {
-	command::run()
+impl pallet_transaction_payment::Config for Runtime {
+	type FeeMultiplierUpdate = polkadot_runtime_common::SlowAdjustingFeeUpdate<Self>;
+	type LengthToFee = ConstantMultiplier<Balance, TransactionByteFee>;
+	type OnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, ()>;
+	type OperationalFeeMultiplier = OperationalFeeMultiplier;
+	type RuntimeEvent = RuntimeEvent;
+	type WeightToFee = WeightToFee;
 }

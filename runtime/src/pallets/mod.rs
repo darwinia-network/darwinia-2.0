@@ -16,16 +16,41 @@
 // You should have received a copy of the GNU General Public License
 // along with Darwinia. If not, see <https://www.gnu.org/licenses/>.
 
-//! Darwinia node CLI.
+mod system;
+pub use system::*;
 
-#![deny(missing_docs)]
+mod timestamp;
+pub use timestamp::*;
 
-mod chain_spec;
-mod cli;
-mod command;
-mod rpc;
-mod service;
+mod authorship;
+pub use authorship::*;
 
-fn main() -> sc_cli::Result<()> {
-	command::run()
-}
+mod balances;
+pub use balances::*;
+
+mod transaction_payment;
+pub use transaction_payment::*;
+
+mod parachain_system;
+pub use parachain_system::*;
+
+mod parachain_info_;
+pub use parachain_info_::*;
+
+mod aura_ext;
+pub use aura_ext::*;
+
+mod xcmp_queue;
+pub use xcmp_queue::*;
+
+mod dmp_queue;
+pub use dmp_queue::*;
+
+mod session;
+pub use session::*;
+
+mod aura;
+pub use aura::*;
+
+mod collator_selection;
+pub use collator_selection::*;

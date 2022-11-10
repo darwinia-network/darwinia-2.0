@@ -16,16 +16,17 @@
 // You should have received a copy of the GNU General Public License
 // along with Darwinia. If not, see <https://www.gnu.org/licenses/>.
 
-//! Darwinia node CLI.
+// darwinia
+use crate::*;
 
-#![deny(missing_docs)]
+frame_support::parameter_types! {
+	pub const MinimumPeriod: u64 = SLOT_DURATION / 2;
+}
 
-mod chain_spec;
-mod cli;
-mod command;
-mod rpc;
-mod service;
-
-fn main() -> sc_cli::Result<()> {
-	command::run()
+impl pallet_timestamp::Config for Runtime {
+	type MinimumPeriod = MinimumPeriod;
+	/// A timestamp: milliseconds since the unix epoch.
+	type Moment = u64;
+	type OnTimestampSet = ();
+	type WeightInfo = weights::pallet_timestamp::WeightInfo<Self>;
 }
