@@ -147,13 +147,17 @@ runtime-benchmarks = [
 
 	# cumulus
 	"pallet-collator-selection/runtime-benchmarks",
+	"cumulus-pallet-parachain-system/runtime-benchmarks",
 	"cumulus-pallet-xcmp-queue/runtime-benchmarks",
 	# cumulus optional
 	"cumulus-pallet-session-benchmarking/runtime-benchmarks",
 
 	# polkadot
 	"pallet-xcm/runtime-benchmarks",
+	"polkadot-parachain/runtime-benchmarks",
+	"polkadot-runtime-common/runtime-benchmarks",
 	"xcm-builder/runtime-benchmarks",
+	"xcm-executor/runtime-benchmarks",
 
 	# substrate
 	"frame-support/runtime-benchmarks",
@@ -178,9 +182,11 @@ try-runtime = [
 
 	# polkadot
 	"pallet-xcm/try-runtime",
+	"polkadot-runtime-common/try-runtime",
 
 	# substrate
 	"frame-executive/try-runtime",
+	"frame-support/try-runtime",
 	"frame-system/try-runtime",
 	"pallet-aura/try-runtime",
 	"pallet-authorship/try-runtime",
