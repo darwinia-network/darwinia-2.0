@@ -34,7 +34,7 @@ env:
   SUBALFRED_LINK: https://github.com/hack-ink/subalfred/releases/latest/download/subalfred-x86_64-unknown-linux-gnu.zst
 
 jobs:
-  basic-check:
+  basic-checks:
     name: Task ${{ matrix.action }} darwinia
     if: github.event_name == 'push' || !github.event.pull_request.draft
     runs-on: ubuntu-latest
