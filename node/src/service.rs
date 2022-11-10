@@ -34,7 +34,7 @@ use cumulus_client_cli::CollatorOptions;
 // Local Runtime Types
 use crate::{
 	cli::{Cli, RpcConfig},
-	ethereum::spawn_frontier_tasks,
+	ethereum::{db_config_dir, spawn_frontier_tasks},
 };
 use darwinia_runtime::RuntimeApi;
 use dc_primitives::*;
@@ -88,10 +88,6 @@ impl sc_executor::NativeExecutionDispatch for DarwiniaRuntimeExecutor {
 		darwinia_runtime::native_version()
 	}
 }
-
-pub type FullClient<Executor, RuntimeApi> =
-	sc_service::TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>;
-type FullBackend = sc_service::TFullBackend<Block>;
 
 /// Starts a `ServiceBuilder` for a full service.
 ///
@@ -620,15 +616,4 @@ pub async fn start_parachain_node(
 		rpc_config,
 	)
 	.await
-}
-
-pub(crate) fn db_config_dir(config: &Configuration) -> PathBuf {
-	config
-		.base_path
-		.as_ref()
-		.map(|base_path| base_path.config_dir(config.chain_spec.id()))
-		.unwrap_or_else(|| {
-			BasePath::from_project("", "", &Cli::executable_name())
-				.config_dir(config.chain_spec.id())
-		})
 }

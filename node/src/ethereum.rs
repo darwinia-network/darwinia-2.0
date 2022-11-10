@@ -19,9 +19,12 @@
 //! Service and service factory implementation. Specialized wrapper over substrate service.
 
 // std
-use std::{sync::Arc, time::Duration};
+use std::{path::PathBuf, sync::Arc, time::Duration};
 // rpc
 use futures::{future, StreamExt};
+// darwinia
+use crate::cli::Cli;
+use dc_primitives::{BlockNumber, Hash};
 // frontier
 use fc_consensus::FrontierBlockImport;
 use fc_db::Backend as FrontierBackend;
@@ -29,10 +32,9 @@ use fc_mapping_sync::{MappingSyncWorker, SyncStrategy};
 use fc_rpc::{EthTask, OverrideHandle};
 use fc_rpc_core::types::{FeeHistoryCache, FeeHistoryCacheLimit, FilterPool};
 // substrate
-use sc_service::TaskManager;
-
-use dc_primitives::{BlockNumber, Hash};
 // TODO: FIX ME
+use sc_cli::SubstrateCli;
+use sc_service::{BasePath, Configuration, TaskManager};
 use sp_runtime::traits::BlakeTwo256 as Hashing;
 
 pub fn spawn_frontier_tasks<B, BE, C>(
@@ -91,4 +93,15 @@ pub fn spawn_frontier_tasks<B, BE, C>(
 		None,
 		EthTask::fee_history_task(client, overrides, fee_history_cache, fee_history_cache_limit),
 	);
+}
+
+pub(crate) fn db_config_dir(config: &Configuration) -> PathBuf {
+	config
+		.base_path
+		.as_ref()
+		.map(|base_path| base_path.config_dir(config.chain_spec.id()))
+		.unwrap_or_else(|| {
+			BasePath::from_project("", "", &Cli::executable_name())
+				.config_dir(config.chain_spec.id())
+		})
 }

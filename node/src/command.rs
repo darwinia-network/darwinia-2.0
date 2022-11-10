@@ -27,7 +27,8 @@ use cumulus_primitives_core::ParaId;
 use crate::{
 	chain_spec,
 	cli::{Cli, RelayChainCli, RpcConfig, Subcommand},
-	service::{self, db_config_dir, DarwiniaRuntimeExecutor},
+	ethereum::db_config_dir,
+	service::{self, DarwiniaRuntimeExecutor},
 };
 use darwinia_runtime::{Block, RuntimeApi};
 // Frontier
@@ -299,9 +300,10 @@ pub fn run() -> Result<()> {
 		Some(Subcommand::FrontierDb(cmd)) => {
 			let runner = cli.create_runner(cmd)?;
 			runner.sync_run(|config| {
-				let PartialComponents { client, other, .. } = service::new_partial(&config, &cli)?;
-				let frontier_backend = other.2;
-				cmd.run::<_, Block>(client, frontier_backend)
+				// let PartialComponents { client, other, .. } = service::new_partial(&config,
+				// &cli)?; let frontier_backend = other.2;
+				// cmd.run::<_, Block>(client, frontier_backend)
+				todo!();
 			})
 		},
 		None => {
