@@ -137,9 +137,9 @@ where
 			client.clone(),
 			pool.clone(),
 			graph,
-			<Option<NoTransactionConverter>>::None, // TODO: check it again.
+			<Option<NoTransactionConverter>>::None,
 			network.clone(),
-			vec![], // TODO: check it again.
+			vec![],
 			overrides.clone(),
 			backend.clone(),
 			is_authority,

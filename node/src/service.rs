@@ -31,12 +31,13 @@ use cumulus_client_cli::CollatorOptions;
 // darwinia
 use crate::{
 	cli::EthRpcConfig,
-	ethereum::{db_config_dir, spawn_frontier_tasks},
+	ethereum::{db_config_dir, overrides_handle, spawn_frontier_tasks},
 };
 use darwinia_runtime::RuntimeApi;
 use dc_primitives::*;
 // frontier
 use fc_db::Backend as FrontierBackend;
+use fc_rpc::EthBlockDataCacheTask;
 use fc_rpc_core::types::{FeeHistoryCache, FeeHistoryCacheLimit, FilterPool};
 // cumulus
 use cumulus_client_consensus_aura::{AuraConsensus, BuildAuraConsensusParams, SlotProportion};
@@ -306,6 +307,7 @@ where
 	let force_authoring = parachain_config.force_authoring;
 	let validator = parachain_config.role.is_authority();
 	let prometheus_registry = parachain_config.prometheus_registry().cloned();
+
 	let transaction_pool = params.transaction_pool.clone();
 	let frontier_backend = Arc::new(FrontierBackend::open(
 		Arc::clone(&client),
@@ -316,12 +318,12 @@ where
 	let fee_history_cache: FeeHistoryCache = Arc::new(Mutex::new(BTreeMap::new()));
 	let fee_history_cache_limit: FeeHistoryCacheLimit = eth_rpc_config.fee_history_limit;
 	let import_queue = cumulus_client_service::SharedImportQueue::new(params.import_queue);
-	let overrides = crate::ethereum::overrides_handle(client.clone());
-	let block_data_cache = Arc::new(fc_rpc::EthBlockDataCacheTask::new(
+	let overrides = overrides_handle(client.clone());
+	let block_data_cache = Arc::new(EthBlockDataCacheTask::new(
 		task_manager.spawn_handle(),
 		overrides.clone(),
-		50,
-		50,
+		eth_rpc_config.eth_log_block_cache,
+		eth_rpc_config.eth_statuses_cache,
 		prometheus_registry.clone(),
 	));
 	let (network, system_rpc_tx, tx_handler_controller, start_network) =
