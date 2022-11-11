@@ -21,29 +21,24 @@
 // std
 use std::{
 	collections::BTreeMap,
-	path::PathBuf,
 	sync::{Arc, Mutex},
 	time::Duration,
 };
 
 // rpc
-use futures::{future, StreamExt};
 use jsonrpsee::RpcModule;
 // cumulus
 use cumulus_client_cli::CollatorOptions;
 // Local Runtime Types
 use crate::{
-	cli::{Cli, RpcConfig},
+	cli::RpcConfig,
 	ethereum::{db_config_dir, spawn_frontier_tasks},
 };
 use darwinia_runtime::RuntimeApi;
 use dc_primitives::*;
 
 // Frontier
-use fc_consensus::FrontierBlockImport;
 use fc_db::Backend as FrontierBackend;
-use fc_mapping_sync::{MappingSyncWorker, SyncStrategy};
-use fc_rpc::{EthTask, OverrideHandle};
 use fc_rpc_core::types::{FeeHistoryCache, FeeHistoryCacheLimit, FilterPool};
 
 // Cumulus Imports
@@ -60,14 +55,10 @@ use cumulus_relay_chain_rpc_interface::{create_client_and_start_worker, RelayCha
 
 // Substrate Imports
 use polkadot_service::CollatorPair;
-use sc_cli::SubstrateCli;
-use sc_client_api::BlockchainEvents;
 use sc_executor::NativeElseWasmExecutor;
 use sc_network::NetworkService;
 use sc_network_common::service::NetworkBlock;
-use sc_service::{
-	BasePath, Configuration, PartialComponents, TFullBackend, TFullClient, TaskManager,
-};
+use sc_service::{Configuration, PartialComponents, TFullBackend, TFullClient, TaskManager};
 use sc_telemetry::{Telemetry, TelemetryHandle, TelemetryWorker, TelemetryWorkerHandle};
 use sp_api::ConstructRuntimeApi;
 use sp_keystore::SyncCryptoStorePtr;

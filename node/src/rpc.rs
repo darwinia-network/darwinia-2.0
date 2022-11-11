@@ -24,17 +24,13 @@
 pub use sc_rpc::{DenyUnsafe, SubscriptionTaskExecutor};
 
 // std
-use std::{collections::BTreeMap, sync::Arc};
+use std::sync::Arc;
 // darwinia
 use dc_primitives::*;
 // frontier
-use fc_rpc::{
-	EthBlockDataCacheTask, EthTask, OverrideHandle, RuntimeApiStorageOverride, SchemaV1Override,
-	SchemaV2Override, SchemaV3Override, StorageOverride,
-};
+use fc_rpc::{EthBlockDataCacheTask, OverrideHandle};
 use fc_rpc_core::types::{FeeHistoryCache, FeeHistoryCacheLimit, FilterPool};
-use fp_rpc::{EthereumRuntimeRPCApi, NoTransactionConverter};
-use fp_storage::EthereumStorageSchema;
+use fp_rpc::NoTransactionConverter;
 // substrate
 use sc_client_api::{
 	backend::{AuxStore, Backend, StateBackend, StorageProvider},
@@ -45,10 +41,8 @@ use sc_transaction_pool::{ChainApi, Pool};
 use sc_transaction_pool_api::TransactionPool;
 use sp_api::ProvideRuntimeApi;
 use sp_block_builder::BlockBuilder;
-use sp_blockchain::{
-	Backend as BlockchainBackend, Error as BlockChainError, HeaderBackend, HeaderMetadata,
-};
-use sp_runtime::traits::{BlakeTwo256, Block as BlockT};
+use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
+use sp_runtime::traits::BlakeTwo256;
 
 /// A type representing all RPC extensions.
 pub type RpcExtension = jsonrpsee::RpcModule<()>;

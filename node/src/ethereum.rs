@@ -27,28 +27,21 @@ use futures::{future, StreamExt};
 use crate::cli::Cli;
 use dc_primitives::{Block, BlockNumber, Hash};
 // frontier
-use fc_consensus::FrontierBlockImport;
 use fc_db::Backend as FrontierBackend;
 use fc_mapping_sync::{MappingSyncWorker, SyncStrategy};
 use fc_rpc::{
-	EthBlockDataCacheTask, EthTask, OverrideHandle, RuntimeApiStorageOverride, SchemaV1Override,
-	SchemaV2Override, SchemaV3Override, StorageOverride,
+	EthTask, OverrideHandle, RuntimeApiStorageOverride, SchemaV1Override, SchemaV2Override,
+	SchemaV3Override, StorageOverride,
 };
 use fc_rpc_core::types::{FeeHistoryCache, FeeHistoryCacheLimit, FilterPool};
-use fp_rpc::{EthereumRuntimeRPCApi, NoTransactionConverter};
 use fp_storage::EthereumStorageSchema;
 // substrate
 // TODO: FIX ME
 use sc_cli::SubstrateCli;
-use sc_client_api::{
-	backend::{AuxStore, Backend, StateBackend, StorageProvider},
-	BlockchainEvents,
-};
+use sc_client_api::backend::{AuxStore, Backend, StateBackend, StorageProvider};
 use sc_service::{BasePath, Configuration, TaskManager};
 use sp_api::ProvideRuntimeApi;
-use sp_blockchain::{
-	Backend as BlockchainBackend, Error as BlockChainError, HeaderBackend, HeaderMetadata,
-};
+use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
 use sp_runtime::traits::{BlakeTwo256 as Hashing, BlakeTwo256};
 
 pub fn spawn_frontier_tasks<B, BE, C>(
