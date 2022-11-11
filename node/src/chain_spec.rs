@@ -24,8 +24,10 @@ use serde::{Deserialize, Serialize};
 // cumulus
 use cumulus_primitives_core::ParaId;
 // darwinia
-use darwinia_runtime::{AuraId, EVMConfig, EXISTENTIAL_DEPOSIT};
+use darwinia_runtime::{AuraId, DarwiniaPrecompiles, EVMConfig, Runtime, EXISTENTIAL_DEPOSIT};
 use dc_primitives::*;
+// frontier
+use fp_evm::GenesisAccount;
 // substrate
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
 use sc_service::ChainType;
@@ -135,7 +137,7 @@ pub fn development_config() -> ChainSpec {
 		None,
 		Extensions {
 			relay_chain: "rococo-local".into(), // You MUST set this to the correct network!
-			para_id: 1000,
+			para_id: 2000,
 		},
 	)
 }
@@ -196,7 +198,7 @@ pub fn local_testnet_config() -> ChainSpec {
 		// Extensions
 		Extensions {
 			relay_chain: "rococo-local".into(), // You MUST set this to the correct network!
-			para_id: 1000,
+			para_id: 2000,
 		},
 	)
 }
@@ -248,7 +250,7 @@ fn testnet_genesis(
 					// H160 address of CI test runner account
 					H160::from_str("6be02d1d3665660d22ff9624b7be0551ee1ac91b")
 						.expect("internal H160 is valid; qed"),
-					fp_evm::GenesisAccount {
+					GenesisAccount {
 						balance: U256::from_str("0xffffffffffffffffffffffffffffffff")
 							.expect("internal U256 is valid; qed"),
 						code: Default::default(),
@@ -260,13 +262,25 @@ fn testnet_genesis(
 					// H160 address for benchmark usage
 					H160::from_str("1000000000000000000000000000000000000001")
 						.expect("internal H160 is valid; qed"),
-					fp_evm::GenesisAccount {
+					GenesisAccount {
 						nonce: U256::from(1),
 						balance: U256::from(1_000_000_000_000_000_000_000_000u128),
 						storage: Default::default(),
 						code: vec![0x00],
 					},
 				);
+
+				for precompile in DarwiniaPrecompiles::<Runtime>::used_addresses() {
+					map.insert(
+						precompile,
+						GenesisAccount {
+							nonce: Default::default(),
+							balance: Default::default(),
+							storage: Default::default(),
+							code: REVERT_BYTECODE.to_vec(),
+						},
+					);
+				}
 				map
 			},
 		},

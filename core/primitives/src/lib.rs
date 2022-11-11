@@ -58,6 +58,14 @@ pub type Header = sp_runtime::generic::Header<BlockNumber, sp_runtime::traits::B
 /// Block type.
 pub type Block = sp_runtime::generic::Block<Header, sp_runtime::OpaqueExtrinsic>;
 
+/// This is the simplest bytecode to revert without returning any data.
+/// We will pre-deploy it under all of our precompiles to ensure they can be called from within
+/// contracts. (PUSH1 0x00 PUSH1 0x00 REVERT)
+pub const REVERT_BYTECODE: [u8; 5] = [0x60, 0x00, 0x60, 0x00, 0xFD];
+
+/// The address prefix for darwinia evm address
+pub const EVM_ADDR_PREFIX: &[u8] = b"dvm:";
+
 /// This determines the average expected block time that we are targeting.
 /// Blocks will be produced at a minimum duration defined by `SLOT_DURATION`.
 /// `SLOT_DURATION` is picked up by `pallet_timestamp` which is in turn picked

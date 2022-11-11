@@ -18,6 +18,7 @@
 
 // darwinia
 use crate::*;
+use dc_primitives::EVM_ADDR_PREFIX;
 // frontier
 use pallet_ethereum::EthereumBlockHashMapping;
 use pallet_evm::{
@@ -61,9 +62,6 @@ impl FeeCalculator for FixedGasPrice {
 	}
 }
 
-/// The address prefix for darwinia evm address
-const ADDR_PREFIX: &[u8] = b"dvm:";
-
 pub struct ConcatAddressMapping;
 impl<AccountId> AddressMapping<AccountId> for ConcatAddressMapping
 where
@@ -75,7 +73,7 @@ where
 		};
 
 		let mut raw_account = [0u8; 32];
-		raw_account[0..4].copy_from_slice(ADDR_PREFIX);
+		raw_account[0..4].copy_from_slice(EVM_ADDR_PREFIX);
 		raw_account[11..31].copy_from_slice(&address[..]);
 		raw_account[31] = check_sum(&raw_account);
 		raw_account.into()

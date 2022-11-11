@@ -25,7 +25,7 @@
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
 mod pallets;
-use pallets::*;
+pub use pallets::*;
 
 mod weights;
 
