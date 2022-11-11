@@ -29,7 +29,7 @@ use std::{
 // rpc
 use futures::{future, StreamExt};
 use jsonrpsee::RpcModule;
-
+// cumulus
 use cumulus_client_cli::CollatorOptions;
 // Local Runtime Types
 use crate::{
@@ -75,7 +75,6 @@ use sp_runtime::traits::BlakeTwo256;
 use substrate_prometheus_endpoint::Registry;
 /// Native executor instance.
 pub struct DarwiniaRuntimeExecutor;
-
 impl sc_executor::NativeExecutionDispatch for DarwiniaRuntimeExecutor {
 	type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
 
@@ -114,10 +113,10 @@ pub fn new_partial<RuntimeApi, Executor, BIQ>(
 	sc_service::Error,
 >
 where
-	RuntimeApi: ConstructRuntimeApi<Block, TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>
+	RuntimeApi: 'static
 		+ Send
 		+ Sync
-		+ 'static,
+		+ ConstructRuntimeApi<Block, TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
 	RuntimeApi::RuntimeApi: sp_transaction_pool::runtime_api::TaggedTransactionQueue<Block>
 		+ sp_api::Metadata<Block>
 		+ sp_session::SessionKeys<Block>
@@ -127,7 +126,7 @@ where
 		> + sp_offchain::OffchainWorkerApi<Block>
 		+ sp_block_builder::BlockBuilder<Block>,
 	sc_client_api::StateBackendFor<TFullBackend<Block>, Block>: sp_api::StateBackend<BlakeTwo256>,
-	Executor: sc_executor::NativeExecutionDispatch + 'static,
+	Executor: 'static + sc_executor::NativeExecutionDispatch,
 	BIQ: FnOnce(
 		Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
 		&Configuration,
@@ -151,14 +150,12 @@ where
 			Ok((worker, telemetry))
 		})
 		.transpose()?;
-
 	let executor = sc_executor::NativeElseWasmExecutor::<Executor>::new(
 		config.wasm_method,
 		config.default_heap_pages,
 		config.max_runtime_instances,
 		config.runtime_cache_size,
 	);
-
 	let (client, backend, keystore_container, task_manager) =
 		sc_service::new_full_parts::<Block, RuntimeApi, _>(
 			config,
@@ -166,14 +163,11 @@ where
 			executor,
 		)?;
 	let client = Arc::new(client);
-
 	let telemetry_worker_handle = telemetry.as_ref().map(|(worker, _)| worker.handle());
-
 	let telemetry = telemetry.map(|(worker, telemetry)| {
 		task_manager.spawn_handle().spawn("telemetry", None, worker.run());
 		telemetry
 	});
-
 	let transaction_pool = sc_transaction_pool::BasicPool::new_full(
 		config.transaction_pool.clone(),
 		config.role.is_authority().into(),
@@ -181,7 +175,6 @@ where
 		task_manager.spawn_essential_handle(),
 		client.clone(),
 	);
-
 	let import_queue = build_import_queue(
 		client.clone(),
 		config,
@@ -189,7 +182,7 @@ where
 		&task_manager,
 	)?;
 
-	let params = PartialComponents {
+	Ok(PartialComponents {
 		backend,
 		client,
 		import_queue,
@@ -198,9 +191,7 @@ where
 		transaction_pool,
 		select_chain: (),
 		other: (telemetry, telemetry_worker_handle),
-	};
-
-	Ok(params)
+	})
 }
 
 async fn build_relay_chain_interface(
@@ -210,7 +201,7 @@ async fn build_relay_chain_interface(
 	task_manager: &mut TaskManager,
 	collator_options: CollatorOptions,
 	hwbench: Option<sc_sysinfo::HwBench>,
-) -> RelayChainResult<(Arc<(dyn RelayChainInterface + 'static)>, Option<CollatorPair>)> {
+) -> RelayChainResult<(Arc<(dyn 'static + RelayChainInterface)>, Option<CollatorPair>)> {
 	match collator_options.relay_chain_rpc_url {
 		Some(relay_chain_url) => {
 			let client = create_client_and_start_worker(relay_chain_url, task_manager).await?;
@@ -246,10 +237,10 @@ async fn start_node_impl<RuntimeApi, Executor, RB, BIQ, BIC>(
 	Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
 )>
 where
-	RuntimeApi: ConstructRuntimeApi<Block, TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>
+	RuntimeApi: 'static
 		+ Send
 		+ Sync
-		+ 'static,
+		+ ConstructRuntimeApi<Block, TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
 	RuntimeApi::RuntimeApi: sp_transaction_pool::runtime_api::TaggedTransactionQueue<Block>
 		+ sp_api::Metadata<Block>
 		+ sp_session::SessionKeys<Block>
@@ -264,13 +255,14 @@ where
 		+ fp_rpc::ConvertTransactionRuntimeApi<Block>
 		+ substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>,
 	sc_client_api::StateBackendFor<TFullBackend<Block>, Block>: sp_api::StateBackend<BlakeTwo256>,
-	Executor: sc_executor::NativeExecutionDispatch + 'static,
-	RB: Fn(
-			Arc<TFullClient<Block, RuntimeApi, Executor>>,
-		) -> Result<RpcModule<()>, sc_service::Error>
+	Executor: 'static + sc_executor::NativeExecutionDispatch,
+	RB: 'static
 		+ Send
-		+ 'static,
-	BIQ: FnOnce(
+		+ Fn(
+			Arc<TFullClient<Block, RuntimeApi, Executor>>,
+		) -> Result<RpcModule<()>, sc_service::Error>,
+	BIQ: 'static
+		+ FnOnce(
 			Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
 			&Configuration,
 			Option<TelemetryHandle>,
@@ -281,7 +273,7 @@ where
 				TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
 			>,
 			sc_service::Error,
-		> + 'static,
+		>,
 	BIC: FnOnce(
 		Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
 		Option<&Registry>,

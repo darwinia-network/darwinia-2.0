@@ -100,7 +100,11 @@ where
 		+ HeaderBackend<Block>
 		+ Send
 		+ Sync
-		+ 'static,
+		+ 'static
+		+ ProvideRuntimeApi<Block>
+		+ HeaderBackend<Block>
+		+ AuxStore
+		+ HeaderMetadata<Block, Error = BlockChainError>,
 	C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>
 		+ substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>
 		+ fp_rpc::ConvertTransactionRuntimeApi<Block>
