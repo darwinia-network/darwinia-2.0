@@ -30,7 +30,7 @@ use jsonrpsee::RpcModule;
 use cumulus_client_cli::CollatorOptions;
 // darwinia
 use crate::{
-	cli::RpcConfig,
+	cli::EthRpcConfig,
 	ethereum::{db_config_dir, spawn_frontier_tasks},
 };
 use darwinia_runtime::RuntimeApi;
@@ -219,7 +219,7 @@ async fn start_node_impl<RuntimeApi, Executor, RB, BIQ, BIC>(
 	build_import_queue: BIQ,
 	build_consensus: BIC,
 	hwbench: Option<sc_sysinfo::HwBench>,
-	rpc_config: RpcConfig,
+	eth_rpc_config: EthRpcConfig,
 ) -> sc_service::error::Result<(
 	TaskManager,
 	Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
@@ -315,7 +315,7 @@ where
 	)?);
 	let filter_pool: Option<FilterPool> = Some(Arc::new(Mutex::new(BTreeMap::new())));
 	let fee_history_cache: FeeHistoryCache = Arc::new(Mutex::new(BTreeMap::new()));
-	let fee_history_cache_limit: FeeHistoryCacheLimit = rpc_config.fee_history_limit;
+	let fee_history_cache_limit: FeeHistoryCacheLimit = eth_rpc_config.fee_history_limit;
 	let import_queue = cumulus_client_service::SharedImportQueue::new(params.import_queue);
 	let overrides = crate::ethereum::overrides_handle(client.clone());
 	let block_data_cache = Arc::new(fc_rpc::EthBlockDataCacheTask::new(
@@ -346,7 +346,7 @@ where
 		let frontier_backend = frontier_backend.clone();
 		let overrides = overrides.clone();
 		let fee_history_cache = fee_history_cache.clone();
-		let max_past_logs = rpc_config.max_past_logs;
+		let max_past_logs = eth_rpc_config.max_past_logs;
 		let collator = parachain_config.role.is_authority();
 
 		Box::new(move |deny_unsafe, subscription_task_executor| {
@@ -516,7 +516,7 @@ pub async fn start_parachain_node(
 	collator_options: CollatorOptions,
 	id: ParaId,
 	hwbench: Option<sc_sysinfo::HwBench>,
-	rpc_config: RpcConfig,
+	eth_rpc_config: EthRpcConfig,
 ) -> sc_service::error::Result<(
 	TaskManager,
 	Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<DarwiniaRuntimeExecutor>>>,
@@ -592,7 +592,7 @@ pub async fn start_parachain_node(
 			))
 		},
 		hwbench,
-		rpc_config,
+		eth_rpc_config,
 	)
 	.await
 }
