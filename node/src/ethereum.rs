@@ -20,8 +20,7 @@
 
 // std
 use std::{collections::BTreeMap, path::PathBuf, sync::Arc, time::Duration};
-
-// rpc
+// crates.io
 use futures::{future, StreamExt};
 // darwinia
 use crate::cli::Cli;
@@ -87,7 +86,7 @@ pub fn spawn_frontier_tasks<B, BE, C>(
 		const FILTER_RETAIN_THRESHOLD: u64 = 100;
 		task_manager.spawn_essential_handle().spawn(
 			"frontier-filter-pool",
-			None,
+			Some("frontier"),
 			EthTask::filter_pool_task(client.clone(), filter_pool, FILTER_RETAIN_THRESHOLD),
 		);
 	}
@@ -113,13 +112,18 @@ pub(crate) fn db_config_dir(config: &Configuration) -> PathBuf {
 
 pub(crate) fn overrides_handle<C, BE>(client: Arc<C>) -> Arc<OverrideHandle<Block>>
 where
-	C: ProvideRuntimeApi<Block> + StorageProvider<Block, BE> + AuxStore,
-	C: HeaderBackend<Block> + HeaderMetadata<Block, Error = BlockChainError>,
-	C: Send + Sync + 'static,
+	C: 'static
+		+ Send
+		+ Sync
+		+ ProvideRuntimeApi<Block>
+		+ StorageProvider<Block, BE>
+		+ AuxStore
+		+ HeaderBackend<Block>
+		+ HeaderMetadata<Block, Error = BlockChainError>,
 	C::Api: sp_api::ApiExt<Block>
 		+ fp_rpc::EthereumRuntimeRPCApi<Block>
 		+ fp_rpc::ConvertTransactionRuntimeApi<Block>,
-	BE: Backend<Block> + 'static,
+	BE: 'static + Backend<Block>,
 	BE::State: StateBackend<Hashing>,
 {
 	let mut overrides_map = BTreeMap::new();
