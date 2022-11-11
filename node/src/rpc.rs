@@ -83,29 +83,26 @@ pub fn create_full<C, P, BE, A>(
 	subscription_task_executor: SubscriptionTaskExecutor,
 ) -> Result<RpcExtension, Box<dyn std::error::Error + Send + Sync>>
 where
-	BE: Backend<Block> + 'static,
+	BE: 'static + Backend<Block>,
 	BE::State: StateBackend<BlakeTwo256>,
-	C: ProvideRuntimeApi<Block>
+	C: 'static
+		+ Send
+		+ Sync
+		+ ProvideRuntimeApi<Block>
 		+ HeaderBackend<Block>
 		+ StorageProvider<Block, BE>
 		+ BlockchainEvents<Block>
 		+ AuxStore
 		+ HeaderMetadata<Block, Error = BlockChainError>
-		+ HeaderBackend<Block>
-		+ Send
-		+ Sync
-		+ 'static
 		+ ProvideRuntimeApi<Block>
-		+ HeaderBackend<Block>
-		+ AuxStore
-		+ HeaderMetadata<Block, Error = BlockChainError>,
+		+ AuxStore,
 	C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>
 		+ substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>
 		+ fp_rpc::ConvertTransactionRuntimeApi<Block>
 		+ fp_rpc::EthereumRuntimeRPCApi<Block>
 		+ BlockBuilder<Block>,
-	P: TransactionPool<Block = Block> + Sync + Send + 'static,
-	A: ChainApi<Block = Block> + 'static,
+	P: 'static + Sync + Send + TransactionPool<Block = Block>,
+	A: 'static + ChainApi<Block = Block>,
 {
 	// frontier
 	use fc_rpc::{
@@ -146,7 +143,6 @@ where
 			vec![], // TODO: check it again.
 			overrides.clone(),
 			backend.clone(),
-			// Is authority.
 			is_authority,
 			block_data_cache.clone(),
 			fee_history_cache,
