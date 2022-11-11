@@ -42,7 +42,6 @@ use sc_transaction_pool_api::TransactionPool;
 use sp_api::ProvideRuntimeApi;
 use sp_block_builder::BlockBuilder;
 use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
-use sp_runtime::traits::BlakeTwo256;
 
 /// A type representing all RPC extensions.
 pub type RpcExtension = jsonrpsee::RpcModule<()>;
@@ -84,7 +83,7 @@ pub fn create_full<C, P, BE, A>(
 ) -> Result<RpcExtension, Box<dyn std::error::Error + Send + Sync>>
 where
 	BE: 'static + Backend<Block>,
-	BE::State: StateBackend<BlakeTwo256>,
+	BE::State: StateBackend<Hashing>,
 	C: 'static
 		+ Send
 		+ Sync

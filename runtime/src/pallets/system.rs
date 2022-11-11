@@ -77,9 +77,9 @@ impl frame_system::Config for Runtime {
 	/// The type for hashing blocks and tries.
 	type Hash = Hash;
 	/// The hashing algorithm used.
-	type Hashing = sp_runtime::traits::BlakeTwo256;
+	type Hashing = Hashing;
 	/// The header type.
-	type Header = generic::Header<BlockNumber, sp_runtime::traits::BlakeTwo256>;
+	type Header = generic::Header<BlockNumber, Self::Hashing>;
 	/// The index type for storing how many extrinsics an account has signed.
 	type Index = Index;
 	/// The lookup mechanism to get account ID from whatever is passed in dispatchers.

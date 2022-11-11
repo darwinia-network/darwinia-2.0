@@ -25,7 +25,7 @@ use std::{collections::BTreeMap, path::PathBuf, sync::Arc, time::Duration};
 use futures::{future, StreamExt};
 // darwinia
 use crate::cli::Cli;
-use dc_primitives::{Block, BlockNumber, Hash};
+use dc_primitives::{Block, BlockNumber, Hash, Hashing};
 // frontier
 use fc_db::Backend as FrontierBackend;
 use fc_mapping_sync::{MappingSyncWorker, SyncStrategy};
@@ -36,13 +36,11 @@ use fc_rpc::{
 use fc_rpc_core::types::{FeeHistoryCache, FeeHistoryCacheLimit, FilterPool};
 use fp_storage::EthereumStorageSchema;
 // substrate
-// TODO: FIX ME
 use sc_cli::SubstrateCli;
 use sc_client_api::backend::{AuxStore, Backend, StateBackend, StorageProvider};
 use sc_service::{BasePath, Configuration, TaskManager};
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
-use sp_runtime::traits::{BlakeTwo256 as Hashing, BlakeTwo256};
 
 pub fn spawn_frontier_tasks<B, BE, C>(
 	task_manager: &TaskManager,
@@ -122,7 +120,7 @@ where
 		+ fp_rpc::EthereumRuntimeRPCApi<Block>
 		+ fp_rpc::ConvertTransactionRuntimeApi<Block>,
 	BE: Backend<Block> + 'static,
-	BE::State: StateBackend<BlakeTwo256>,
+	BE::State: StateBackend<Hashing>,
 {
 	let mut overrides_map = BTreeMap::new();
 	overrides_map.insert(

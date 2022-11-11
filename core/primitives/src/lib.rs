@@ -52,8 +52,11 @@ pub type BlockNumber = u32;
 /// The address format for describing accounts.
 pub type Address = sp_runtime::MultiAddress<AccountId, ()>;
 
+/// Hashing type
+pub type Hashing = sp_runtime::traits::BlakeTwo256;
+
 /// Block header type.
-pub type Header = sp_runtime::generic::Header<BlockNumber, sp_runtime::traits::BlakeTwo256>;
+pub type Header = sp_runtime::generic::Header<BlockNumber, Hashing>;
 
 /// Block type.
 pub type Block = sp_runtime::generic::Block<Header, sp_runtime::OpaqueExtrinsic>;
