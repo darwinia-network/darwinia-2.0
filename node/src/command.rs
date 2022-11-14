@@ -461,7 +461,6 @@ pub fn run() -> Result<()> {
 	}
 }
 
-
 fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 	Ok(match id {
 		"dev" => Box::new(chain_spec::development_config()),
