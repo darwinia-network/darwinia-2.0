@@ -407,7 +407,7 @@ sp_api::impl_runtime_apis! {
 		}
 
 		fn account_basic(address: H160) -> EVMAccount {
-			let (account, _) = EVM::account_basic(&address);
+			let (account, _) = Evm::account_basic(&address);
 			account
 		}
 
@@ -417,7 +417,7 @@ sp_api::impl_runtime_apis! {
 		}
 
 		fn account_code_at(address: H160) -> Vec<u8> {
-			EVM::account_codes(address)
+			Evm::account_codes(address)
 		}
 
 		fn author() -> H160 {
@@ -427,7 +427,7 @@ sp_api::impl_runtime_apis! {
 		fn storage_at(address: H160, index: U256) -> H256 {
 			let mut tmp = [0u8; 32];
 			index.to_big_endian(&mut tmp);
-			EVM::account_storages(address, H256::from_slice(&tmp[..]))
+			Evm::account_storages(address, H256::from_slice(&tmp[..]))
 		}
 
 		fn call(

@@ -25,7 +25,7 @@ use serde::{Deserialize, Serialize};
 // cumulus
 use cumulus_primitives_core::ParaId;
 // darwinia
-use darwinia_runtime::{AuraId, DarwiniaPrecompiles, EVMConfig, Runtime, EXISTENTIAL_DEPOSIT};
+use darwinia_runtime::{AuraId, DarwiniaPrecompiles, EvmConfig, Runtime, EXISTENTIAL_DEPOSIT};
 use dc_primitives::*;
 // frontier
 use fp_evm::GenesisAccount;
@@ -250,7 +250,7 @@ fn testnet_genesis(
 			safe_xcm_version: Some(SAFE_XCM_VERSION),
 		},
 		ethereum: Default::default(),
-		evm: EVMConfig {
+		evm: EvmConfig {
 			accounts: {
 				let mut map = BTreeMap::new();
 				map.insert(
