@@ -61,11 +61,6 @@ pub type Header = sp_runtime::generic::Header<BlockNumber, Hashing>;
 /// Block type.
 pub type Block = sp_runtime::generic::Block<Header, sp_runtime::OpaqueExtrinsic>;
 
-/// This is the simplest bytecode to revert without returning any data.
-/// We will pre-deploy it under all of our precompiles to ensure they can be called from within
-/// contracts. (PUSH1 0x00 PUSH1 0x00 REVERT)
-pub const REVERT_BYTECODE: [u8; 5] = [0x60, 0x00, 0x60, 0x00, 0xFD];
-
 /// The address prefix for darwinia evm address
 pub const EVM_ADDR_PREFIX: &[u8] = b"dvm:";
 

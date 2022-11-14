@@ -40,6 +40,11 @@ pub type ChainSpec = sc_service::GenericChainSpec<darwinia_runtime::GenesisConfi
 /// The default XCM version to set in genesis config.
 const SAFE_XCM_VERSION: u32 = xcm::prelude::XCM_VERSION;
 
+/// This is the simplest bytecode to revert without returning any data.
+/// We will pre-deploy it under all of our precompiles to ensure they can be called from within
+/// contracts. (PUSH1 0x00 PUSH1 0x00 REVERT)
+pub const REVERT_BYTECODE: [u8; 5] = [0x60, 0x00, 0x60, 0x00, 0xFD];
+
 /// Helper function to generate a crypto pair from seed
 pub fn get_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Public {
 	TPublic::Pair::from_string(&format!("//{}", seed), None)
