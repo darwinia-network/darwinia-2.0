@@ -140,7 +140,6 @@ impl SubstrateCli for RelayChainCli {
 		polkadot_cli::Cli::native_runtime_version(chain_spec)
 	}
 }
-
 impl DefaultConfigurationValues for RelayChainCli {
 	fn p2p_listen_port() -> u16 {
 		30334
@@ -461,6 +460,7 @@ pub fn run() -> Result<()> {
 		},
 	}
 }
+
 
 fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 	Ok(match id {
