@@ -67,5 +67,3 @@ std = [
     "xcm/std",
     "xcm-executor/std",
 ]
-
-runtime-benchmarks = ["frame-benchmarking"]
