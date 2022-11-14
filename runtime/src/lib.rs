@@ -258,7 +258,6 @@ frame_support::construct_runtime! {
 		Ethereum: pallet_ethereum::{Pallet, Call, Storage, Config, Event, Origin} = 15,
 		Evm: pallet_evm::{Pallet, Call, Storage, Config, Event<T>} = 16,
 		BaseFee: pallet_base_fee::{Pallet, Call, Storage, Config<T>, Event} = 17,
-
 	}
 }
 
