@@ -29,10 +29,7 @@ use jsonrpsee::RpcModule;
 // cumulus
 use cumulus_client_cli::CollatorOptions;
 // darwinia
-use crate::{
-	cli::EthRpcConfig,
-	ethereum::{db_config_dir, overrides_handle, spawn_frontier_tasks},
-};
+use crate::{cli::EthRpcConfig, frontier_service};
 use darwinia_runtime::RuntimeApi;
 use dc_primitives::*;
 // frontier
@@ -312,13 +309,13 @@ where
 	let frontier_backend = Arc::new(FrontierBackend::open(
 		Arc::clone(&client),
 		&parachain_config.database,
-		&db_config_dir(&parachain_config),
+		&frontier_service::db_config_dir(&parachain_config),
 	)?);
 	let filter_pool: Option<FilterPool> = Some(Arc::new(Mutex::new(BTreeMap::new())));
 	let fee_history_cache: FeeHistoryCache = Arc::new(Mutex::new(BTreeMap::new()));
 	let fee_history_cache_limit: FeeHistoryCacheLimit = eth_rpc_config.fee_history_limit;
 	let import_queue = cumulus_client_service::SharedImportQueue::new(params.import_queue);
-	let overrides = overrides_handle(client.clone());
+	let overrides = frontier_service::overrides_handle(client.clone());
 	let block_data_cache = Arc::new(EthBlockDataCacheTask::new(
 		task_manager.spawn_handle(),
 		overrides.clone(),
@@ -385,7 +382,7 @@ where
 		telemetry: telemetry.as_mut(),
 	})?;
 
-	spawn_frontier_tasks(
+	frontier_service::spawn_frontier_tasks(
 		&task_manager,
 		client.clone(),
 		backend,

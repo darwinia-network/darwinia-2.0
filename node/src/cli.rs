@@ -49,6 +49,9 @@ pub enum Subcommand {
 	/// Export the genesis wasm of the parachain.
 	ExportGenesisWasm(cumulus_client_cli::ExportGenesisWasmCommand),
 
+	/// Db meta columns information.
+	FrontierDb(fc_cli::FrontierDbCmd),
+
 	/// Sub-commands concerned with benchmarking.
 	/// The pallet benchmarking moved to the `pallet` sub-command.
 	#[clap(subcommand)]
@@ -56,9 +59,6 @@ pub enum Subcommand {
 
 	/// Try some testing command against a specified runtime state.
 	TryRuntime(try_runtime_cli::TryRuntimeCmd),
-
-	/// Db meta columns information.
-	FrontierDb(fc_cli::FrontierDbCmd),
 }
 
 #[derive(Debug, clap::Parser)]
@@ -134,7 +134,6 @@ pub struct EthArgs {
 	#[clap(long, default_value = "2048")]
 	pub fee_history_limit: u64,
 }
-
 impl EthArgs {
 	pub fn build_eth_rpc_config(&self) -> EthRpcConfig {
 		EthRpcConfig {

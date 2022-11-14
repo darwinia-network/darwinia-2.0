@@ -128,6 +128,7 @@ where
 	BE::State: StateBackend<Hashing>,
 {
 	let mut overrides_map = BTreeMap::new();
+
 	overrides_map.insert(
 		EthereumStorageSchema::V1,
 		Box::new(SchemaV1Override::new(client.clone()))

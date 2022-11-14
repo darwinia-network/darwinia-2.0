@@ -27,7 +27,7 @@ use cumulus_primitives_core::ParaId;
 use crate::{
 	chain_spec,
 	cli::{Cli, RelayChainCli, Subcommand},
-	ethereum::db_config_dir,
+	frontier_service,
 	service::{self, DarwiniaRuntimeExecutor},
 };
 use darwinia_runtime::{Block, RuntimeApi};
@@ -314,8 +314,8 @@ pub fn run() -> Result<()> {
 			let runner = cli.create_runner(cmd)?;
 
 			runner.sync_run(|config| {
-				// Remove Frontier offchain db
-				let db_config_dir = db_config_dir(&config);
+				// Remove Frontier DB.
+				let db_config_dir = frontier_service::db_config_dir(&config);
 				let frontier_database_config = match config.database {
 					DatabaseSource::RocksDb { .. } => DatabaseSource::RocksDb {
 						path: frontier_database_dir(&db_config_dir, "db"),
@@ -327,13 +327,13 @@ pub fn run() -> Result<()> {
 					_ =>
 						return Err(format!("Cannot purge `{:?}` database", config.database).into()),
 				};
+
 				cmd.base.run(frontier_database_config)?;
 
 				let polkadot_cli = RelayChainCli::new(
 					&config,
 					[RelayChainCli::executable_name()].iter().chain(cli.relay_chain_args.iter()),
 				);
-
 				let polkadot_config = SubstrateCli::create_configuration(
 					&polkadot_cli,
 					&polkadot_cli,
@@ -357,6 +357,16 @@ pub fn run() -> Result<()> {
 			runner.sync_run(|_config| {
 				let spec = cli.load_spec(&cmd.shared_params.chain.clone().unwrap_or_default())?;
 				cmd.run(&*spec)
+			})
+		},
+		// TODO: https://github.com/darwinia-network/darwinia-2.0/issues/35
+		Some(Subcommand::FrontierDb(cmd)) => {
+			let runner = cli.create_runner(cmd)?;
+			runner.sync_run(|config| {
+				// let PartialComponents { client, other, .. } = service::new_partial(&config,
+				// &cli)?; let frontier_backend = other.2;
+				// cmd.run::<_, Block>(client, frontier_backend)
+				todo!();
 			})
 		},
 		Some(Subcommand::Benchmark(cmd)) => {
@@ -419,16 +429,6 @@ pub fn run() -> Result<()> {
 			} else {
 				Err("Try-runtime must be enabled by `--features try-runtime`.".into())
 			}
-		},
-		// TODO: FIX ME
-		Some(Subcommand::FrontierDb(cmd)) => {
-			let runner = cli.create_runner(cmd)?;
-			runner.sync_run(|config| {
-				// let PartialComponents { client, other, .. } = service::new_partial(&config,
-				// &cli)?; let frontier_backend = other.2;
-				// cmd.run::<_, Block>(client, frontier_backend)
-				todo!();
-			})
 		},
 		None => {
 			let runner = cli.create_runner(&cli.run.normalize())?;
