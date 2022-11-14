@@ -61,7 +61,7 @@ pub type Header = sp_runtime::generic::Header<BlockNumber, Hashing>;
 /// Block type.
 pub type Block = sp_runtime::generic::Block<Header, sp_runtime::OpaqueExtrinsic>;
 
-/// The address prefix for darwinia evm address
+/// Darwinia EVM addresses specific prefix.
 pub const EVM_ADDR_PREFIX: &[u8] = b"dvm:";
 
 /// This determines the average expected block time that we are targeting.
