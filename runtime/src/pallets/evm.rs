@@ -31,7 +31,7 @@ use pallet_evm_precompile_modexp::Modexp;
 use pallet_evm_precompile_simple::{ECRecover, Identity, Ripemd160, Sha256};
 // substrate
 use frame_support::{traits::FindAuthor, ConsensusEngineId};
-use sp_core::{H160, U256};
+use sp_core::crypto::ByteArray;
 use sp_std::marker::PhantomData;
 
 const WEIGHT_PER_GAS: u64 = 40_000;

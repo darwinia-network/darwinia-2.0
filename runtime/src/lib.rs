@@ -53,10 +53,7 @@ use frame_support::{
 	PalletId,
 };
 use frame_system::EnsureRoot;
-use sp_core::{
-	crypto::{ByteArray, KeyTypeId},
-	OpaqueMetadata, H160, H256, U256,
-};
+use sp_core::{crypto::KeyTypeId, OpaqueMetadata, H160, H256, U256};
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 use sp_runtime::{
