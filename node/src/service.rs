@@ -89,7 +89,6 @@ impl<Api> RuntimeApiCollection for Api where
 		+ pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>
 		+ fp_rpc::EthereumRuntimeRPCApi<Block>
 		+ fp_rpc::ConvertTransactionRuntimeApi<Block>
-		/* + moonbeam_rpc_primitives_debug::DebugRuntimeApi<Block> */
 		+ substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>
 {
 }
