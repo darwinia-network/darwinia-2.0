@@ -22,8 +22,8 @@ use dc_primitives::EVM_ADDR_PREFIX;
 // frontier
 use pallet_ethereum::EthereumBlockHashMapping;
 use pallet_evm::{
-	AddressMapping, FixedGasWeightMapping, Precompile, PrecompileHandle, PrecompileResult,
-	PrecompileSet,
+	AddressMapping, EnsureAddressTruncated, FeeCalculator, FixedGasWeightMapping, Precompile,
+	PrecompileHandle, PrecompileResult, PrecompileSet,
 };
 use pallet_evm_precompile_blake2::Blake2F;
 use pallet_evm_precompile_bn128::{Bn128Add, Bn128Mul, Bn128Pairing};
@@ -90,8 +90,9 @@ where
 pub struct DarwiniaPrecompiles<R>(PhantomData<R>);
 impl<R> DarwiniaPrecompiles<R>
 where
-	R: pallet_evm::Config,
+R: pallet_evm::Config,
 {
+	#[allow(clippy::new_without_default)]
 	pub fn new() -> Self {
 		Self(Default::default())
 	}

@@ -40,11 +40,6 @@ use smallvec::smallvec;
 use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
 // darwinia
 use dc_primitives::*;
-// frontier
-use fp_rpc::TransactionStatus;
-use pallet_ethereum::{Call::transact, Transaction as EthereumTransaction};
-use pallet_evm::{Account as EVMAccount, EnsureAddressTruncated, FeeCalculator, Runner};
-
 // polkadot
 use xcm::latest::prelude::BodyId;
 use xcm_executor::XcmExecutor;
@@ -406,13 +401,18 @@ sp_api::impl_runtime_apis! {
 			<Runtime as pallet_evm::Config>::ChainId::get()
 		}
 
-		fn account_basic(address: H160) -> EVMAccount {
+		fn account_basic(address: H160) -> pallet_evm::Account {
 			let (account, _) = Evm::account_basic(&address);
+
 			account
 		}
 
 		fn gas_price() -> U256 {
+			// frontier
+			use pallet_evm::FeeCalculator;
+
 			let (gas_price, _) = <Runtime as pallet_evm::Config>::FeeCalculator::min_gas_price();
+
 			gas_price
 		}
 
@@ -426,7 +426,9 @@ sp_api::impl_runtime_apis! {
 
 		fn storage_at(address: H160, index: U256) -> H256 {
 			let mut tmp = [0u8; 32];
+
 			index.to_big_endian(&mut tmp);
+
 			Evm::account_storages(address, H256::from_slice(&tmp[..]))
 		}
 
@@ -442,6 +444,9 @@ sp_api::impl_runtime_apis! {
 			estimate: bool,
 			access_list: Option<Vec<(H160, Vec<H256>)>>,
 		) -> Result<pallet_evm::CallInfo, sp_runtime::DispatchError> {
+			// frontier
+			use pallet_evm::Runner;
+
 			let config = if estimate {
 				let mut config = <Runtime as pallet_evm::Config>::config().clone();
 				config.estimate = true;
@@ -480,6 +485,9 @@ sp_api::impl_runtime_apis! {
 			estimate: bool,
 			access_list: Option<Vec<(H160, Vec<H256>)>>,
 		) -> Result<pallet_evm::CreateInfo, sp_runtime::DispatchError> {
+			// frontier
+			use pallet_evm::Runner;
+
 			let config = if estimate {
 				let mut config = <Runtime as pallet_evm::Config>::config().clone();
 				config.estimate = true;
@@ -506,7 +514,7 @@ sp_api::impl_runtime_apis! {
 			).map_err(|err| err.error.into())
 		}
 
-		fn current_transaction_statuses() -> Option<Vec<TransactionStatus>> {
+		fn current_transaction_statuses() -> Option<Vec<fp_rpc::TransactionStatus>> {
 			Ethereum::current_transaction_statuses()
 		}
 
@@ -521,7 +529,7 @@ sp_api::impl_runtime_apis! {
 		fn current_all() -> (
 			Option<pallet_ethereum::Block>,
 			Option<Vec<pallet_ethereum::Receipt>>,
-			Option<Vec<TransactionStatus>>
+			Option<Vec<fp_rpc::TransactionStatus>>
 		) {
 			(
 				Ethereum::current_block(),
@@ -532,11 +540,13 @@ sp_api::impl_runtime_apis! {
 
 		fn extrinsic_filter(
 			xts: Vec<<Block as BlockT>::Extrinsic>,
-		) -> Vec<EthereumTransaction> {
+		) -> Vec<pallet_ethereum::Transaction> {
 			xts.into_iter().filter_map(|xt| match xt.0.function {
-				RuntimeCall::Ethereum(transact { transaction }) => Some(transaction),
+				RuntimeCall::Ethereum(
+					pallet_ethereum::Call::<Runtime>::transact { transaction }
+				) => Some(transaction),
 				_ => None
-			}).collect::<Vec<EthereumTransaction>>()
+			}).collect::<Vec<pallet_ethereum::Transaction>>()
 		}
 
 		fn elasticity() -> Option<Permill> {
@@ -545,7 +555,9 @@ sp_api::impl_runtime_apis! {
 	}
 
 	impl fp_rpc::ConvertTransactionRuntimeApi<Block> for Runtime {
-		fn convert_transaction(transaction: EthereumTransaction) -> <Block as BlockT>::Extrinsic {
+		fn convert_transaction(
+			transaction: pallet_ethereum::Transaction
+		) -> <Block as BlockT>::Extrinsic {
 			UncheckedExtrinsic::new_unsigned(
 				pallet_ethereum::Call::<Runtime>::transact { transaction }.into(),
 			)
@@ -668,13 +680,18 @@ cumulus_pallet_parachain_system::register_validate_block! {
 
 #[cfg(test)]
 mod tests {
+	// darwinia
 	use super::{Runtime, WeightPerGas};
+	// substrate
+	use frame_support::dispatch::DispatchClass;
+
 	#[test]
 	fn configured_base_extrinsic_weight_is_evm_compatible() {
 		let min_ethereum_transaction_weight = WeightPerGas::get() * 21_000;
 		let base_extrinsic = <Runtime as frame_system::Config>::BlockWeights::get()
-			.get(frame_support::dispatch::DispatchClass::Normal)
+			.get(DispatchClass::Normal)
 			.base_extrinsic;
+
 		assert!(base_extrinsic.ref_time() <= min_ethereum_transaction_weight.ref_time());
 	}
 }
