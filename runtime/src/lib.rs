@@ -259,9 +259,9 @@ frame_support::construct_runtime! {
 		CumulusXcm: cumulus_pallet_xcm::{Pallet, Event<T>, Origin} = 13,
 		DmpQueue: cumulus_pallet_dmp_queue::{Pallet, Call, Storage, Event<T>} = 14,
 
-		// Ethereum stuff
+		// EVM stuff.
 		Ethereum: pallet_ethereum::{Pallet, Call, Storage, Config, Event, Origin} = 15,
-		EVM: pallet_evm::{Pallet, Call, Storage, Config, Event<T>} = 16,
+		Evm: pallet_evm::{Pallet, Call, Storage, Config, Event<T>} = 16,
 		BaseFee: pallet_base_fee::{Pallet, Call, Storage, Config<T>, Event} = 17,
 
 	}
