@@ -97,3 +97,18 @@ try-runtime = [
 	# darwinia
 	"darwinia-runtime/try-runtime",
 ]
+
+all-native = [
+	# darwinia
+	"kusama-native",
+	"rococo-native",
+]
+kusama-native = [
+	# polkadot
+	"polkadot-cli/kusama-native",
+]
+rococo-native = [
+	# polkadot
+	"polkadot-cli/rococo-native",
+]
+
