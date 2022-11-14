@@ -46,8 +46,6 @@ use xcm_executor::XcmExecutor;
 // substrate
 use frame_support::{
 	dispatch::DispatchClass,
-	pallet_prelude::TransactionValidityError,
-	traits::FindAuthor,
 	weights::{
 		ConstantMultiplier, Weight, WeightToFeeCoefficient, WeightToFeeCoefficients,
 		WeightToFeePolynomial,
@@ -120,7 +118,9 @@ impl fp_self_contained::SelfContainedCall for RuntimeCall {
 		}
 	}
 
-	fn check_self_contained(&self) -> Option<Result<Self::SignedInfo, TransactionValidityError>> {
+	fn check_self_contained(
+		&self,
+	) -> Option<Result<Self::SignedInfo, sp_runtime::TransactionValidityError>> {
 		match self {
 			RuntimeCall::Ethereum(call) => call.check_self_contained(),
 			_ => None,
@@ -144,7 +144,7 @@ impl fp_self_contained::SelfContainedCall for RuntimeCall {
 		info: &Self::SignedInfo,
 		dispatch_info: &DispatchInfoOf<RuntimeCall>,
 		len: usize,
-	) -> Option<Result<(), TransactionValidityError>> {
+	) -> Option<Result<(), sp_runtime::TransactionValidityError>> {
 		match self {
 			RuntimeCall::Ethereum(call) =>
 				call.pre_dispatch_self_contained(info, dispatch_info, len),

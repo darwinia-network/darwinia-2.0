@@ -30,6 +30,7 @@ use pallet_evm_precompile_bn128::{Bn128Add, Bn128Mul, Bn128Pairing};
 use pallet_evm_precompile_modexp::Modexp;
 use pallet_evm_precompile_simple::{ECRecover, Identity, Ripemd160, Sha256};
 // substrate
+use frame_support::traits::FindAuthor;
 use sp_core::{H160, U256};
 use sp_std::marker::PhantomData;
 
@@ -90,7 +91,7 @@ where
 pub struct DarwiniaPrecompiles<R>(PhantomData<R>);
 impl<R> DarwiniaPrecompiles<R>
 where
-R: pallet_evm::Config,
+	R: pallet_evm::Config,
 {
 	#[allow(clippy::new_without_default)]
 	pub fn new() -> Self {
