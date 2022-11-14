@@ -61,9 +61,6 @@ pub type Header = sp_runtime::generic::Header<BlockNumber, Hashing>;
 /// Block type.
 pub type Block = sp_runtime::generic::Block<Header, sp_runtime::OpaqueExtrinsic>;
 
-/// Darwinia EVM addresses specific prefix.
-pub const EVM_ADDR_PREFIX: &[u8] = b"dvm:";
-
 /// This determines the average expected block time that we are targeting.
 /// Blocks will be produced at a minimum duration defined by `SLOT_DURATION`.
 /// `SLOT_DURATION` is picked up by `pallet_timestamp` which is in turn picked
@@ -100,3 +97,6 @@ pub const MWEI: Balance = 1_000 * KWEI;
 pub const KWEI: Balance = 1_000 * WEI;
 /// 1 wei — 1
 pub const WEI: Balance = 1;
+
+/// Darwinia EVM addresses specific prefix.
+pub const EVM_ADDR_PREFIX: &[u8] = b"dvm:";
