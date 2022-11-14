@@ -16,11 +16,9 @@
 // You should have received a copy of the GNU General Public License
 // along with Darwinia. If not, see <https://www.gnu.org/licenses/>.
 
-mod barrier;
-use barrier::Barrier;
-
 // darwinia
 use crate::*;
+use darwinia_common_runtime::xcm_barrier::*;
 // polkadot
 use pallet_xcm::XcmPassthrough;
 use polkadot_parachain::primitives::Sibling;

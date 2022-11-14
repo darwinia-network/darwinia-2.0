@@ -54,3 +54,6 @@ pub use aura::*;
 
 mod collator_selection;
 pub use collator_selection::*;
+
+mod polkadot_xcm;
+pub use polkadot_xcm::*;
