@@ -34,6 +34,7 @@ use sp_core::{H160, U256};
 use sp_std::marker::PhantomData;
 
 const WEIGHT_PER_GAS: u64 = 40_000;
+
 frame_support::parameter_types! {
 	pub BlockGasLimit: U256 = U256::from(NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT.ref_time() / WEIGHT_PER_GAS);
 	pub PrecompilesValue: DarwiniaPrecompiles<Runtime> = DarwiniaPrecompiles::<_>::new();
@@ -47,11 +48,17 @@ impl<F: FindAuthor<u32>> FindAuthor<H160> for FindAuthorTruncated<F> {
 	where
 		I: 'a + IntoIterator<Item = (ConsensusEngineId, &'a [u8])>,
 	{
-		if let Some(author_index) = F::find_author(digests) {
-			let authority_id = Aura::authorities()[author_index as usize].clone();
-			return Some(H160::from_slice(&authority_id.to_raw_vec()[4..24]));
-		}
-		None
+		F::find_author(digests).and_then(|i| {
+			Aura::authorities().get(i as usize).and_then(|id| {
+				let raw = id.to_raw_vec();
+
+				if raw.len() >= 24 {
+					Some(H160::from_slice(&raw[4..24]))
+				} else {
+					None
+				}
+			})
+		})
 	}
 }
 
@@ -80,27 +87,7 @@ where
 	}
 }
 
-impl pallet_evm::Config for Runtime {
-	type AddressMapping = ConcatAddressMapping;
-	type BlockGasLimit = BlockGasLimit;
-	type BlockHashMapping = EthereumBlockHashMapping<Self>;
-	type CallOrigin = EnsureAddressTruncated;
-	type ChainId = ChainId;
-	type Currency = Balances;
-	type FeeCalculator = FixedGasPrice;
-	type FindAuthor = FindAuthorTruncated<Aura>;
-	type GasWeightMapping = FixedGasWeightMapping<Self>;
-	type OnChargeTransaction = ();
-	type PrecompilesType = DarwiniaPrecompiles<Self>;
-	type PrecompilesValue = PrecompilesValue;
-	type Runner = pallet_evm::runner::stack::Runner<Self>;
-	type RuntimeEvent = RuntimeEvent;
-	type WeightPerGas = WeightPerGas;
-	type WithdrawOrigin = EnsureAddressTruncated;
-}
-
 pub struct DarwiniaPrecompiles<R>(PhantomData<R>);
-
 impl<R> DarwiniaPrecompiles<R>
 where
 	R: pallet_evm::Config,
@@ -119,7 +106,7 @@ where
 {
 	fn execute(&self, handle: &mut impl PrecompileHandle) -> Option<PrecompileResult> {
 		match handle.code_address() {
-			// Ethereum precompiles :
+			// Ethereum precompiles:
 			a if a == addr(1) => Some(ECRecover::execute(handle)),
 			a if a == addr(2) => Some(Sha256::execute(handle)),
 			a if a == addr(3) => Some(Ripemd160::execute(handle)),
@@ -129,7 +116,7 @@ where
 			a if a == addr(7) => Some(Bn128Mul::execute(handle)),
 			a if a == addr(8) => Some(Bn128Pairing::execute(handle)),
 			a if a == addr(9) => Some(Blake2F::execute(handle)),
-			// Non-Frontier specific nor Ethereum precompiles :
+			// Non-Frontier specific nor Ethereum precompiles:
 			_ => None,
 		}
 	}
@@ -137,6 +124,25 @@ where
 	fn is_precompile(&self, address: H160) -> bool {
 		Self::used_addresses().contains(&address)
 	}
+}
+
+impl pallet_evm::Config for Runtime {
+	type AddressMapping = ConcatAddressMapping;
+	type BlockGasLimit = BlockGasLimit;
+	type BlockHashMapping = EthereumBlockHashMapping<Self>;
+	type CallOrigin = EnsureAddressTruncated;
+	type ChainId = ChainId;
+	type Currency = Balances;
+	type FeeCalculator = FixedGasPrice;
+	type FindAuthor = FindAuthorTruncated<Aura>;
+	type GasWeightMapping = FixedGasWeightMapping<Self>;
+	type OnChargeTransaction = ();
+	type PrecompilesType = DarwiniaPrecompiles<Self>;
+	type PrecompilesValue = PrecompilesValue;
+	type Runner = pallet_evm::runner::stack::Runner<Self>;
+	type RuntimeEvent = RuntimeEvent;
+	type WeightPerGas = WeightPerGas;
+	type WithdrawOrigin = EnsureAddressTruncated;
 }
 
 fn addr(a: u64) -> H160 {
