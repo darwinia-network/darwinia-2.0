@@ -50,7 +50,7 @@ use frame_support::{
 		ConstantMultiplier, Weight, WeightToFeeCoefficient, WeightToFeeCoefficients,
 		WeightToFeePolynomial,
 	},
-	ConsensusEngineId, PalletId,
+	PalletId,
 };
 use frame_system::EnsureRoot;
 use sp_core::{
@@ -61,9 +61,7 @@ use sp_core::{
 pub use sp_runtime::BuildStorage;
 use sp_runtime::{
 	generic,
-	traits::{
-		Block as BlockT, DispatchInfoOf, Dispatchable, PostDispatchInfoOf, UniqueSaturatedInto,
-	},
+	traits::Block as BlockT,
 	transaction_validity::{TransactionSource, TransactionValidity},
 	ApplyExtrinsicResult,
 };
@@ -120,7 +118,8 @@ impl fp_self_contained::SelfContainedCall for RuntimeCall {
 
 	fn check_self_contained(
 		&self,
-	) -> Option<Result<Self::SignedInfo, sp_runtime::TransactionValidityError>> {
+	) -> Option<Result<Self::SignedInfo, sp_runtime::transaction_validity::TransactionValidityError>>
+	{
 		match self {
 			RuntimeCall::Ethereum(call) => call.check_self_contained(),
 			_ => None,
@@ -130,7 +129,7 @@ impl fp_self_contained::SelfContainedCall for RuntimeCall {
 	fn validate_self_contained(
 		&self,
 		info: &Self::SignedInfo,
-		dispatch_info: &DispatchInfoOf<RuntimeCall>,
+		dispatch_info: &sp_runtime::traits::DispatchInfoOf<RuntimeCall>,
 		len: usize,
 	) -> Option<TransactionValidity> {
 		match self {
@@ -142,9 +141,9 @@ impl fp_self_contained::SelfContainedCall for RuntimeCall {
 	fn pre_dispatch_self_contained(
 		&self,
 		info: &Self::SignedInfo,
-		dispatch_info: &DispatchInfoOf<RuntimeCall>,
+		dispatch_info: &sp_runtime::traits::DispatchInfoOf<RuntimeCall>,
 		len: usize,
-	) -> Option<Result<(), sp_runtime::TransactionValidityError>> {
+	) -> Option<Result<(), sp_runtime::transaction_validity::TransactionValidityError>> {
 		match self {
 			RuntimeCall::Ethereum(call) =>
 				call.pre_dispatch_self_contained(info, dispatch_info, len),
@@ -155,7 +154,10 @@ impl fp_self_contained::SelfContainedCall for RuntimeCall {
 	fn apply_self_contained(
 		self,
 		info: Self::SignedInfo,
-	) -> Option<sp_runtime::DispatchResultWithInfo<PostDispatchInfoOf<Self>>> {
+	) -> Option<sp_runtime::DispatchResultWithInfo<sp_runtime::traits::PostDispatchInfoOf<Self>>> {
+		// substrate
+		use sp_runtime::traits::Dispatchable;
+
 		match self {
 			call @ RuntimeCall::Ethereum(pallet_ethereum::Call::transact { .. }) =>
 				Some(call.dispatch(RuntimeOrigin::from(
@@ -445,6 +447,8 @@ sp_api::impl_runtime_apis! {
 		) -> Result<pallet_evm::CallInfo, sp_runtime::DispatchError> {
 			// frontier
 			use pallet_evm::Runner;
+			// substrate
+			use sp_runtime::traits::UniqueSaturatedInto;
 
 			let config = if estimate {
 				let mut config = <Runtime as pallet_evm::Config>::config().clone();
@@ -487,6 +491,8 @@ sp_api::impl_runtime_apis! {
 		) -> Result<pallet_evm::CreateInfo, sp_runtime::DispatchError> {
 			// frontier
 			use pallet_evm::Runner;
+			// substrate
+			use sp_runtime::traits::UniqueSaturatedInto;
 
 			let config = if estimate {
 				let mut config = <Runtime as pallet_evm::Config>::config().clone();
