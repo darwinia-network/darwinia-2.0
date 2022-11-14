@@ -36,7 +36,6 @@ polkadot-core-primitives    = { default-features = false, git = "https://github.
 polkadot-parachain          = { default-features = false, git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.30" }
 polkadot-runtime-parachains = { default-features = false, git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.30" }
 xcm                         = { default-features = false, git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.30" }
-xcm-builder                 = { default-features = false, git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.30" }
 xcm-executor                = { default-features = false, git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.30" }
 [dev-dependencies]
 
@@ -66,7 +65,6 @@ std = [
     "polkadot-parachain/std",
     "polkadot-runtime-parachains/std",
     "xcm/std",
-    "xcm-builder/std",
     "xcm-executor/std",
 ]
 

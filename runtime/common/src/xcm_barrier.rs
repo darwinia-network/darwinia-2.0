@@ -20,10 +20,9 @@
 use core::marker::PhantomData;
 // polkadot
 use xcm::latest::{prelude::*, Weight as XCMWeight};
-use xcm_builder::*;
 use xcm_executor::traits::ShouldExecute;
 // substrate
-use frame_support::{log, traits::Everything};
+use frame_support::log;
 
 frame_support::match_types! {
 	pub type ParentOrParentsExecutivePlurality: impl Contains<MultiLocation> = {
@@ -96,13 +95,3 @@ impl ShouldExecute for DenyReserveTransferToRelayChain {
 		Ok(())
 	}
 }
-
-pub type Barrier = DenyThenTry<
-	DenyReserveTransferToRelayChain,
-	(
-		TakeWeightCredit,
-		AllowTopLevelPaidExecutionFrom<Everything>,
-		AllowUnpaidExecutionFrom<ParentOrParentsExecutivePlurality>,
-		// ^^^ Parent and its exec plurality get free execution
-	),
->;
