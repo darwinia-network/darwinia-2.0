@@ -457,6 +457,7 @@ sp_api::impl_runtime_apis! {
 
 			let is_transactional = false;
 			let validate = true;
+			#[allow(clippy::or_fun_call)]
 			let evm_config = config.as_ref().unwrap_or(<Runtime as pallet_evm::Config>::config());
 			<Runtime as pallet_evm::Config>::Runner::call(
 				from,
@@ -498,6 +499,7 @@ sp_api::impl_runtime_apis! {
 
 			let is_transactional = false;
 			let validate = true;
+			#[allow(clippy::or_fun_call)]
 			let evm_config = config.as_ref().unwrap_or(<Runtime as pallet_evm::Config>::config());
 			<Runtime as pallet_evm::Config>::Runner::create(
 				from,

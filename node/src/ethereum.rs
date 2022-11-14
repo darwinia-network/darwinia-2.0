@@ -41,6 +41,7 @@ use sc_service::{BasePath, Configuration, TaskManager};
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
 
+#[allow(clippy::too_many_arguments)]
 pub fn spawn_frontier_tasks<B, BE, C>(
 	task_manager: &TaskManager,
 	client: Arc<C>,
