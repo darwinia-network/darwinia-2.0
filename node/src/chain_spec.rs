@@ -249,28 +249,29 @@ fn testnet_genesis(
 		polkadot_xcm: darwinia_runtime::PolkadotXcmConfig {
 			safe_xcm_version: Some(SAFE_XCM_VERSION),
 		},
+		ethereum: Default::default(),
 		evm: EVMConfig {
 			accounts: {
 				let mut map = BTreeMap::new();
 				map.insert(
-					// H160 address of CI test runner account
-					H160::from_str("6be02d1d3665660d22ff9624b7be0551ee1ac91b")
-						.expect("internal H160 is valid; qed"),
+					// Testing account.
+					H160::from_str("0x6be02d1d3665660d22ff9624b7be0551ee1ac91b")
+						.expect("internal `H160` is valid; qed"),
 					GenesisAccount {
 						balance: U256::from_str("0xffffffffffffffffffffffffffffffff")
-							.expect("internal U256 is valid; qed"),
+							.expect("internal `U256` is valid; qed"),
 						code: Default::default(),
 						nonce: Default::default(),
 						storage: Default::default(),
 					},
 				);
 				map.insert(
-					// H160 address for benchmark usage
+					// Benchmarking account.
 					H160::from_str("1000000000000000000000000000000000000001")
-						.expect("internal H160 is valid; qed"),
+						.expect("internal `H160` is valid; qed"),
 					GenesisAccount {
 						nonce: U256::from(1),
-						balance: U256::from(1_000_000_000_000_000_000_000_000u128),
+						balance: U256::from(1_000_000_000_000_000_000_000_000_u128),
 						storage: Default::default(),
 						code: vec![0x00],
 					},
@@ -290,7 +291,6 @@ fn testnet_genesis(
 				map
 			},
 		},
-		ethereum: Default::default(),
 		base_fee: Default::default(),
 	}
 }
