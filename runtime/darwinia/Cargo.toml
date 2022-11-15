@@ -89,9 +89,7 @@ frame-system-benchmarking = { optional = true, default-features = false, git = "
 frame-try-runtime         = { optional = true, default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
 
 [features]
-default = [
-	"std",
-]
+default = ["std"]
 std = [
 	# crates.io
 	"codec/std",
