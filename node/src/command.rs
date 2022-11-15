@@ -41,7 +41,7 @@ use sc_cli::{
 };
 use sc_service::{
 	config::{BasePath, PrometheusConfig},
-	DatabaseSource, TaskManager,
+	DatabaseSource, PartialComponents, TaskManager,
 };
 use sp_core::hexdisplay::HexDisplay;
 use sp_runtime::traits::{AccountIdConversion, Block as BlockT};
@@ -53,10 +53,8 @@ macro_rules! construct_async_run {
 			let $components = service::new_partial::<
 				RuntimeApi,
 				DarwiniaRuntimeExecutor,
-				_
 			>(
 				&$config,
-				crate::service::parachain_build_import_queue,
 			)?;
 			let task_manager = $components.task_manager;
 			{ $( $code )* }.map(|v| (v, task_manager))
@@ -359,12 +357,12 @@ pub fn run() -> Result<()> {
 				cmd.run(&*spec)
 			})
 		},
-		// TODO: https://github.com/darwinia-network/darwinia-2.0/issues/35
 		Some(Subcommand::FrontierDb(cmd)) => {
 			let runner = cli.create_runner(cmd)?;
 			runner.sync_run(|config| {
-				// let PartialComponents { client, other, .. } = service::new_partial(&config,
-				// &cli)?; let frontier_backend = other.2;
+				// let PartialComponents { client, other, .. } = service::new_partial(&config)?;
+				// let _ = service::new_partial(&config)?;
+				// let frontier_backend = other.2;
 				// cmd.run::<_, Block>(client, frontier_backend)
 				todo!();
 			})
@@ -382,10 +380,8 @@ pub fn run() -> Result<()> {
 							.into())
 					},
 				BenchmarkCmd::Block(cmd) => runner.sync_run(|config| {
-					let partials = service::new_partial::<RuntimeApi, DarwiniaRuntimeExecutor, _>(
-						&config,
-						crate::service::parachain_build_import_queue,
-					)?;
+					let partials =
+						service::new_partial::<RuntimeApi, DarwiniaRuntimeExecutor>(&config)?;
 					cmd.run(partials.client)
 				}),
 				#[cfg(not(feature = "runtime-benchmarks"))]

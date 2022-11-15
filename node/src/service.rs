@@ -30,7 +30,7 @@ use jsonrpsee::RpcModule;
 use cumulus_client_cli::CollatorOptions;
 // darwinia
 use crate::{cli::EthRpcConfig, frontier_service};
-use darwinia_runtime::RuntimeApi;
+use darwinia_runtime::{AuraId, RuntimeApi};
 use dc_primitives::*;
 // frontier
 use fc_db::Backend as FrontierBackend;
@@ -56,7 +56,9 @@ use sc_network_common::service::NetworkBlock;
 use sc_service::{Configuration, PartialComponents, TFullClient, TaskManager};
 use sc_telemetry::{Telemetry, TelemetryHandle, TelemetryWorker, TelemetryWorkerHandle};
 use sp_api::ConstructRuntimeApi;
+use sp_core::Pair;
 use sp_keystore::SyncCryptoStorePtr;
+use sp_runtime::app_crypto::AppKey;
 use substrate_prometheus_endpoint::Registry;
 
 type FullBackend = sc_service::TFullBackend<Block>;
@@ -76,6 +78,7 @@ pub trait RuntimeApiCollection:
 	+ fp_rpc::EthereumRuntimeRPCApi<Block>
 	+ fp_rpc::ConvertTransactionRuntimeApi<Block>
 	+ substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>
+	+ sp_consensus_aura::AuraApi<Block, <<AuraId as AppKey>::Pair as Pair>::Public>
 {
 }
 impl<Api> RuntimeApiCollection for Api where
@@ -90,6 +93,7 @@ impl<Api> RuntimeApiCollection for Api where
 		+ fp_rpc::EthereumRuntimeRPCApi<Block>
 		+ fp_rpc::ConvertTransactionRuntimeApi<Block>
 		+ substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>
+		+ sp_consensus_aura::AuraApi<Block, <<AuraId as AppKey>::Pair as Pair>::Public>
 {
 }
 
@@ -112,9 +116,10 @@ impl sc_executor::NativeExecutionDispatch for DarwiniaRuntimeExecutor {
 /// Use this macro if you don't actually need the full service, but just the builder in order to
 /// be able to perform chain operations.
 #[allow(clippy::type_complexity)]
-pub fn new_partial<RuntimeApi, Executor, BIQ>(
+// pub fn new_partial<RuntimeApi, Executor, BIQ>(
+pub fn new_partial<RuntimeApi, Executor>(
 	config: &Configuration,
-	build_import_queue: BIQ,
+	// build_import_queue: BIQ,
 ) -> Result<
 	PartialComponents<
 		FullClient<RuntimeApi, Executor>,
@@ -129,18 +134,19 @@ pub fn new_partial<RuntimeApi, Executor, BIQ>(
 where
 	RuntimeApi:
 		'static + Send + Sync + ConstructRuntimeApi<Block, FullClient<RuntimeApi, Executor>>,
-	RuntimeApi::RuntimeApi: RuntimeApiCollection,
+	RuntimeApi::RuntimeApi: RuntimeApiCollection
+		+ sp_consensus_aura::AuraApi<Block, <<AuraId as AppKey>::Pair as Pair>::Public>,
 	sc_client_api::StateBackendFor<FullBackend, Block>: sp_api::StateBackend<Hashing>,
 	Executor: 'static + sc_executor::NativeExecutionDispatch,
-	BIQ: FnOnce(
-		Arc<FullClient<RuntimeApi, Executor>>,
-		&Configuration,
-		Option<TelemetryHandle>,
-		&TaskManager,
-	) -> Result<
-		sc_consensus::DefaultImportQueue<Block, FullClient<RuntimeApi, Executor>>,
-		sc_service::Error,
-	>,
+	// BIQ: FnOnce(
+	// 	Arc<FullClient<RuntimeApi, Executor>>,
+	// 	&Configuration,
+	// 	Option<TelemetryHandle>,
+	// 	&TaskManager,
+	// ) -> Result<
+	// 	sc_consensus::DefaultImportQueue<Block, FullClient<RuntimeApi, Executor>>,
+	// 	sc_service::Error,
+	// >,
 {
 	let telemetry = config
 		.telemetry_endpoints
@@ -177,12 +183,20 @@ where
 		task_manager.spawn_essential_handle(),
 		client.clone(),
 	);
-	let import_queue = build_import_queue(
+
+	let import_queue = parachain_build_import_queue(
 		client.clone(),
 		config,
 		telemetry.as_ref().map(|telemetry| telemetry.handle()),
 		&task_manager,
 	)?;
+
+	// let import_queue = build_import_queue(
+	// 	client.clone(),
+	// 	config,
+	// 	telemetry.as_ref().map(|telemetry| telemetry.handle()),
+	// 	&task_manager,
+	// )?;
 
 	Ok(PartialComponents {
 		backend,
@@ -224,13 +238,14 @@ async fn build_relay_chain_interface(
 /// This is the actual implementation that is abstract over the executor and the runtime api.
 #[allow(clippy::too_many_arguments)]
 #[sc_tracing::logging::prefix_logs_with("Parachain")]
-async fn start_node_impl<RuntimeApi, Executor, RB, BIQ, BIC>(
+// async fn start_node_impl<RuntimeApi, Executor, RB, BIQ, BIC>(
+async fn start_node_impl<RuntimeApi, Executor, RB, BIC>(
 	parachain_config: Configuration,
 	polkadot_config: Configuration,
 	collator_options: CollatorOptions,
 	id: ParaId,
 	_rpc_ext_builder: RB,
-	build_import_queue: BIQ,
+	// build_import_queue: BIQ,
 	build_consensus: BIC,
 	hwbench: Option<sc_sysinfo::HwBench>,
 	eth_rpc_config: EthRpcConfig,
@@ -246,16 +261,16 @@ where
 		+ Fn(
 			Arc<TFullClient<Block, RuntimeApi, Executor>>,
 		) -> Result<RpcModule<()>, sc_service::Error>,
-	BIQ: 'static
-		+ FnOnce(
-			Arc<FullClient<RuntimeApi, Executor>>,
-			&Configuration,
-			Option<TelemetryHandle>,
-			&TaskManager,
-		) -> Result<
-			sc_consensus::DefaultImportQueue<Block, FullClient<RuntimeApi, Executor>>,
-			sc_service::Error,
-		>,
+	// BIQ: 'static
+	// 	+ FnOnce(
+	// 		Arc<FullClient<RuntimeApi, Executor>>,
+	// 		&Configuration,
+	// 		Option<TelemetryHandle>,
+	// 		&TaskManager,
+	// 	) -> Result<
+	// 		sc_consensus::DefaultImportQueue<Block, FullClient<RuntimeApi, Executor>>,
+	// 		sc_service::Error,
+	// 	>,
 	BIC: FnOnce(
 		Arc<FullClient<RuntimeApi, Executor>>,
 		Option<&Registry>,
@@ -270,7 +285,9 @@ where
 {
 	let parachain_config = prepare_node_config(parachain_config);
 
-	let params = new_partial::<RuntimeApi, Executor, BIQ>(&parachain_config, build_import_queue)?;
+	// let params = new_partial::<RuntimeApi, Executor, BIQ>(&parachain_config,
+	// build_import_queue)?;
+	let params = new_partial::<RuntimeApi, Executor>(&parachain_config)?;
 	let (mut telemetry, telemetry_worker_handle) = params.other;
 
 	let client = params.client.clone();
@@ -306,7 +323,9 @@ where
 	let filter_pool: Option<FilterPool> = Some(Arc::new(Mutex::new(BTreeMap::new())));
 	let fee_history_cache: FeeHistoryCache = Arc::new(Mutex::new(BTreeMap::new()));
 	let fee_history_cache_limit: FeeHistoryCacheLimit = eth_rpc_config.fee_history_limit;
+
 	let import_queue = cumulus_client_service::SharedImportQueue::new(params.import_queue);
+
 	let overrides = frontier_service::overrides_handle(client.clone());
 	let block_data_cache = Arc::new(EthBlockDataCacheTask::new(
 		task_manager.spawn_handle(),
@@ -457,18 +476,29 @@ where
 
 /// Build the import queue for the parachain runtime.
 #[allow(clippy::type_complexity)]
-pub fn parachain_build_import_queue(
-	client: Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<DarwiniaRuntimeExecutor>>>,
+pub fn parachain_build_import_queue<RuntimeApi, Executor>(
+	// client: Arc<TFullClient<Block, RuntimeApi,
+	// NativeElseWasmExecutor<DarwiniaRuntimeExecutor>>>,
+	client: Arc<FullClient<RuntimeApi, Executor>>,
 	config: &Configuration,
 	telemetry: Option<TelemetryHandle>,
 	task_manager: &TaskManager,
 ) -> Result<
 	sc_consensus::DefaultImportQueue<
 		Block,
-		TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<DarwiniaRuntimeExecutor>>,
+		// TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<DarwiniaRuntimeExecutor>>,
+		FullClient<RuntimeApi, Executor>,
 	>,
 	sc_service::Error,
-> {
+>
+where
+	RuntimeApi:
+		'static + Send + Sync + ConstructRuntimeApi<Block, FullClient<RuntimeApi, Executor>>,
+	RuntimeApi::RuntimeApi: RuntimeApiCollection
+		+ sp_consensus_aura::AuraApi<Block, <<AuraId as AppKey>::Pair as Pair>::Public>,
+	sc_client_api::StateBackendFor<FullBackend, Block>: sp_api::StateBackend<Hashing>,
+	Executor: 'static + sc_executor::NativeExecutionDispatch,
+{
 	let slot_duration = cumulus_client_consensus_aura::slot_duration(&*client)?;
 
 	cumulus_client_consensus_aura::import_queue::<
@@ -511,13 +541,13 @@ pub async fn start_parachain_node(
 	TaskManager,
 	Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<DarwiniaRuntimeExecutor>>>,
 )> {
-	start_node_impl::<RuntimeApi, DarwiniaRuntimeExecutor, _, _, _>(
+	start_node_impl::<RuntimeApi, DarwiniaRuntimeExecutor, _, _>(
 		parachain_config,
 		polkadot_config,
 		collator_options,
 		id,
 		|_| Ok(RpcModule::new(())),
-		parachain_build_import_queue,
+		// parachain_build_import_queue,
 		|client,
 		 prometheus_registry,
 		 telemetry,
