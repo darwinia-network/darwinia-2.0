@@ -71,6 +71,7 @@ pub trait RuntimeApiCollection:
 	+ sp_api::ApiExt<Block, StateBackend = sc_client_api::StateBackendFor<FullBackend, Block>>
 	+ sp_api::Metadata<Block>
 	+ sp_block_builder::BlockBuilder<Block>
+	+ sp_consensus_aura::AuraApi<Block, <<AuraId as AppKey>::Pair as Pair>::Public>
 	+ sp_offchain::OffchainWorkerApi<Block>
 	+ sp_session::SessionKeys<Block>
 	+ sp_transaction_pool::runtime_api::TaggedTransactionQueue<Block>
@@ -78,7 +79,6 @@ pub trait RuntimeApiCollection:
 	+ fp_rpc::EthereumRuntimeRPCApi<Block>
 	+ fp_rpc::ConvertTransactionRuntimeApi<Block>
 	+ substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>
-	+ sp_consensus_aura::AuraApi<Block, <<AuraId as AppKey>::Pair as Pair>::Public>
 {
 }
 impl<Api> RuntimeApiCollection for Api where
@@ -86,6 +86,7 @@ impl<Api> RuntimeApiCollection for Api where
 		+ sp_api::ApiExt<Block, StateBackend = sc_client_api::StateBackendFor<FullBackend, Block>>
 		+ sp_api::Metadata<Block>
 		+ sp_block_builder::BlockBuilder<Block>
+		+ sp_consensus_aura::AuraApi<Block, <<AuraId as AppKey>::Pair as Pair>::Public>
 		+ sp_offchain::OffchainWorkerApi<Block>
 		+ sp_session::SessionKeys<Block>
 		+ sp_transaction_pool::runtime_api::TaggedTransactionQueue<Block>
@@ -93,7 +94,6 @@ impl<Api> RuntimeApiCollection for Api where
 		+ fp_rpc::EthereumRuntimeRPCApi<Block>
 		+ fp_rpc::ConvertTransactionRuntimeApi<Block>
 		+ substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>
-		+ sp_consensus_aura::AuraApi<Block, <<AuraId as AppKey>::Pair as Pair>::Public>
 {
 }
 
@@ -140,9 +140,7 @@ pub fn new_partial<RuntimeApi, Executor>(
 where
 	RuntimeApi:
 		'static + Send + Sync + ConstructRuntimeApi<Block, FullClient<RuntimeApi, Executor>>,
-	RuntimeApi::RuntimeApi: RuntimeApiCollection
-		+ sp_consensus_aura::AuraApi<Block, <<AuraId as AppKey>::Pair as Pair>::Public>,
-	sc_client_api::StateBackendFor<FullBackend, Block>: sp_api::StateBackend<Hashing>,
+	RuntimeApi::RuntimeApi: RuntimeApiCollection,
 	Executor: 'static + sc_executor::NativeExecutionDispatch,
 {
 	let telemetry = config
@@ -279,7 +277,6 @@ where
 	) -> Result<Box<dyn ParachainConsensus<Block>>, sc_service::Error>,
 {
 	let parachain_config = prepare_node_config(parachain_config);
-
 	let PartialComponents {
 		backend,
 		client,
@@ -318,18 +315,8 @@ where
 	let force_authoring = parachain_config.force_authoring;
 	let validator = parachain_config.role.is_authority();
 	let prometheus_registry = parachain_config.prometheus_registry().cloned();
-
 	let import_queue = cumulus_client_service::SharedImportQueue::new(import_queue);
 
-	let transaction_pool = transaction_pool.clone();
-	let overrides = frontier_service::overrides_handle(client.clone());
-	let block_data_cache = Arc::new(EthBlockDataCacheTask::new(
-		task_manager.spawn_handle(),
-		overrides.clone(),
-		eth_rpc_config.eth_log_block_cache,
-		eth_rpc_config.eth_statuses_cache,
-		prometheus_registry.clone(),
-	));
 	let (network, system_rpc_tx, tx_handler_controller, start_network) =
 		sc_service::build_network(sc_service::BuildNetworkParams {
 			config: &parachain_config,
@@ -343,6 +330,14 @@ where
 			warp_sync: None,
 		})?;
 
+	let overrides = frontier_service::overrides_handle(client.clone());
+	let block_data_cache = Arc::new(EthBlockDataCacheTask::new(
+		task_manager.spawn_handle(),
+		overrides.clone(),
+		eth_rpc_config.eth_log_block_cache,
+		eth_rpc_config.eth_statuses_cache,
+		prometheus_registry.clone(),
+	));
 	let rpc_builder = {
 		let client = client.clone();
 		let pool = transaction_pool.clone();
@@ -484,9 +479,7 @@ pub fn parachain_build_import_queue<RuntimeApi, Executor>(
 where
 	RuntimeApi:
 		'static + Send + Sync + ConstructRuntimeApi<Block, FullClient<RuntimeApi, Executor>>,
-	RuntimeApi::RuntimeApi: RuntimeApiCollection
-		+ sp_consensus_aura::AuraApi<Block, <<AuraId as AppKey>::Pair as Pair>::Public>,
-	sc_client_api::StateBackendFor<FullBackend, Block>: sp_api::StateBackend<Hashing>,
+	RuntimeApi::RuntimeApi: RuntimeApiCollection,
 	Executor: 'static + sc_executor::NativeExecutionDispatch,
 {
 	let slot_duration = cumulus_client_consensus_aura::slot_duration(&*client)?;

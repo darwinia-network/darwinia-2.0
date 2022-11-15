@@ -50,13 +50,12 @@ macro_rules! construct_async_run {
 	(|$components:ident, $cli:ident, $cmd:ident, $config:ident| $( $code:tt )* ) => {{
 		let runner = $cli.create_runner($cmd)?;
 		runner.async_run(|$config| {
-			let eth_rpc_config = $cli.eth_args.build_eth_rpc_config();
 			let $components = service::new_partial::<
 				RuntimeApi,
 				DarwiniaRuntimeExecutor,
 			>(
 				&$config,
-				&eth_rpc_config
+				&$cli.eth_args.build_eth_rpc_config()
 			)?;
 			let task_manager = $components.task_manager;
 			{ $( $code )* }.map(|v| (v, task_manager))
@@ -362,12 +361,11 @@ pub fn run() -> Result<()> {
 		Some(Subcommand::FrontierDb(cmd)) => {
 			let runner = cli.create_runner(cmd)?;
 			runner.sync_run(|config| {
-				let eth_rpc_config = cli.eth_args.build_eth_rpc_config();
-				let PartialComponents { client, other, .. } = service::new_partial::<
-					RuntimeApi,
-					DarwiniaRuntimeExecutor,
-				>(&config, &eth_rpc_config)?;
-				let frontier_backend = other.0;
+				let PartialComponents { client, other: (frontier_backend, ..), .. } =
+					service::new_partial::<RuntimeApi, DarwiniaRuntimeExecutor>(
+						&config,
+						&cli.eth_args.build_eth_rpc_config(),
+					)?;
 				cmd.run::<_, dc_primitives::Block>(client, frontier_backend)
 			})
 		},
@@ -384,10 +382,9 @@ pub fn run() -> Result<()> {
 							.into())
 					},
 				BenchmarkCmd::Block(cmd) => runner.sync_run(|config| {
-					let eth_rpc_config = cli.eth_args.build_eth_rpc_config();
 					let partials = service::new_partial::<RuntimeApi, DarwiniaRuntimeExecutor>(
 						&config,
-						&eth_rpc_config,
+						&cli.eth_args.build_eth_rpc_config(),
 					)?;
 					cmd.run(partials.client)
 				}),
