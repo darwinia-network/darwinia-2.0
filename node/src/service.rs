@@ -144,8 +144,7 @@ where
 		'static + Send + Sync + ConstructRuntimeApi<Block, FullClient<RuntimeApi, Executor>>,
 	RuntimeApi::RuntimeApi: RuntimeApiCollection
 		+ sp_consensus_aura::AuraApi<Block, <<AuraId as AppKey>::Pair as Pair>::Public>,
-	sc_client_api::StateBackendFor<FullBackend, Block>:
-		sp_api::StateBackend<Hashing>,
+	sc_client_api::StateBackendFor<FullBackend, Block>: sp_api::StateBackend<Hashing>,
 	Executor: 'static + sc_executor::NativeExecutionDispatch,
 	// BIQ: FnOnce(
 	// 	Arc<FullClient<RuntimeApi, Executor>>,
@@ -313,19 +312,27 @@ where
 
 	// let params = new_partial::<RuntimeApi, Executor, BIQ>(&parachain_config,
 	// build_import_queue)?;
-	let params = new_partial::<RuntimeApi, Executor>(&parachain_config, eth_rpc_config)?;
-	let (
-		frontier_backend,
-		filter_pool,
-		fee_history_cache,
-		fee_history_cache_limit,
-		mut telemetry,
-		telemetry_worker_handle,
-	) = params.other;
+	let PartialComponents {
+		backend,
+		client,
+		import_queue,
+		keystore_container,
+		mut task_manager,
+		transaction_pool,
+		select_chain,
+		other:
+			(
+				frontier_backend,
+				filter_pool,
+				fee_history_cache,
+				fee_history_cache_limit,
+				mut telemetry,
+				telemetry_worker_handle,
+			),
+	} = new_partial::<RuntimeApi, Executor>(&parachain_config, eth_rpc_config)?;
 
-	let client = params.client.clone();
-	let backend = params.backend.clone();
-	let mut task_manager = params.task_manager;
+	let client = client.clone();
+	let backend = backend.clone();
 
 	let (relay_chain_interface, collator_key) = build_relay_chain_interface(
 		polkadot_config,
@@ -347,7 +354,7 @@ where
 	let validator = parachain_config.role.is_authority();
 	let prometheus_registry = parachain_config.prometheus_registry().cloned();
 
-	let transaction_pool = params.transaction_pool.clone();
+	let transaction_pool = transaction_pool.clone();
 	// let frontier_backend = Arc::new(FrontierBackend::open(
 	// 	Arc::clone(&client),
 	// 	&parachain_config.database,
@@ -357,7 +364,7 @@ where
 	// let fee_history_cache: FeeHistoryCache = Arc::new(Mutex::new(BTreeMap::new()));
 	// let fee_history_cache_limit: FeeHistoryCacheLimit = eth_rpc_config.fee_history_limit;
 
-	let import_queue = cumulus_client_service::SharedImportQueue::new(params.import_queue);
+	let import_queue = cumulus_client_service::SharedImportQueue::new(import_queue);
 
 	let overrides = frontier_service::overrides_handle(client.clone());
 	let block_data_cache = Arc::new(EthBlockDataCacheTask::new(
@@ -418,7 +425,7 @@ where
 		transaction_pool: transaction_pool.clone(),
 		task_manager: &mut task_manager,
 		config: parachain_config,
-		keystore: params.keystore_container.sync_keystore(),
+		keystore: keystore_container.sync_keystore(),
 		backend: backend.clone(),
 		network: network.clone(),
 		system_rpc_tx,
@@ -466,7 +473,7 @@ where
 			relay_chain_interface.clone(),
 			transaction_pool,
 			network,
-			params.keystore_container.sync_keystore(),
+			keystore_container.sync_keystore(),
 			force_authoring,
 		)?;
 
