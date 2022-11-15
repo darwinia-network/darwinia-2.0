@@ -1938,26 +1938,7 @@ dependencies = [
 name = "darwinia-common-runtime"
 version = "6.0.0"
 dependencies = [
- "array-bytes",
- "ethabi",
- "ethereum",
- "ethereum-types",
- "frame-benchmarking",
  "frame-support",
- "frame-system",
- "pallet-balances",
- "pallet-transaction-payment",
- "pallet-xcm",
- "parity-scale-codec",
- "polkadot-core-primitives",
- "polkadot-parachain",
- "polkadot-runtime-parachains",
- "scale-info",
- "smallvec",
- "sp-core",
- "sp-io",
- "sp-runtime",
- "sp-std",
  "xcm",
  "xcm-executor",
 ]
@@ -2369,19 +2350,6 @@ checksum = "aa68f1b12764fab894d2755d2518754e71b4fd80ecfb822714a1206c2aab39bf"
 dependencies = [
  "cc",
  "libc",
-]
-
-[[package]]
-name = "ethabi"
-version = "17.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e4966fba78396ff92db3b817ee71143eccd98acf0f876b8d600e585a670c5d1b"
-dependencies = [
- "ethereum-types",
- "hex",
- "sha3",
- "thiserror",
- "uint",
 ]
 
 [[package]]
