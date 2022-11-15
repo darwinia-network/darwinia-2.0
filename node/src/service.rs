@@ -26,7 +26,6 @@ use std::{
 };
 // darwinia
 use crate::{cli::EthRpcConfig, frontier_service};
-use darwinia_runtime::RuntimeApi;
 use dc_primitives::*;
 // substrate
 use sc_network_common::service::NetworkBlock;
@@ -457,7 +456,7 @@ pub fn parachain_build_import_queue(
 	client: Arc<
 		sc_service::TFullClient<
 			Block,
-			RuntimeApi,
+			darwinia_runtime::RuntimeApi,
 			sc_executor::NativeElseWasmExecutor<DarwiniaRuntimeExecutor>,
 		>,
 	>,
@@ -469,7 +468,7 @@ pub fn parachain_build_import_queue(
 		Block,
 		sc_service::TFullClient<
 			Block,
-			RuntimeApi,
+			darwinia_runtime::RuntimeApi,
 			sc_executor::NativeElseWasmExecutor<DarwiniaRuntimeExecutor>,
 		>,
 	>,
@@ -518,12 +517,12 @@ pub async fn start_parachain_node(
 	Arc<
 		sc_service::TFullClient<
 			Block,
-			RuntimeApi,
+			darwinia_runtime::RuntimeApi,
 			sc_executor::NativeElseWasmExecutor<DarwiniaRuntimeExecutor>,
 		>,
 	>,
 )> {
-	start_node_impl::<RuntimeApi, DarwiniaRuntimeExecutor, _, _, _>(
+	start_node_impl::<darwinia_runtime::RuntimeApi, DarwiniaRuntimeExecutor, _, _, _>(
 		parachain_config,
 		polkadot_config,
 		collator_options,
