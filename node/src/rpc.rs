@@ -27,6 +27,9 @@ pub use sc_rpc::{DenyUnsafe, SubscriptionTaskExecutor};
 use std::sync::Arc;
 // darwinia
 use dc_primitives::*;
+// substrate
+#[cfg(feature = "manual-seal")]
+use sc_consensus_manual_seal::rpc::{ManualSeal, ManualSealApiServer};
 
 /// A type representing all RPC extensions.
 pub type RpcExtension = jsonrpsee::RpcModule<()>;
@@ -59,6 +62,10 @@ pub struct FullDeps<C, P, A: sc_transaction_pool::ChainApi> {
 	pub overrides: Arc<fc_rpc::OverrideHandle<Block>>,
 	/// Cache for Ethereum block data.
 	pub block_data_cache: Arc<fc_rpc::EthBlockDataCacheTask<Block>>,
+	/// Manual seal command sink
+	#[cfg(feature = "manual-seal")]
+	pub command_sink:
+		Option<futures::channel::mpsc::Sender<sc_consensus_manual_seal::rpc::EngineCommand<Hash>>>,
 }
 
 /// Instantiate all RPC extensions.
@@ -111,6 +118,8 @@ where
 		fee_history_cache_limit,
 		overrides,
 		block_data_cache,
+		#[cfg(feature = "manual-seal")]
+		command_sink,
 	} = deps;
 
 	module.merge(System::new(client.clone(), pool.clone(), deny_unsafe).into_rpc())?;
@@ -168,6 +177,15 @@ where
 		.into_rpc(),
 	)?;
 	module.merge(Web3::new(client).into_rpc())?;
+
+	#[cfg(feature = "manual-seal")]
+	if let Some(command_sink) = command_sink {
+		module.merge(
+			// We provide the rpc handler with the sending end of the channel to allow the rpc
+			// send EngineCommands to the background block authorship task.
+			ManualSeal::new(command_sink).into_rpc(),
+		)?;
+	}
 
 	Ok(module)
 }

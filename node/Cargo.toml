@@ -65,6 +65,7 @@ sc-chain-spec                  = { git = "https://github.com/paritytech/substrat
 sc-cli                         = { features = ["wasmtime"], git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
 sc-client-api                  = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
 sc-consensus                   = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
+sc-consensus-manual-seal       = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30", optional = true }
 sc-executor                    = { features = ["wasmtime"], git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
 sc-keystore                    = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
 sc-network                     = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
@@ -96,6 +97,10 @@ try-runtime-cli                = { git = "https://github.com/paritytech/substrat
 
 [features]
 default = []
+
+manual-seal = [
+	"sc-consensus-manual-seal",
+]
 
 runtime-benchmarks = [
 	# darwinia

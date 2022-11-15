@@ -168,23 +168,64 @@ where
 	let fee_history_cache = Arc::new(Mutex::new(BTreeMap::new()));
 	let fee_history_cache_limit = eth_rpc_config.fee_history_limit;
 
-	Ok(sc_service::PartialComponents {
-		backend,
-		client,
-		import_queue,
-		keystore_container,
-		task_manager,
-		transaction_pool,
-		select_chain: (),
-		other: (
-			frontier_backend,
-			filter_pool,
-			fee_history_cache,
-			fee_history_cache_limit,
-			telemetry,
-			telemetry_worker_handle,
-		),
-	})
+	#[cfg(not(feature = "manual-seal"))]
+	{
+		let import_queue = parachain_build_import_queue(
+			client.clone(),
+			config,
+			telemetry.as_ref().map(|telemetry| telemetry.handle()),
+			&task_manager,
+		)?;
+
+		Ok(PartialComponents {
+			backend,
+			client,
+			import_queue,
+			keystore_container,
+			task_manager,
+			transaction_pool,
+			select_chain: (),
+			other: (
+				frontier_backend.clone(),
+				filter_pool,
+				fee_history_cache,
+				fee_history_cache_limit,
+				telemetry,
+				telemetry_worker_handle,
+			),
+		})
+	}
+
+	#[cfg(feature = "manual-seal")]
+	{
+		use fc_consensus::FrontierBlockImport;
+		let frontier_block_import =
+			FrontierBlockImport::new(client.clone(), client.clone(), frontier_backend.clone());
+
+		let import_queue = sc_consensus_manual_seal::import_queue(
+			Box::new(frontier_block_import.clone()),
+			&task_manager.spawn_essential_handle(),
+			config.prometheus_registry(),
+		);
+
+		Ok(PartialComponents {
+			backend,
+			client,
+			import_queue,
+			keystore_container,
+			task_manager,
+			transaction_pool,
+			select_chain: (),
+			other: (
+				frontier_backend.clone(),
+				filter_pool,
+				fee_history_cache,
+				fee_history_cache_limit,
+				telemetry,
+				telemetry_worker_handle,
+			),
+		})
+	}
 }
 
 async fn build_relay_chain_interface(
@@ -328,6 +369,8 @@ where
 		eth_rpc_config.eth_statuses_cache,
 		prometheus_registry.clone(),
 	));
+	#[cfg(feature = "manual-seal")]
+	let (command_sink, commands_stream) = futures::channel::mpsc::channel(1000);
 	let rpc_builder = {
 		let client = client.clone();
 		let pool = transaction_pool.clone();
@@ -354,6 +397,8 @@ where
 				fee_history_cache_limit,
 				overrides: overrides.clone(),
 				block_data_cache: block_data_cache.clone(),
+				#[cfg(feature = "manual-seal")]
+				command_sink: Some(command_sink.clone()),
 			};
 
 			crate::rpc::create_full(deps, subscription_task_executor).map_err(Into::into)

@@ -133,7 +133,13 @@ pub struct EthArgs {
 	/// Maximum fee history cache size.
 	#[clap(long, default_value = "2048")]
 	pub fee_history_limit: u64,
+
+	/// Choose sealing method.
+	#[cfg(feature = "manual-seal")]
+	#[clap(long, arg_enum, ignore_case = true)]
+	pub sealing: Sealing,
 }
+
 impl EthArgs {
 	pub fn build_eth_rpc_config(&self) -> EthRpcConfig {
 		EthRpcConfig {
@@ -141,6 +147,8 @@ impl EthArgs {
 			eth_log_block_cache: self.eth_log_block_cache,
 			max_past_logs: self.max_past_logs,
 			fee_history_limit: self.fee_history_limit,
+			#[cfg(feature = "manual-seal")]
+			sealing: self.sealing,
 		}
 	}
 }
@@ -157,4 +165,25 @@ pub struct EthRpcConfig {
 
 	/// Maximum fee history cache size.
 	pub max_past_logs: u32,
+
+	/// Choose sealing method.
+	#[cfg(feature = "manual-seal")]
+	pub sealing: Sealing,
+}
+
+/// Available Sealing methods.
+#[cfg(feature = "manual-seal")]
+#[derive(Debug, Copy, Clone, clap::ArgEnum)]
+pub enum Sealing {
+	// Seal using rpc method.
+	Manual,
+	// Seal when transaction is executed.
+	Instant,
+}
+
+#[cfg(feature = "manual-seal")]
+impl Default for Sealing {
+	fn default() -> Sealing {
+		Sealing::Manual
+	}
 }
