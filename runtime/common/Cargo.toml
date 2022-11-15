@@ -9,8 +9,6 @@ readme      = "README.md"
 repository  = "https://github.com/darwinia-network/darwinia-parachain"
 version     = "6.0.0"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
 # crates.io
 array-bytes    = { version = "4.1" }
@@ -43,27 +41,27 @@ xcm-executor                = { default-features = false, git = "https://github.
 default = ["std"]
 
 std = [
-    # crates.io
-    "codec/std",
-    "ethabi/std",
-    "ethereum/std",
-    "ethereum-types/std",
-    "scale-info/std",
-    # substrate
-    "frame-benchmarking/std",
-    "frame-support/std",
-    "frame-system/std",
-    "pallet-balances/std",
-    "pallet-transaction-payment/std",
-    "sp-core/std",
-    "sp-io/std",
-    "sp-runtime/std",
-    "sp-std/std",
-    # polkadot
-    "pallet-xcm/std",
-    "polkadot-core-primitives/std",
-    "polkadot-parachain/std",
-    "polkadot-runtime-parachains/std",
-    "xcm/std",
-    "xcm-executor/std",
+	# crates.io
+	"codec/std",
+	"ethabi/std",
+	"ethereum/std",
+	"ethereum-types/std",
+	"scale-info/std",
+	# substrate
+	"frame-benchmarking/std",
+	"frame-support/std",
+	"frame-system/std",
+	"pallet-balances/std",
+	"pallet-transaction-payment/std",
+	"sp-core/std",
+	"sp-io/std",
+	"sp-runtime/std",
+	"sp-std/std",
+	# polkadot
+	"pallet-xcm/std",
+	"polkadot-core-primitives/std",
+	"polkadot-parachain/std",
+	"polkadot-runtime-parachains/std",
+	"xcm/std",
+	"xcm-executor/std",
 ]
