@@ -12,29 +12,9 @@ version     = "6.0.0"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-# crates.io
-array-bytes    = { version = "4.1" }
-codec          = { package = "parity-scale-codec", version = "3.1", default-features = false, features = ["derive"] }
-ethabi         = { version = "17.0", default-features = false }
-ethereum       = { version = "0.12", default-features = false, features = ["with-codec"] }
-ethereum-types = { version = "0.13.1", default-features = false, features = ["rlp", "codec"] }
-scale-info     = { version = "2.0", default-features = false, features = ["derive"] }
-smallvec       = { version = "1.9" }
 # substrate
-frame-benchmarking         = { default-features = false, optional = true, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
 frame-support              = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
-frame-system               = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
-pallet-balances            = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
-pallet-transaction-payment = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
-sp-core                    = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
-sp-io                      = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
-sp-runtime                 = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
-sp-std                     = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
 # polkadot
-pallet-xcm                  = { default-features = false, git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.30" }
-polkadot-core-primitives    = { default-features = false, git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.30" }
-polkadot-parachain          = { default-features = false, git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.30" }
-polkadot-runtime-parachains = { default-features = false, git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.30" }
 xcm                         = { default-features = false, git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.30" }
 xcm-executor                = { default-features = false, git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.30" }
 [dev-dependencies]
@@ -43,27 +23,9 @@ xcm-executor                = { default-features = false, git = "https://github.
 default = ["std"]
 
 std = [
-    # crates.io
-    "codec/std",
-    "ethabi/std",
-    "ethereum/std",
-    "ethereum-types/std",
-    "scale-info/std",
     # substrate
-    "frame-benchmarking/std",
     "frame-support/std",
-    "frame-system/std",
-    "pallet-balances/std",
-    "pallet-transaction-payment/std",
-    "sp-core/std",
-    "sp-io/std",
-    "sp-runtime/std",
-    "sp-std/std",
     # polkadot
-    "pallet-xcm/std",
-    "polkadot-core-primitives/std",
-    "polkadot-parachain/std",
-    "polkadot-runtime-parachains/std",
     "xcm/std",
     "xcm-executor/std",
 ]
