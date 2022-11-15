@@ -55,7 +55,7 @@ use sc_network::NetworkService;
 use sc_network_common::service::NetworkBlock;
 use sc_service::{Configuration, PartialComponents, TFullClient, TaskManager};
 use sc_telemetry::{Telemetry, TelemetryHandle, TelemetryWorker, TelemetryWorkerHandle};
-use sp_api::ConstructRuntimeApi;
+use sp_api::{ConstructRuntimeApi, ProvideRuntimeApi};
 use sp_core::Pair;
 use sp_keystore::SyncCryptoStorePtr;
 use sp_runtime::app_crypto::AppKey;
@@ -119,6 +119,7 @@ impl sc_executor::NativeExecutionDispatch for DarwiniaRuntimeExecutor {
 // pub fn new_partial<RuntimeApi, Executor, BIQ>(
 pub fn new_partial<RuntimeApi, Executor>(
 	config: &Configuration,
+	eth_rpc_config: &EthRpcConfig,
 	// build_import_queue: BIQ,
 ) -> Result<
 	PartialComponents<
@@ -127,7 +128,14 @@ pub fn new_partial<RuntimeApi, Executor>(
 		(),
 		sc_consensus::DefaultImportQueue<Block, FullClient<RuntimeApi, Executor>>,
 		sc_transaction_pool::FullPool<Block, FullClient<RuntimeApi, Executor>>,
-		(Option<Telemetry>, Option<TelemetryWorkerHandle>),
+		(
+			Arc<FrontierBackend<Block>>,
+			Option<FilterPool>,
+			FeeHistoryCache,
+			FeeHistoryCacheLimit,
+			Option<Telemetry>,
+			Option<TelemetryWorkerHandle>,
+		),
 	>,
 	sc_service::Error,
 >
@@ -136,7 +144,8 @@ where
 		'static + Send + Sync + ConstructRuntimeApi<Block, FullClient<RuntimeApi, Executor>>,
 	RuntimeApi::RuntimeApi: RuntimeApiCollection
 		+ sp_consensus_aura::AuraApi<Block, <<AuraId as AppKey>::Pair as Pair>::Public>,
-	sc_client_api::StateBackendFor<FullBackend, Block>: sp_api::StateBackend<Hashing>,
+	sc_client_api::StateBackendFor<FullBackend, Block>:
+		sp_api::StateBackend<Hashing>,
 	Executor: 'static + sc_executor::NativeExecutionDispatch,
 	// BIQ: FnOnce(
 	// 	Arc<FullClient<RuntimeApi, Executor>>,
@@ -198,6 +207,16 @@ where
 	// 	&task_manager,
 	// )?;
 
+	// Frontier stuffs
+	let frontier_backend = Arc::new(FrontierBackend::open(
+		Arc::clone(&client),
+		&config.database,
+		&frontier_service::db_config_dir(&config),
+	)?);
+	let filter_pool: Option<FilterPool> = Some(Arc::new(Mutex::new(BTreeMap::new())));
+	let fee_history_cache: FeeHistoryCache = Arc::new(Mutex::new(BTreeMap::new()));
+	let fee_history_cache_limit: FeeHistoryCacheLimit = eth_rpc_config.fee_history_limit;
+
 	Ok(PartialComponents {
 		backend,
 		client,
@@ -206,7 +225,14 @@ where
 		task_manager,
 		transaction_pool,
 		select_chain: (),
-		other: (telemetry, telemetry_worker_handle),
+		other: (
+			frontier_backend.clone(),
+			filter_pool,
+			fee_history_cache,
+			fee_history_cache_limit,
+			telemetry,
+			telemetry_worker_handle,
+		),
 	})
 }
 
@@ -248,7 +274,7 @@ async fn start_node_impl<RuntimeApi, Executor, RB, BIC>(
 	// build_import_queue: BIQ,
 	build_consensus: BIC,
 	hwbench: Option<sc_sysinfo::HwBench>,
-	eth_rpc_config: EthRpcConfig,
+	eth_rpc_config: &EthRpcConfig,
 ) -> sc_service::error::Result<(TaskManager, Arc<FullClient<RuntimeApi, Executor>>)>
 where
 	RuntimeApi:
@@ -287,8 +313,15 @@ where
 
 	// let params = new_partial::<RuntimeApi, Executor, BIQ>(&parachain_config,
 	// build_import_queue)?;
-	let params = new_partial::<RuntimeApi, Executor>(&parachain_config)?;
-	let (mut telemetry, telemetry_worker_handle) = params.other;
+	let params = new_partial::<RuntimeApi, Executor>(&parachain_config, eth_rpc_config)?;
+	let (
+		frontier_backend,
+		filter_pool,
+		fee_history_cache,
+		fee_history_cache_limit,
+		mut telemetry,
+		telemetry_worker_handle,
+	) = params.other;
 
 	let client = params.client.clone();
 	let backend = params.backend.clone();
@@ -315,14 +348,14 @@ where
 	let prometheus_registry = parachain_config.prometheus_registry().cloned();
 
 	let transaction_pool = params.transaction_pool.clone();
-	let frontier_backend = Arc::new(FrontierBackend::open(
-		Arc::clone(&client),
-		&parachain_config.database,
-		&frontier_service::db_config_dir(&parachain_config),
-	)?);
-	let filter_pool: Option<FilterPool> = Some(Arc::new(Mutex::new(BTreeMap::new())));
-	let fee_history_cache: FeeHistoryCache = Arc::new(Mutex::new(BTreeMap::new()));
-	let fee_history_cache_limit: FeeHistoryCacheLimit = eth_rpc_config.fee_history_limit;
+	// let frontier_backend = Arc::new(FrontierBackend::open(
+	// 	Arc::clone(&client),
+	// 	&parachain_config.database,
+	// 	&frontier_service::db_config_dir(&parachain_config),
+	// )?);
+	// let filter_pool: Option<FilterPool> = Some(Arc::new(Mutex::new(BTreeMap::new())));
+	// let fee_history_cache: FeeHistoryCache = Arc::new(Mutex::new(BTreeMap::new()));
+	// let fee_history_cache_limit: FeeHistoryCacheLimit = eth_rpc_config.fee_history_limit;
 
 	let import_queue = cumulus_client_service::SharedImportQueue::new(params.import_queue);
 
@@ -612,7 +645,7 @@ pub async fn start_parachain_node(
 			))
 		},
 		hwbench,
-		eth_rpc_config,
+		&eth_rpc_config,
 	)
 	.await
 }

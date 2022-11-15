@@ -50,11 +50,13 @@ macro_rules! construct_async_run {
 	(|$components:ident, $cli:ident, $cmd:ident, $config:ident| $( $code:tt )* ) => {{
 		let runner = $cli.create_runner($cmd)?;
 		runner.async_run(|$config| {
+			let eth_rpc_config = $cli.eth_args.build_eth_rpc_config();
 			let $components = service::new_partial::<
 				RuntimeApi,
 				DarwiniaRuntimeExecutor,
 			>(
 				&$config,
+				&eth_rpc_config
 			)?;
 			let task_manager = $components.task_manager;
 			{ $( $code )* }.map(|v| (v, task_manager))
@@ -360,18 +362,18 @@ pub fn run() -> Result<()> {
 		Some(Subcommand::FrontierDb(cmd)) => {
 			let runner = cli.create_runner(cmd)?;
 			runner.sync_run(|config| {
-				// let PartialComponents { client, other, .. } = service::new_partial(&config)?;
-				// let _ = service::new_partial(&config)?;
-				// let frontier_backend = other.2;
-				// cmd.run::<_, Block>(client, frontier_backend)
-				todo!();
+				let eth_rpc_config = cli.eth_args.build_eth_rpc_config();
+				let PartialComponents { client, other, .. } =
+					service::new_partial(&config, &eth_rpc_config)?;
+				let frontier_backend = other.0;
+				cmd.run::<_, Block>(client, frontier_backend)
 			})
 		},
 		Some(Subcommand::Benchmark(cmd)) => {
 			let runner = cli.create_runner(cmd)?;
 			// Switch on the concrete benchmark sub-command-
 			match cmd {
-				BenchmarkCmd::Pallet(cmd) =>
+				BenchmarkCmd::Pallet(cmd) =>;
 					if cfg!(feature = "runtime-benchmarks") {
 						runner.sync_run(|config| cmd.run::<Block, DarwiniaRuntimeExecutor>(config))
 					} else {
@@ -380,8 +382,11 @@ pub fn run() -> Result<()> {
 							.into())
 					},
 				BenchmarkCmd::Block(cmd) => runner.sync_run(|config| {
-					let partials =
-						service::new_partial::<RuntimeApi, DarwiniaRuntimeExecutor>(&config)?;
+					let eth_rpc_config = cli.eth_args.build_eth_rpc_config();
+					let partials = service::new_partial::<RuntimeApi, DarwiniaRuntimeExecutor>(
+						&config,
+						&eth_rpc_config,
+					)?;
 					cmd.run(partials.client)
 				}),
 				#[cfg(not(feature = "runtime-benchmarks"))]
