@@ -55,7 +55,7 @@ use sc_network::NetworkService;
 use sc_network_common::service::NetworkBlock;
 use sc_service::{Configuration, PartialComponents, TFullClient, TaskManager};
 use sc_telemetry::{Telemetry, TelemetryHandle, TelemetryWorker, TelemetryWorkerHandle};
-use sp_api::{ConstructRuntimeApi, ProvideRuntimeApi};
+use sp_api::ConstructRuntimeApi;
 use sp_core::Pair;
 use sp_keystore::SyncCryptoStorePtr;
 use sp_runtime::app_crypto::AppKey;
@@ -116,11 +116,9 @@ impl sc_executor::NativeExecutionDispatch for DarwiniaRuntimeExecutor {
 /// Use this macro if you don't actually need the full service, but just the builder in order to
 /// be able to perform chain operations.
 #[allow(clippy::type_complexity)]
-// pub fn new_partial<RuntimeApi, Executor, BIQ>(
 pub fn new_partial<RuntimeApi, Executor>(
 	config: &Configuration,
 	eth_rpc_config: &EthRpcConfig,
-	// build_import_queue: BIQ,
 ) -> Result<
 	PartialComponents<
 		FullClient<RuntimeApi, Executor>,
@@ -146,15 +144,6 @@ where
 		+ sp_consensus_aura::AuraApi<Block, <<AuraId as AppKey>::Pair as Pair>::Public>,
 	sc_client_api::StateBackendFor<FullBackend, Block>: sp_api::StateBackend<Hashing>,
 	Executor: 'static + sc_executor::NativeExecutionDispatch,
-	// BIQ: FnOnce(
-	// 	Arc<FullClient<RuntimeApi, Executor>>,
-	// 	&Configuration,
-	// 	Option<TelemetryHandle>,
-	// 	&TaskManager,
-	// ) -> Result<
-	// 	sc_consensus::DefaultImportQueue<Block, FullClient<RuntimeApi, Executor>>,
-	// 	sc_service::Error,
-	// >,
 {
 	let telemetry = config
 		.telemetry_endpoints
@@ -198,13 +187,6 @@ where
 		telemetry.as_ref().map(|telemetry| telemetry.handle()),
 		&task_manager,
 	)?;
-
-	// let import_queue = build_import_queue(
-	// 	client.clone(),
-	// 	config,
-	// 	telemetry.as_ref().map(|telemetry| telemetry.handle()),
-	// 	&task_manager,
-	// )?;
 
 	// Frontier stuffs
 	let frontier_backend = Arc::new(FrontierBackend::open(
@@ -263,14 +245,12 @@ async fn build_relay_chain_interface(
 /// This is the actual implementation that is abstract over the executor and the runtime api.
 #[allow(clippy::too_many_arguments)]
 #[sc_tracing::logging::prefix_logs_with("Parachain")]
-// async fn start_node_impl<RuntimeApi, Executor, RB, BIQ, BIC>(
 async fn start_node_impl<RuntimeApi, Executor, RB, BIC>(
 	parachain_config: Configuration,
 	polkadot_config: Configuration,
 	collator_options: CollatorOptions,
 	id: ParaId,
 	_rpc_ext_builder: RB,
-	// build_import_queue: BIQ,
 	build_consensus: BIC,
 	hwbench: Option<sc_sysinfo::HwBench>,
 	eth_rpc_config: &EthRpcConfig,
@@ -286,16 +266,6 @@ where
 		+ Fn(
 			Arc<TFullClient<Block, RuntimeApi, Executor>>,
 		) -> Result<RpcModule<()>, sc_service::Error>,
-	// BIQ: 'static
-	// 	+ FnOnce(
-	// 		Arc<FullClient<RuntimeApi, Executor>>,
-	// 		&Configuration,
-	// 		Option<TelemetryHandle>,
-	// 		&TaskManager,
-	// 	) -> Result<
-	// 		sc_consensus::DefaultImportQueue<Block, FullClient<RuntimeApi, Executor>>,
-	// 		sc_service::Error,
-	// 	>,
 	BIC: FnOnce(
 		Arc<FullClient<RuntimeApi, Executor>>,
 		Option<&Registry>,
@@ -310,8 +280,6 @@ where
 {
 	let parachain_config = prepare_node_config(parachain_config);
 
-	// let params = new_partial::<RuntimeApi, Executor, BIQ>(&parachain_config,
-	// build_import_queue)?;
 	let PartialComponents {
 		backend,
 		client,
@@ -319,7 +287,7 @@ where
 		keystore_container,
 		mut task_manager,
 		transaction_pool,
-		select_chain,
+		select_chain: _,
 		other:
 			(
 				frontier_backend,
@@ -330,9 +298,6 @@ where
 				telemetry_worker_handle,
 			),
 	} = new_partial::<RuntimeApi, Executor>(&parachain_config, eth_rpc_config)?;
-
-	let client = client.clone();
-	let backend = backend.clone();
 
 	let (relay_chain_interface, collator_key) = build_relay_chain_interface(
 		polkadot_config,
@@ -354,18 +319,9 @@ where
 	let validator = parachain_config.role.is_authority();
 	let prometheus_registry = parachain_config.prometheus_registry().cloned();
 
-	let transaction_pool = transaction_pool.clone();
-	// let frontier_backend = Arc::new(FrontierBackend::open(
-	// 	Arc::clone(&client),
-	// 	&parachain_config.database,
-	// 	&frontier_service::db_config_dir(&parachain_config),
-	// )?);
-	// let filter_pool: Option<FilterPool> = Some(Arc::new(Mutex::new(BTreeMap::new())));
-	// let fee_history_cache: FeeHistoryCache = Arc::new(Mutex::new(BTreeMap::new()));
-	// let fee_history_cache_limit: FeeHistoryCacheLimit = eth_rpc_config.fee_history_limit;
-
 	let import_queue = cumulus_client_service::SharedImportQueue::new(import_queue);
 
+	let transaction_pool = transaction_pool.clone();
 	let overrides = frontier_service::overrides_handle(client.clone());
 	let block_data_cache = Arc::new(EthBlockDataCacheTask::new(
 		task_manager.spawn_handle(),
@@ -517,18 +473,12 @@ where
 /// Build the import queue for the parachain runtime.
 #[allow(clippy::type_complexity)]
 pub fn parachain_build_import_queue<RuntimeApi, Executor>(
-	// client: Arc<TFullClient<Block, RuntimeApi,
-	// NativeElseWasmExecutor<DarwiniaRuntimeExecutor>>>,
 	client: Arc<FullClient<RuntimeApi, Executor>>,
 	config: &Configuration,
 	telemetry: Option<TelemetryHandle>,
 	task_manager: &TaskManager,
 ) -> Result<
-	sc_consensus::DefaultImportQueue<
-		Block,
-		// TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<DarwiniaRuntimeExecutor>>,
-		FullClient<RuntimeApi, Executor>,
-	>,
+	sc_consensus::DefaultImportQueue<Block, FullClient<RuntimeApi, Executor>>,
 	sc_service::Error,
 >
 where
@@ -587,7 +537,6 @@ pub async fn start_parachain_node(
 		collator_options,
 		id,
 		|_| Ok(RpcModule::new(())),
-		// parachain_build_import_queue,
 		|client,
 		 prometheus_registry,
 		 telemetry,
