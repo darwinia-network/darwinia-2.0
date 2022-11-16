@@ -103,7 +103,7 @@ pub fn new_partial<RuntimeApi, Executor>(
 		sc_consensus::DefaultImportQueue<Block, FullClient<RuntimeApi, Executor>>,
 		sc_transaction_pool::FullPool<Block, FullClient<RuntimeApi, Executor>>,
 		(
-			FrontierBlockImport<
+			fc_consensus::FrontierBlockImport<
 				Block,
 				Arc<FullClient<RuntimeApi, Executor>>,
 				FullClient<RuntimeApi, Executor>,
@@ -176,14 +176,7 @@ where
 
 	#[cfg(not(feature = "manual-seal"))]
 	{
-		// let import_queue = parachain_build_import_queue(
-		// 	client.clone(),
-		// 	config,
-		// 	telemetry.as_ref().map(|telemetry| telemetry.handle()),
-		// 	&task_manager,
-		// )?;
 		let slot_duration = cumulus_client_consensus_aura::slot_duration(&*client)?;
-
 		let import_queue = cumulus_client_consensus_aura::import_queue::<
 			sp_consensus_aura::sr25519::AuthorityPair,
 			_,
@@ -196,7 +189,6 @@ where
 			client: client.clone(),
 			create_inherent_data_providers: move |_, _| async move {
 				let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
-
 				let slot =
 				sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
 					*timestamp,
@@ -651,7 +643,7 @@ where
 				telemetry_worker_handle,
 			),
 	} = new_partial::<RuntimeApi, Executor>(&parachain_config, eth_rpc_config)?;
-	// TODO: FIX ME
+	// Choose longestChain fork choice in manual-seal.
 	let select_chain = sc_consensus::LongestChain::new(backend.clone());
 
 	let (relay_chain_interface, _collator_key) = build_relay_chain_interface(
@@ -673,10 +665,10 @@ where
 	let block_announce_validator =
 		cumulus_client_network::BlockAnnounceValidator::new(relay_chain_interface.clone(), id);
 
-	// let force_authoring = parachain_config.force_authoring;
 	let validator = parachain_config.role.is_authority();
 	let prometheus_registry = parachain_config.prometheus_registry().cloned();
 	let import_queue = cumulus_client_service::SharedImportQueue::new(import_queue);
+
 	let (network, system_rpc_tx, tx_handler_controller, start_network) =
 		sc_service::build_network(sc_service::BuildNetworkParams {
 			config: &parachain_config,
@@ -769,12 +761,6 @@ where
 		}
 	}
 
-	// let announce_block = {
-	// 	let network = network.clone();
-	// 	Arc::new(move |hash, data| network.announce_block(hash, data))
-	// };
-	// let relay_chain_slot_duration = Duration::from_secs(6);
-
 	if validator {
 		const INHERENT_IDENTIFIER: sp_inherents::InherentIdentifier = *b"timstap0";
 		const SLOT_DURATION: u64 = 6000;
@@ -817,7 +803,6 @@ where
 			let mock_timestamp = MockTimestampInherentDataProvider;
 			Ok(mock_timestamp)
 		};
-
 		let manual_seal = match eth_rpc_config.sealing {
 			Sealing::Manual =>
 				futures::future::Either::Left(sc_consensus_manual_seal::run_manual_seal(
