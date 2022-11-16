@@ -22,7 +22,6 @@
 use std::{
 	collections::BTreeMap,
 	sync::{Arc, Mutex},
-	time::Duration,
 };
 // darwinia
 #[cfg(feature = "manual-seal")]
@@ -30,10 +29,7 @@ use crate::cli::Sealing;
 use crate::frontier_service;
 use darwinia_runtime::AuraId;
 use dc_primitives::*;
-// frontier
-use fc_consensus::FrontierBlockImport;
 // substrate
-use sc_network_common::service::NetworkBlock;
 use sp_core::Pair;
 use sp_runtime::app_crypto::AppKey;
 
@@ -168,8 +164,11 @@ where
 		&config.database,
 		&frontier_service::db_config_dir(config),
 	)?);
-	let frontier_block_import =
-		FrontierBlockImport::new(client.clone(), client.clone(), frontier_backend.clone());
+	let frontier_block_import = fc_consensus::FrontierBlockImport::new(
+		client.clone(),
+		client.clone(),
+		frontier_backend.clone(),
+	);
 	let filter_pool = Some(Arc::new(Mutex::new(BTreeMap::new())));
 	let fee_history_cache = Arc::new(Mutex::new(BTreeMap::new()));
 	let fee_history_cache_limit = eth_rpc_config.fee_history_limit;
@@ -336,7 +335,6 @@ where
 		+ Sync
 		+ sp_api::ConstructRuntimeApi<Block, FullClient<RuntimeApi, Executor>>,
 	RuntimeApi::RuntimeApi: RuntimeApiCollection,
-	sc_client_api::StateBackendFor<FullBackend, Block>: sp_api::StateBackend<Hashing>,
 	Executor: 'static + sc_executor::NativeExecutionDispatch,
 	RB: 'static
 		+ Send
@@ -344,6 +342,11 @@ where
 			Arc<sc_service::TFullClient<Block, RuntimeApi, Executor>>,
 		) -> Result<jsonrpsee::RpcModule<()>, sc_service::Error>,
 {
+	// std
+	use std::time::Duration;
+	// substrate
+	use sc_network_common::service::NetworkBlock;
+
 	let parachain_config = cumulus_client_service::prepare_node_config(parachain_config);
 	let sc_service::PartialComponents {
 		backend,
