@@ -364,7 +364,7 @@ pub fn run() -> Result<()> {
 			let runner = cli.create_runner(cmd)?;
 
 			runner.sync_run(|config| {
-				let PartialComponents { client, other: (frontier_backend, ..), .. } =
+				let PartialComponents { client, other: (_, frontier_backend, ..), .. } =
 					service::new_partial::<RuntimeApi, DarwiniaRuntimeExecutor>(
 						&config,
 						&cli.eth_args.build_eth_rpc_config(),

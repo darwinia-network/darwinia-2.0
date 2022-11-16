@@ -32,6 +32,8 @@ use crate::cli::Sealing;
 use crate::frontier_service;
 use darwinia_runtime::AuraId;
 use dc_primitives::*;
+// frontier
+use fc_consensus::FrontierBlockImport;
 // substrate
 use sc_network_common::service::NetworkBlock;
 use sp_core::Pair;
@@ -103,6 +105,11 @@ pub fn new_partial<RuntimeApi, Executor>(
 		sc_consensus::DefaultImportQueue<Block, FullClient<RuntimeApi, Executor>>,
 		sc_transaction_pool::FullPool<Block, FullClient<RuntimeApi, Executor>>,
 		(
+			FrontierBlockImport<
+				Block,
+				Arc<FullClient<RuntimeApi, Executor>>,
+				FullClient<RuntimeApi, Executor>,
+			>,
 			Arc<fc_db::Backend<Block>>,
 			Option<fc_rpc_core::types::FilterPool>,
 			fc_rpc_core::types::FeeHistoryCache,
@@ -156,18 +163,15 @@ where
 		task_manager.spawn_essential_handle(),
 		client.clone(),
 	);
-	let import_queue = parachain_build_import_queue(
-		client.clone(),
-		config,
-		telemetry.as_ref().map(|telemetry| telemetry.handle()),
-		&task_manager,
-	)?;
+
 	// Frontier stuffs.
 	let frontier_backend = Arc::new(fc_db::Backend::open(
 		Arc::clone(&client),
 		&config.database,
 		&frontier_service::db_config_dir(config),
 	)?);
+	let frontier_block_import =
+		FrontierBlockImport::new(client.clone(), client.clone(), frontier_backend.clone());
 	let filter_pool = Some(Arc::new(Mutex::new(BTreeMap::new())));
 	let fee_history_cache = Arc::new(Mutex::new(BTreeMap::new()));
 	let fee_history_cache_limit = eth_rpc_config.fee_history_limit;
@@ -190,6 +194,7 @@ where
 			transaction_pool,
 			select_chain: (),
 			other: (
+				frontier_block_import,
 				frontier_backend.clone(),
 				filter_pool,
 				fee_history_cache,
@@ -202,10 +207,6 @@ where
 
 	#[cfg(feature = "manual-seal")]
 	{
-		use fc_consensus::FrontierBlockImport;
-		let frontier_block_import =
-			FrontierBlockImport::new(client.clone(), client.clone(), frontier_backend.clone());
-
 		let import_queue = sc_consensus_manual_seal::import_queue(
 			Box::new(frontier_block_import.clone()),
 			&task_manager.spawn_essential_handle(),
@@ -221,6 +222,7 @@ where
 			transaction_pool,
 			select_chain: (),
 			other: (
+				frontier_block_import,
 				frontier_backend.clone(),
 				filter_pool,
 				fee_history_cache,
@@ -321,6 +323,7 @@ where
 		select_chain: _,
 		other:
 			(
+				frontier_block_import,
 				frontier_backend,
 				filter_pool,
 				fee_history_cache,
@@ -352,6 +355,7 @@ where
 	let force_authoring = parachain_config.force_authoring;
 	let validator = parachain_config.role.is_authority();
 	let prometheus_registry = parachain_config.prometheus_registry().cloned();
+	let import_queue = cumulus_client_service::SharedImportQueue::new(import_queue);
 
 	let (network, system_rpc_tx, tx_handler_controller, start_network) =
 		sc_service::build_network(sc_service::BuildNetworkParams {
@@ -373,8 +377,6 @@ where
 		eth_rpc_config.eth_statuses_cache,
 		prometheus_registry.clone(),
 	));
-	#[cfg(feature = "manual-seal")]
-	let (command_sink, commands_stream) = futures::channel::mpsc::channel(1000);
 	let rpc_builder = {
 		let client = client.clone();
 		let pool = transaction_pool.clone();
@@ -803,6 +805,7 @@ where
 		select_chain: _,
 		other:
 			(
+				frontier_block_import,
 				frontier_backend,
 				filter_pool,
 				fee_history_cache,
@@ -837,7 +840,6 @@ where
 	let validator = parachain_config.role.is_authority();
 	let prometheus_registry = parachain_config.prometheus_registry().cloned();
 	let import_queue = cumulus_client_service::SharedImportQueue::new(import_queue);
-
 	let (network, system_rpc_tx, tx_handler_controller, start_network) =
 		sc_service::build_network(sc_service::BuildNetworkParams {
 			config: &parachain_config,
@@ -858,7 +860,6 @@ where
 		eth_rpc_config.eth_statuses_cache,
 		prometheus_registry.clone(),
 	));
-	#[cfg(feature = "manual-seal")]
 	let (command_sink, commands_stream) = futures::channel::mpsc::channel(1000);
 	let rpc_builder = {
 		let client = client.clone();
@@ -886,7 +887,6 @@ where
 				fee_history_cache_limit,
 				overrides: overrides.clone(),
 				block_data_cache: block_data_cache.clone(),
-				#[cfg(feature = "manual-seal")]
 				command_sink: Some(command_sink.clone()),
 			};
 
@@ -985,9 +985,9 @@ where
 		let manual_seal = match eth_rpc_config.sealing {
 			Sealing::Manual => future::Either::Left(sc_consensus_manual_seal::run_manual_seal(
 				sc_consensus_manual_seal::ManualSealParams {
-					block_import: import_queue,
+					block_import: frontier_block_import,
 					env,
-					client,
+					client: client.clone(),
 					pool: transaction_pool,
 					commands_stream,
 					select_chain,
@@ -997,9 +997,9 @@ where
 			)),
 			Sealing::Instant => future::Either::Right(sc_consensus_manual_seal::run_instant_seal(
 				sc_consensus_manual_seal::InstantSealParams {
-					block_import: import_queue,
+					block_import: frontier_block_import,
 					env,
-					client,
+					client: client.clone(),
 					pool: transaction_pool,
 					select_chain,
 					consensus_data_provider: None,
