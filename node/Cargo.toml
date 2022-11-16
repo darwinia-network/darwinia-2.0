@@ -20,6 +20,7 @@ futures   = { version = "0.3" }
 jsonrpsee = { version = "0.15", features = ["server"] }
 log       = { version = "0.4" }
 serde     = { version = "1.0", features = ["derive"] }
+async-trait = "0.1"
 
 # cumulus
 cumulus-client-cli                      = { git = "https://github.com/paritytech/cumulus.git", branch = "polkadot-v0.9.30" }

@@ -1862,6 +1862,7 @@ dependencies = [
 name = "darwinia"
 version = "6.0.0"
 dependencies = [
+ "async-trait",
  "clap",
  "cumulus-client-cli",
  "cumulus-client-collator",
