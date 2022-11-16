@@ -24,9 +24,6 @@ use std::{
 	sync::{Arc, Mutex},
 	time::Duration,
 };
-// frontier
-use fc_db::Backend as FrontierBackend;
-use fc_rpc_core::types::{FeeHistoryCache, FeeHistoryCacheLimit, FilterPool};
 // darwinia
 use crate::frontier_service;
 use darwinia_runtime::AuraId;
@@ -102,10 +99,10 @@ pub fn new_partial<RuntimeApi, Executor>(
 		sc_consensus::DefaultImportQueue<Block, FullClient<RuntimeApi, Executor>>,
 		sc_transaction_pool::FullPool<Block, FullClient<RuntimeApi, Executor>>,
 		(
-			Arc<FrontierBackend<Block>>,
-			Option<FilterPool>,
-			FeeHistoryCache,
-			FeeHistoryCacheLimit,
+			Arc<fc_db::Backend<Block>>,
+			Option<fc_rpc_core::types::FilterPool>,
+			fc_rpc_core::types::FeeHistoryCache,
+			fc_rpc_core::types::FeeHistoryCacheLimit,
 			Option<sc_telemetry::Telemetry>,
 			Option<sc_telemetry::TelemetryWorkerHandle>,
 		),
@@ -155,23 +152,21 @@ where
 		task_manager.spawn_essential_handle(),
 		client.clone(),
 	);
-
 	let import_queue = parachain_build_import_queue(
 		client.clone(),
 		config,
 		telemetry.as_ref().map(|telemetry| telemetry.handle()),
 		&task_manager,
 	)?;
-
-	// Frontier stuffs
-	let frontier_backend = Arc::new(FrontierBackend::open(
+	// Frontier stuffs.
+	let frontier_backend = Arc::new(fc_db::Backend::open(
 		Arc::clone(&client),
 		&config.database,
-		&frontier_service::db_config_dir(&config),
+		&frontier_service::db_config_dir(config),
 	)?);
-	let filter_pool: Option<FilterPool> = Some(Arc::new(Mutex::new(BTreeMap::new())));
-	let fee_history_cache: FeeHistoryCache = Arc::new(Mutex::new(BTreeMap::new()));
-	let fee_history_cache_limit: FeeHistoryCacheLimit = eth_rpc_config.fee_history_limit;
+	let filter_pool = Some(Arc::new(Mutex::new(BTreeMap::new())));
+	let fee_history_cache = Arc::new(Mutex::new(BTreeMap::new()));
+	let fee_history_cache_limit = eth_rpc_config.fee_history_limit;
 
 	Ok(sc_service::PartialComponents {
 		backend,
@@ -182,7 +177,7 @@ where
 		transaction_pool,
 		select_chain: (),
 		other: (
-			frontier_backend.clone(),
+			frontier_backend,
 			filter_pool,
 			fee_history_cache,
 			fee_history_cache_limit,
@@ -325,7 +320,6 @@ where
 			})),
 			warp_sync: None,
 		})?;
-
 	let overrides = frontier_service::overrides_handle(client.clone());
 	let block_data_cache = Arc::new(fc_rpc::EthBlockDataCacheTask::new(
 		task_manager.spawn_handle(),
@@ -462,7 +456,6 @@ where
 }
 
 /// Build the import queue for the parachain runtime.
-#[allow(clippy::type_complexity)]
 pub fn parachain_build_import_queue<RuntimeApi, Executor>(
 	client: Arc<FullClient<RuntimeApi, Executor>>,
 	config: &sc_service::Configuration,
@@ -608,7 +601,7 @@ pub async fn start_parachain_node(
 			}))
 		},
 		hwbench,
-		&eth_rpc_config,
+		eth_rpc_config,
 	)
 	.await
 }
