@@ -21,8 +21,6 @@ use std::net::SocketAddr;
 // crates.io
 use codec::Encode;
 use log::info;
-// cumulus
-use cumulus_primitives_core::ParaId;
 // darwinia
 use crate::{
 	chain_spec,
@@ -39,10 +37,7 @@ use sc_cli::{
 	ChainSpec, CliConfiguration, DefaultConfigurationValues, ImportParams, KeystoreParams,
 	NetworkParams, Result, RuntimeVersion, SharedParams, SubstrateCli,
 };
-use sc_service::{
-	config::{BasePath, PrometheusConfig},
-	DatabaseSource, PartialComponents, TaskManager,
-};
+use sc_service::{config::BasePath, DatabaseSource};
 use sp_core::hexdisplay::HexDisplay;
 use sp_runtime::traits::{AccountIdConversion, Block as BlockT};
 
@@ -196,7 +191,7 @@ impl CliConfiguration<Self> for RelayChainCli {
 		&self,
 		default_listen_port: u16,
 		chain_spec: &Box<dyn ChainSpec>,
-	) -> Result<Option<PrometheusConfig>> {
+	) -> Result<Option<sc_service::config::PrometheusConfig>> {
 		self.base.base.prometheus_config(default_listen_port, chain_spec)
 	}
 
@@ -361,7 +356,7 @@ pub fn run() -> Result<()> {
 		Some(Subcommand::FrontierDb(cmd)) => {
 			let runner = cli.create_runner(cmd)?;
 			runner.sync_run(|config| {
-				let PartialComponents { client, other: (frontier_backend, ..), .. } =
+				let sc_service::PartialComponents { client, other: (frontier_backend, ..), .. } =
 					service::new_partial::<RuntimeApi, DarwiniaRuntimeExecutor>(
 						&config,
 						&cli.eth_args.build_eth_rpc_config(),
@@ -420,7 +415,7 @@ pub fn run() -> Result<()> {
 				// grab the task manager.
 				let registry = &runner.config().prometheus_config.as_ref().map(|cfg| &cfg.registry);
 				let task_manager =
-					TaskManager::new(runner.config().tokio_handle.clone(), *registry)
+					sc_service::TaskManager::new(runner.config().tokio_handle.clone(), *registry)
 						.map_err(|e| format!("Error: {:?}", e))?;
 
 				runner.async_run(|config| {
@@ -453,7 +448,7 @@ pub fn run() -> Result<()> {
 					[RelayChainCli::executable_name()].iter().chain(cli.relay_chain_args.iter()),
 				);
 
-				let id = ParaId::from(para_id);
+				let id = cumulus_primitives_core::ParaId::from(para_id);
 
 				let parachain_account =
 					AccountIdConversion::<polkadot_primitives::v2::AccountId>::into_account_truncating(&id);
