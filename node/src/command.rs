@@ -482,7 +482,7 @@ pub fn run() -> Result<()> {
 					collator_options,
 					id,
 					hwbench,
-					eth_rpc_config,
+					&eth_rpc_config,
 				)
 				.await
 				.map(|r| r.0)

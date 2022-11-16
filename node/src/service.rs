@@ -24,27 +24,18 @@ use std::{
 	sync::{Arc, Mutex},
 	time::Duration,
 };
-use jsonrpsee::RpcModule;
-use cumulus_client_service::prepare_node_config;
-use cumulus_client_cli::CollatorOptions;
-use polkadot_service::ParaId;
 // frontier
 use fc_db::Backend as FrontierBackend;
-use fc_rpc::EthBlockDataCacheTask;
 use fc_rpc_core::types::{FeeHistoryCache, FeeHistoryCacheLimit, FilterPool};
 // darwinia
-use crate::{cli::EthRpcConfig, frontier_service};
-use darwinia_runtime::{AuraId, RuntimeApi};
+use crate::frontier_service;
+use darwinia_runtime::AuraId;
 use dc_primitives::*;
 // substrate
 use sc_network_common::service::NetworkBlock;
-use sc_service::{Configuration, PartialComponents, TFullClient, TaskManager};
-use sc_telemetry::{Telemetry, TelemetryHandle, TelemetryWorker, TelemetryWorkerHandle};
-use sp_api::ConstructRuntimeApi;
+use sc_service::TFullClient;
 use sp_core::Pair;
-use sp_keystore::SyncCryptoStorePtr;
 use sp_runtime::app_crypto::AppKey;
-use substrate_prometheus_endpoint::Registry;
 
 type FullBackend = sc_service::TFullBackend<Block>;
 type FullClient<RuntimeApi, Executor> =
@@ -102,8 +93,8 @@ impl sc_executor::NativeExecutionDispatch for DarwiniaRuntimeExecutor {
 /// be able to perform chain operations.
 #[allow(clippy::type_complexity)]
 pub fn new_partial<RuntimeApi, Executor>(
-	config: &Configuration,
-	eth_rpc_config: &EthRpcConfig,
+	config: &sc_service::Configuration,
+	eth_rpc_config: &crate::cli::EthRpcConfig,
 ) -> Result<
 	sc_service::PartialComponents<
 		FullClient<RuntimeApi, Executor>,
@@ -116,8 +107,8 @@ pub fn new_partial<RuntimeApi, Executor>(
 			Option<FilterPool>,
 			FeeHistoryCache,
 			FeeHistoryCacheLimit,
-			Option<Telemetry>,
-			Option<TelemetryWorkerHandle>,
+			Option<sc_telemetry::Telemetry>,
+			Option<sc_telemetry::TelemetryWorkerHandle>,
 		),
 	>,
 	sc_service::Error,
@@ -183,7 +174,7 @@ where
 	let fee_history_cache: FeeHistoryCache = Arc::new(Mutex::new(BTreeMap::new()));
 	let fee_history_cache_limit: FeeHistoryCacheLimit = eth_rpc_config.fee_history_limit;
 
-	Ok(PartialComponents {
+	Ok(sc_service::PartialComponents {
 		backend,
 		client,
 		import_queue,
@@ -242,15 +233,15 @@ async fn build_relay_chain_interface(
 #[allow(clippy::too_many_arguments)]
 #[sc_tracing::logging::prefix_logs_with("Parachain")]
 async fn start_node_impl<RuntimeApi, Executor, RB, BIC>(
-	parachain_config: Configuration,
-	polkadot_config: Configuration,
-	collator_options: CollatorOptions,
-	id: ParaId,
+	parachain_config: sc_service::Configuration,
+	polkadot_config: sc_service::Configuration,
+	collator_options: cumulus_client_cli::CollatorOptions,
+	id: cumulus_primitives_core::ParaId,
 	_rpc_ext_builder: RB,
 	build_consensus: BIC,
 	hwbench: Option<sc_sysinfo::HwBench>,
-	eth_rpc_config: &EthRpcConfig,
-) -> sc_service::error::Result<(TaskManager, Arc<FullClient<RuntimeApi, Executor>>)>
+	eth_rpc_config: &crate::cli::EthRpcConfig,
+) -> sc_service::error::Result<(sc_service::TaskManager, Arc<FullClient<RuntimeApi, Executor>>)>
 where
 	RuntimeApi: 'static
 		+ Send
@@ -263,7 +254,7 @@ where
 		+ Send
 		+ Fn(
 			Arc<TFullClient<Block, RuntimeApi, Executor>>,
-		) -> Result<RpcModule<()>, sc_service::Error>,
+		) -> Result<jsonrpsee::RpcModule<()>, sc_service::Error>,
 	BIC: FnOnce(
 		Arc<FullClient<RuntimeApi, Executor>>,
 		Option<&substrate_prometheus_endpoint::Registry>,
@@ -279,8 +270,8 @@ where
 		sc_service::Error,
 	>,
 {
-	let parachain_config = prepare_node_config(parachain_config);
-	let PartialComponents {
+	let parachain_config = cumulus_client_service::prepare_node_config(parachain_config);
+	let sc_service::PartialComponents {
 		backend,
 		client,
 		import_queue,
@@ -337,7 +328,7 @@ where
 		})?;
 
 	let overrides = frontier_service::overrides_handle(client.clone());
-	let block_data_cache = Arc::new(EthBlockDataCacheTask::new(
+	let block_data_cache = Arc::new(fc_rpc::EthBlockDataCacheTask::new(
 		task_manager.spawn_handle(),
 		overrides.clone(),
 		eth_rpc_config.eth_log_block_cache,
@@ -475,16 +466,18 @@ where
 #[allow(clippy::type_complexity)]
 pub fn parachain_build_import_queue<RuntimeApi, Executor>(
 	client: Arc<FullClient<RuntimeApi, Executor>>,
-	config: &Configuration,
-	telemetry: Option<TelemetryHandle>,
-	task_manager: &TaskManager,
+	config: &sc_service::Configuration,
+	telemetry: Option<sc_telemetry::TelemetryHandle>,
+	task_manager: &sc_service::TaskManager,
 ) -> Result<
 	sc_consensus::DefaultImportQueue<Block, FullClient<RuntimeApi, Executor>>,
 	sc_service::Error,
 >
 where
-	RuntimeApi:
-		'static + Send + Sync + ConstructRuntimeApi<Block, FullClient<RuntimeApi, Executor>>,
+	RuntimeApi: 'static
+		+ Send
+		+ Sync
+		+ sp_api::ConstructRuntimeApi<Block, FullClient<RuntimeApi, Executor>>,
 	RuntimeApi::RuntimeApi: RuntimeApiCollection,
 	Executor: 'static + sc_executor::NativeExecutionDispatch,
 {
@@ -525,7 +518,7 @@ pub async fn start_parachain_node(
 	collator_options: cumulus_client_cli::CollatorOptions,
 	id: cumulus_primitives_core::ParaId,
 	hwbench: Option<sc_sysinfo::HwBench>,
-	eth_rpc_config: EthRpcConfig,
+	eth_rpc_config: &crate::cli::EthRpcConfig,
 ) -> sc_service::error::Result<(
 	sc_service::TaskManager,
 	Arc<
@@ -536,12 +529,12 @@ pub async fn start_parachain_node(
 		>,
 	>,
 )> {
-	start_node_impl::<RuntimeApi, DarwiniaRuntimeExecutor, _, _>(
+	start_node_impl::<darwinia_runtime::RuntimeApi, DarwiniaRuntimeExecutor, _, _>(
 		parachain_config,
 		polkadot_config,
 		collator_options,
 		id,
-		|_| Ok(RpcModule::new(())),
+		|_| Ok(jsonrpsee::RpcModule::new(())),
 		|client,
 		 prometheus_registry,
 		 telemetry,
