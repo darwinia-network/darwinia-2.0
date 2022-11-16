@@ -33,7 +33,6 @@ use darwinia_runtime::AuraId;
 use dc_primitives::*;
 // substrate
 use sc_network_common::service::NetworkBlock;
-use sc_service::TFullClient;
 use sp_core::Pair;
 use sp_runtime::app_crypto::AppKey;
 
@@ -253,7 +252,7 @@ where
 	RB: 'static
 		+ Send
 		+ Fn(
-			Arc<TFullClient<Block, RuntimeApi, Executor>>,
+			Arc<sc_service::TFullClient<Block, RuntimeApi, Executor>>,
 		) -> Result<jsonrpsee::RpcModule<()>, sc_service::Error>,
 	BIC: FnOnce(
 		Arc<FullClient<RuntimeApi, Executor>>,
