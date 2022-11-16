@@ -457,17 +457,73 @@ where
 	let relay_chain_slot_duration = Duration::from_secs(6);
 
 	if validator {
-		let parachain_consensus = build_consensus(
+		let telemetry = telemetry.as_ref().map(|t| t.handle());
+		let prometheus_registry = prometheus_registry.as_ref();
+		let slot_duration = cumulus_client_consensus_aura::slot_duration(&*client)?;
+
+		let proposer_factory = sc_basic_authorship::ProposerFactory::with_proof_recording(
+			task_manager.spawn_handle(),
 			client.clone(),
-			prometheus_registry.as_ref(),
-			telemetry.as_ref().map(|t| t.handle()),
-			&task_manager,
-			relay_chain_interface.clone(),
 			transaction_pool,
-			network,
-			keystore_container.sync_keystore(),
+			prometheus_registry,
+			telemetry.clone(),
+		);
+
+		let relay_chain_interface_clone = relay_chain_interface.clone();
+		let parachain_consensus = cumulus_client_consensus_aura::AuraConsensus::build::<
+			sp_consensus_aura::sr25519::AuthorityPair,
+			_,
+			_,
+			_,
+			_,
+			_,
+			_,
+		>(cumulus_client_consensus_aura::BuildAuraConsensusParams {
+			proposer_factory,
+			create_inherent_data_providers: move |_, (relay_parent, validation_data)| {
+				let relay_chain_interface = relay_chain_interface.clone();
+				async move {
+					let parachain_inherent =
+						cumulus_primitives_parachain_inherent::ParachainInherentData::create_at(
+							relay_parent,
+							&relay_chain_interface,
+							&validation_data,
+							id,
+						)
+						.await;
+					let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
+
+					let slot =
+					sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
+						*timestamp,
+						slot_duration,
+					);
+
+					let parachain_inherent = parachain_inherent.ok_or_else(|| {
+						Box::<dyn std::error::Error + Send + Sync>::from(
+							"Failed to create parachain inherent",
+						)
+					})?;
+					Ok((slot, timestamp, parachain_inherent))
+				}
+			},
+			block_import: client.clone(),
+			para_client: client.clone(),
+			backoff_authoring_blocks: Option::<()>::None,
+			sync_oracle: network,
+			keystore: keystore_container.sync_keystore(),
 			force_authoring,
-		)?;
+			slot_duration,
+			// We got around 500ms for proposing
+			block_proposal_slot_portion: cumulus_client_consensus_aura::SlotProportion::new(
+				1f32 / 24f32,
+			),
+			// And a maximum of 750ms if slots are skipped
+			max_block_proposal_slot_portion: Some(
+				cumulus_client_consensus_aura::SlotProportion::new(1f32 / 16f32),
+			),
+			telemetry,
+		});
 
 		let spawner = task_manager.spawn_handle();
 
@@ -477,7 +533,7 @@ where
 			announce_block,
 			client: client.clone(),
 			task_manager: &mut task_manager,
-			relay_chain_interface,
+			relay_chain_interface: relay_chain_interface_clone.clone(),
 			spawner,
 			parachain_consensus,
 			import_queue,
