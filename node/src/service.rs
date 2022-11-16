@@ -24,8 +24,6 @@ use std::{
 	sync::{Arc, Mutex},
 	time::Duration,
 };
-// crates.io
-use futures::future;
 // darwinia
 #[cfg(feature = "manual-seal")]
 use crate::cli::Sealing;
@@ -178,12 +176,39 @@ where
 
 	#[cfg(not(feature = "manual-seal"))]
 	{
-		let import_queue = parachain_build_import_queue(
-			client.clone(),
-			config,
-			telemetry.as_ref().map(|telemetry| telemetry.handle()),
-			&task_manager,
-		)?;
+		// let import_queue = parachain_build_import_queue(
+		// 	client.clone(),
+		// 	config,
+		// 	telemetry.as_ref().map(|telemetry| telemetry.handle()),
+		// 	&task_manager,
+		// )?;
+		let slot_duration = cumulus_client_consensus_aura::slot_duration(&*client)?;
+
+		let import_queue = cumulus_client_consensus_aura::import_queue::<
+			sp_consensus_aura::sr25519::AuthorityPair,
+			_,
+			_,
+			_,
+			_,
+			_,
+		>(cumulus_client_consensus_aura::ImportQueueParams {
+			block_import: frontier_block_import.clone(),
+			client: client.clone(),
+			create_inherent_data_providers: move |_, _| async move {
+				let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
+
+				let slot =
+				sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
+					*timestamp,
+					slot_duration,
+				);
+
+				Ok((slot, timestamp))
+			},
+			registry: config.prometheus_registry(),
+			spawner: &task_manager.spawn_essential_handle(),
+			telemetry: telemetry.as_ref().map(|telemetry| telemetry.handle()),
+		})?;
 
 		Ok(sc_service::PartialComponents {
 			backend,
@@ -268,19 +293,48 @@ async fn build_relay_chain_interface(
 	}
 }
 
+/// Start a parachain node.
+pub async fn start_parachain_node(
+	parachain_config: sc_service::Configuration,
+	polkadot_config: sc_service::Configuration,
+	collator_options: cumulus_client_cli::CollatorOptions,
+	id: cumulus_primitives_core::ParaId,
+	hwbench: Option<sc_sysinfo::HwBench>,
+	eth_rpc_config: &crate::cli::EthRpcConfig,
+) -> sc_service::error::Result<(
+	sc_service::TaskManager,
+	Arc<
+		sc_service::TFullClient<
+			Block,
+			darwinia_runtime::RuntimeApi,
+			sc_executor::NativeElseWasmExecutor<DarwiniaRuntimeExecutor>,
+		>,
+	>,
+)> {
+	start_node_impl::<darwinia_runtime::RuntimeApi, DarwiniaRuntimeExecutor, _>(
+		parachain_config,
+		polkadot_config,
+		collator_options,
+		id,
+		|_| Ok(jsonrpsee::RpcModule::new(())),
+		hwbench,
+		eth_rpc_config,
+	)
+	.await
+}
+
 /// Start a node with the given parachain `Configuration` and relay chain `Configuration`.
 ///
 /// This is the actual implementation that is abstract over the executor and the runtime api.
 #[allow(clippy::too_many_arguments)]
 #[sc_tracing::logging::prefix_logs_with("Parachain")]
 #[cfg(not(feature = "manual-seal"))]
-async fn start_node_impl<RuntimeApi, Executor, RB, BIC>(
+async fn start_node_impl<RuntimeApi, Executor, RB>(
 	parachain_config: sc_service::Configuration,
 	polkadot_config: sc_service::Configuration,
 	collator_options: cumulus_client_cli::CollatorOptions,
 	id: cumulus_primitives_core::ParaId,
 	_rpc_ext_builder: RB,
-	build_consensus: BIC,
 	hwbench: Option<sc_sysinfo::HwBench>,
 	eth_rpc_config: &crate::cli::EthRpcConfig,
 ) -> sc_service::error::Result<(sc_service::TaskManager, Arc<FullClient<RuntimeApi, Executor>>)>
@@ -297,20 +351,6 @@ where
 		+ Fn(
 			Arc<sc_service::TFullClient<Block, RuntimeApi, Executor>>,
 		) -> Result<jsonrpsee::RpcModule<()>, sc_service::Error>,
-	BIC: FnOnce(
-		Arc<FullClient<RuntimeApi, Executor>>,
-		Option<&substrate_prometheus_endpoint::Registry>,
-		Option<sc_telemetry::TelemetryHandle>,
-		&sc_service::TaskManager,
-		Arc<dyn cumulus_relay_chain_interface::RelayChainInterface>,
-		Arc<sc_transaction_pool::FullPool<Block, FullClient<RuntimeApi, Executor>>>,
-		Arc<sc_network::NetworkService<Block, Hash>>,
-		sp_keystore::SyncCryptoStorePtr,
-		bool,
-	) -> Result<
-		Box<dyn cumulus_client_consensus_common::ParachainConsensus<Block>>,
-		sc_service::Error,
-	>,
 {
 	let parachain_config = cumulus_client_service::prepare_node_config(parachain_config);
 	let sc_service::PartialComponents {
@@ -507,7 +547,7 @@ where
 					Ok((slot, timestamp, parachain_inherent))
 				}
 			},
-			block_import: client.clone(),
+			block_import: frontier_block_import.clone(),
 			para_client: client.clone(),
 			backoff_authoring_blocks: Option::<()>::None,
 			sync_oracle: network,
@@ -562,263 +602,18 @@ where
 	Ok((task_manager, client))
 }
 
-/// Build the import queue for the parachain runtime.
-pub fn parachain_build_import_queue<RuntimeApi, Executor>(
-	client: Arc<FullClient<RuntimeApi, Executor>>,
-	config: &sc_service::Configuration,
-	telemetry: Option<sc_telemetry::TelemetryHandle>,
-	task_manager: &sc_service::TaskManager,
-) -> Result<
-	sc_consensus::DefaultImportQueue<Block, FullClient<RuntimeApi, Executor>>,
-	sc_service::Error,
->
-where
-	RuntimeApi: 'static
-		+ Send
-		+ Sync
-		+ sp_api::ConstructRuntimeApi<Block, FullClient<RuntimeApi, Executor>>,
-	RuntimeApi::RuntimeApi: RuntimeApiCollection,
-	Executor: 'static + sc_executor::NativeExecutionDispatch,
-{
-	let slot_duration = cumulus_client_consensus_aura::slot_duration(&*client)?;
-
-	cumulus_client_consensus_aura::import_queue::<
-		sp_consensus_aura::sr25519::AuthorityPair,
-		_,
-		_,
-		_,
-		_,
-		_,
-	>(cumulus_client_consensus_aura::ImportQueueParams {
-		block_import: client.clone(),
-		client,
-		create_inherent_data_providers: move |_, _| async move {
-			let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
-
-			let slot =
-				sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
-					*timestamp,
-					slot_duration,
-				);
-
-			Ok((slot, timestamp))
-		},
-		registry: config.prometheus_registry(),
-		spawner: &task_manager.spawn_essential_handle(),
-		telemetry,
-	})
-	.map_err(Into::into)
-}
-
-/// Start a parachain node.
-pub async fn start_parachain_node(
-	parachain_config: sc_service::Configuration,
-	polkadot_config: sc_service::Configuration,
-	collator_options: cumulus_client_cli::CollatorOptions,
-	id: cumulus_primitives_core::ParaId,
-	hwbench: Option<sc_sysinfo::HwBench>,
-	eth_rpc_config: &crate::cli::EthRpcConfig,
-) -> sc_service::error::Result<(
-	sc_service::TaskManager,
-	Arc<
-		sc_service::TFullClient<
-			Block,
-			darwinia_runtime::RuntimeApi,
-			sc_executor::NativeElseWasmExecutor<DarwiniaRuntimeExecutor>,
-		>,
-	>,
-)> {
-	#[cfg(not(feature = "manual-seal"))]
-	return start_node_impl::<darwinia_runtime::RuntimeApi, DarwiniaRuntimeExecutor, _, _>(
-		parachain_config,
-		polkadot_config,
-		collator_options,
-		id,
-		|_| Ok(jsonrpsee::RpcModule::new(())),
-		|client,
-		 prometheus_registry,
-		 telemetry,
-		 task_manager,
-		 relay_chain_interface,
-		 transaction_pool,
-		 sync_oracle,
-		 keystore,
-		 force_authoring| {
-			let slot_duration = cumulus_client_consensus_aura::slot_duration(&*client)?;
-
-			let proposer_factory = sc_basic_authorship::ProposerFactory::with_proof_recording(
-				task_manager.spawn_handle(),
-				client.clone(),
-				transaction_pool,
-				prometheus_registry,
-				telemetry.clone(),
-			);
-
-			Ok(cumulus_client_consensus_aura::AuraConsensus::build::<
-				sp_consensus_aura::sr25519::AuthorityPair,
-				_,
-				_,
-				_,
-				_,
-				_,
-				_,
-			>(cumulus_client_consensus_aura::BuildAuraConsensusParams {
-				proposer_factory,
-				create_inherent_data_providers: move |_, (relay_parent, validation_data)| {
-					let relay_chain_interface = relay_chain_interface.clone();
-					async move {
-						let parachain_inherent =
-							cumulus_primitives_parachain_inherent::ParachainInherentData::create_at(
-								relay_parent,
-								&relay_chain_interface,
-								&validation_data,
-								id,
-							).await;
-						let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
-
-						let slot =
-						sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
-							*timestamp,
-							slot_duration,
-						);
-
-						let parachain_inherent = parachain_inherent.ok_or_else(|| {
-							Box::<dyn std::error::Error + Send + Sync>::from(
-								"Failed to create parachain inherent",
-							)
-						})?;
-						Ok((slot, timestamp, parachain_inherent))
-					}
-				},
-				block_import: client.clone(),
-				para_client: client,
-				backoff_authoring_blocks: Option::<()>::None,
-				sync_oracle,
-				keystore,
-				force_authoring,
-				slot_duration,
-				// We got around 500ms for proposing
-				block_proposal_slot_portion: cumulus_client_consensus_aura::SlotProportion::new(
-					1f32 / 24f32,
-				),
-				// And a maximum of 750ms if slots are skipped
-				max_block_proposal_slot_portion: Some(
-					cumulus_client_consensus_aura::SlotProportion::new(1f32 / 16f32),
-				),
-				telemetry,
-			}))
-		},
-		hwbench,
-		eth_rpc_config,
-	)
-	.await;
-
-	#[cfg(feature = "manual-seal")]
-	return start_node_impl::<darwinia_runtime::RuntimeApi, DarwiniaRuntimeExecutor, _, _>(
-		parachain_config,
-		polkadot_config,
-		collator_options,
-		id,
-		|_| Ok(jsonrpsee::RpcModule::new(())),
-		|client,
-		 prometheus_registry,
-		 telemetry,
-		 task_manager,
-		 relay_chain_interface,
-		 transaction_pool,
-		 sync_oracle,
-		 keystore,
-		 force_authoring| {
-			let slot_duration = cumulus_client_consensus_aura::slot_duration(&*client)?;
-
-			let proposer_factory = sc_basic_authorship::ProposerFactory::with_proof_recording(
-				task_manager.spawn_handle(),
-				client.clone(),
-				transaction_pool,
-				prometheus_registry,
-				telemetry.clone(),
-			);
-			// let env = sc_basic_authorship::ProposerFactory::new(
-			// 	task_manager.spawn_handle(),
-			// 	client.clone(),
-			// 	transaction_pool.clone(),
-			// 	prometheus_registry.as_ref(),
-			// 	telemetry.as_ref().map(|x| x.handle()),
-			// );
-
-			Ok(cumulus_client_consensus_aura::AuraConsensus::build::<
-				sp_consensus_aura::sr25519::AuthorityPair,
-				_,
-				_,
-				_,
-				_,
-				_,
-				_,
-			>(cumulus_client_consensus_aura::BuildAuraConsensusParams {
-				proposer_factory,
-				create_inherent_data_providers: move |_, (relay_parent, validation_data)| {
-					let relay_chain_interface = relay_chain_interface.clone();
-					async move {
-						let parachain_inherent =
-							cumulus_primitives_parachain_inherent::ParachainInherentData::create_at(
-								relay_parent,
-								&relay_chain_interface,
-								&validation_data,
-								id,
-							).await;
-						let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
-
-						let slot =
-						sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
-							*timestamp,
-							slot_duration,
-						);
-
-						let parachain_inherent = parachain_inherent.ok_or_else(|| {
-							Box::<dyn std::error::Error + Send + Sync>::from(
-								"Failed to create parachain inherent",
-							)
-						})?;
-						Ok((slot, timestamp, parachain_inherent))
-					}
-				},
-				block_import: client.clone(),
-				para_client: client,
-				backoff_authoring_blocks: Option::<()>::None,
-				sync_oracle,
-				keystore,
-				force_authoring,
-				slot_duration,
-				// We got around 500ms for proposing
-				block_proposal_slot_portion: cumulus_client_consensus_aura::SlotProportion::new(
-					1f32 / 24f32,
-				),
-				// And a maximum of 750ms if slots are skipped
-				max_block_proposal_slot_portion: Some(
-					cumulus_client_consensus_aura::SlotProportion::new(1f32 / 16f32),
-				),
-				telemetry,
-			}))
-		},
-		hwbench,
-		eth_rpc_config,
-	)
-	.await;
-}
-
 /// Start a node with the given parachain `Configuration` and relay chain `Configuration`.
 ///
 /// This is the actual implementation that is abstract over the executor and the runtime api.
 #[allow(clippy::too_many_arguments)]
 #[sc_tracing::logging::prefix_logs_with("Parachain")]
 #[cfg(feature = "manual-seal")]
-async fn start_node_impl<RuntimeApi, Executor, RB, BIC>(
+async fn start_node_impl<RuntimeApi, Executor, RB>(
 	parachain_config: sc_service::Configuration,
 	polkadot_config: sc_service::Configuration,
 	collator_options: cumulus_client_cli::CollatorOptions,
 	id: cumulus_primitives_core::ParaId,
 	_rpc_ext_builder: RB,
-	_build_consensus: BIC,
 	hwbench: Option<sc_sysinfo::HwBench>,
 	eth_rpc_config: &crate::cli::EthRpcConfig,
 ) -> sc_service::error::Result<(sc_service::TaskManager, Arc<FullClient<RuntimeApi, Executor>>)>
@@ -835,20 +630,6 @@ where
 		+ Fn(
 			Arc<sc_service::TFullClient<Block, RuntimeApi, Executor>>,
 		) -> Result<jsonrpsee::RpcModule<()>, sc_service::Error>,
-	BIC: FnOnce(
-		Arc<FullClient<RuntimeApi, Executor>>,
-		Option<&substrate_prometheus_endpoint::Registry>,
-		Option<sc_telemetry::TelemetryHandle>,
-		&sc_service::TaskManager,
-		Arc<dyn cumulus_relay_chain_interface::RelayChainInterface>,
-		Arc<sc_transaction_pool::FullPool<Block, FullClient<RuntimeApi, Executor>>>,
-		Arc<sc_network::NetworkService<Block, Hash>>,
-		sp_keystore::SyncCryptoStorePtr,
-		bool,
-	) -> Result<
-		Box<dyn cumulus_client_consensus_common::ParachainConsensus<Block>>,
-		sc_service::Error,
-	>,
 {
 	let parachain_config = cumulus_client_service::prepare_node_config(parachain_config);
 	let sc_service::PartialComponents {
@@ -873,7 +654,7 @@ where
 	// TODO: FIX ME
 	let select_chain = sc_consensus::LongestChain::new(backend.clone());
 
-	let (relay_chain_interface, collator_key) = build_relay_chain_interface(
+	let (relay_chain_interface, _collator_key) = build_relay_chain_interface(
 		polkadot_config,
 		&parachain_config,
 		telemetry_worker_handle,
@@ -892,7 +673,7 @@ where
 	let block_announce_validator =
 		cumulus_client_network::BlockAnnounceValidator::new(relay_chain_interface.clone(), id);
 
-	let force_authoring = parachain_config.force_authoring;
+	// let force_authoring = parachain_config.force_authoring;
 	let validator = parachain_config.role.is_authority();
 	let prometheus_registry = parachain_config.prometheus_registry().cloned();
 	let import_queue = cumulus_client_service::SharedImportQueue::new(import_queue);
@@ -988,12 +769,11 @@ where
 		}
 	}
 
-	let announce_block = {
-		let network = network.clone();
-		Arc::new(move |hash, data| network.announce_block(hash, data))
-	};
-
-	let relay_chain_slot_duration = Duration::from_secs(6);
+	// let announce_block = {
+	// 	let network = network.clone();
+	// 	Arc::new(move |hash, data| network.announce_block(hash, data))
+	// };
+	// let relay_chain_slot_duration = Duration::from_secs(6);
 
 	if validator {
 		const INHERENT_IDENTIFIER: sp_inherents::InherentIdentifier = *b"timstap0";
@@ -1039,29 +819,31 @@ where
 		};
 
 		let manual_seal = match eth_rpc_config.sealing {
-			Sealing::Manual => future::Either::Left(sc_consensus_manual_seal::run_manual_seal(
-				sc_consensus_manual_seal::ManualSealParams {
-					block_import: frontier_block_import,
-					env,
-					client: client.clone(),
-					pool: transaction_pool,
-					commands_stream,
-					select_chain,
-					consensus_data_provider: None,
-					create_inherent_data_providers,
-				},
-			)),
-			Sealing::Instant => future::Either::Right(sc_consensus_manual_seal::run_instant_seal(
-				sc_consensus_manual_seal::InstantSealParams {
-					block_import: frontier_block_import,
-					env,
-					client: client.clone(),
-					pool: transaction_pool,
-					select_chain,
-					consensus_data_provider: None,
-					create_inherent_data_providers,
-				},
-			)),
+			Sealing::Manual =>
+				futures::future::Either::Left(sc_consensus_manual_seal::run_manual_seal(
+					sc_consensus_manual_seal::ManualSealParams {
+						block_import: frontier_block_import,
+						env,
+						client: client.clone(),
+						pool: transaction_pool,
+						commands_stream,
+						select_chain,
+						consensus_data_provider: None,
+						create_inherent_data_providers,
+					},
+				)),
+			Sealing::Instant =>
+				futures::future::Either::Right(sc_consensus_manual_seal::run_instant_seal(
+					sc_consensus_manual_seal::InstantSealParams {
+						block_import: frontier_block_import,
+						env,
+						client: client.clone(),
+						pool: transaction_pool,
+						select_chain,
+						consensus_data_provider: None,
+						create_inherent_data_providers,
+					},
+				)),
 		};
 		// we spawn the future on a background thread managed by service.
 		task_manager.spawn_essential_handle().spawn_blocking("manual-seal", None, manual_seal);
