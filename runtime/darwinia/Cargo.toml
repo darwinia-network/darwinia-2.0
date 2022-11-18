@@ -198,6 +198,12 @@ runtime-benchmarks = [
 	# cumulus optional
 	"cumulus-pallet-session-benchmarking/runtime-benchmarks",
 
+	# darwinia-messages-substrate
+	"bridge-runtime-common/runtime-benchmarks",
+	"pallet-bridge-grandpa/runtime-benchmarks",
+	"pallet-bridge-messages/runtime-benchmarks",
+	"pallet-fee-market/runtime-benchmarks",
+
 	# frontier
 	"pallet-ethereum/runtime-benchmarks",
 	"pallet-evm/runtime-benchmarks",
