@@ -30,6 +30,7 @@ sp-runtime    = { optional = true, git = "https://github.com/paritytech/substrat
 sp-std        = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
 # frontier
 fp-evm = { default-features = false, git = "https://github.com/paritytech/frontier", branch = "polkadot-v0.9.30" }
+pallet-evm = { default-features = false, git = "https://github.com/paritytech/frontier", branch = "polkadot-v0.9.30" }
 
 [features]
 default = ["std"]
@@ -46,6 +47,7 @@ std = [
 	"sp-std/std",
 	# frontier
 	"fp-evm/std",
+	"pallet-evm/std"
 ]
 
 testing = [

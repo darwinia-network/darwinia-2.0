@@ -33,7 +33,6 @@ use sha3::{Digest, Keccak256};
 //             _ => Err(PrecompileFailure::Revert {
 //                 exit_status: ExitRevert::Reverted,
 //                 output: b"Unknown action".to_vec(),
-//                 cost: 0,
 //             }),
 //         }
 //     }

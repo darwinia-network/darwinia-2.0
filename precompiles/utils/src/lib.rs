@@ -27,10 +27,10 @@ pub mod test_helper;
 
 // --- darwinia-network ---
 use crate::prelude::*;
-use darwinia_evm::GasWeightMapping;
 // --- paritytech ---
 use fp_evm::{Context, ExitError, ExitRevert, PrecompileFailure};
 use frame_support::traits::Get;
+use pallet_evm::GasWeightMapping;
 use sp_std::marker::PhantomData;
 
 /// Generic error to build abi-encoded revert output.
@@ -54,7 +54,7 @@ pub struct PrecompileHelper<'a, T> {
 	_marker: PhantomData<T>,
 }
 
-impl<'a, T: darwinia_evm::Config> PrecompileHelper<'a, T> {
+impl<'a, T: pallet_evm::Config> PrecompileHelper<'a, T> {
 	pub fn new(
 		input: &'a [u8],
 		target_gas: Option<u64>,
@@ -92,13 +92,13 @@ impl<'a, T: darwinia_evm::Config> PrecompileHelper<'a, T> {
 	}
 
 	pub fn record_db_gas(&mut self, reads: u64, writes: u64) -> EvmResult<()> {
-		let reads_cost = <T as darwinia_evm::Config>::GasWeightMapping::weight_to_gas(
-			<T as frame_system::Config>::DbWeight::get().read,
+		let reads_cost = <T as pallet_evm::Config>::GasWeightMapping::weight_to_gas(
+			<T as frame_system::Config>::DbWeight::get().reads(reads),
 		)
 		.checked_mul(reads)
 		.ok_or_else(|| revert("Cost Overflow"))?;
-		let writes_cost = <T as darwinia_evm::Config>::GasWeightMapping::weight_to_gas(
-			<T as frame_system::Config>::DbWeight::get().write,
+		let writes_cost = <T as pallet_evm::Config>::GasWeightMapping::weight_to_gas(
+			<T as frame_system::Config>::DbWeight::get().writes(writes),
 		)
 		.checked_mul(writes)
 		.ok_or_else(|| revert("Cost Overflow"))?;
@@ -145,7 +145,6 @@ pub fn revert(message: impl AsRef<[u8]>) -> PrecompileFailure {
 		output: EvmDataWriter::new_with_selector(Error::Generic)
 			.write::<Bytes>(Bytes(message.as_ref().to_vec()))
 			.build(),
-		cost: 0,
 	}
 }
 
