@@ -18,76 +18,44 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-// #[cfg(test)]
-// mod tests;
+#[cfg(test)]
+mod tests;
 
-// --- core ---
+// std
 use core::marker::PhantomData;
-// --- darwinia-network ---
-use darwinia_evm_precompile_utils::{prelude::*, revert, PrecompileHelper};
-// --- paritytech ---
-use fp_evm::{
-	Context, ExitRevert, ExitSucceed, Precompile, PrecompileFailure, PrecompileOutput,
-	PrecompileResult,
-};
+// moonbeam
+use precompile_utils::prelude::*;
 
 const PALLET_PREFIX_LENGTH: usize = 16;
-
-#[selector]
-pub enum Action {
-	StateGetStorage = "state_storage(bytes)",
-}
 
 pub trait StorageFilterT {
 	fn allow(prefix: &[u8]) -> bool;
 }
 
-pub struct StateStorage<T, F> {
-	_marker: PhantomData<(T, F)>,
+pub struct StateStorage<Runtime, Filter> {
+	_marker: PhantomData<(Runtime, Filter)>,
 }
 
-impl<T, F> Precompile for StateStorage<T, F>
+#[precompile_utils::precompile]
+impl<Runtime, Filter> StateStorage<Runtime, Filter>
 where
-	T: darwinia_evm::Config,
-	F: StorageFilterT,
+	Runtime: pallet_evm::Config,
+	Filter: StorageFilterT,
 {
-	fn execute(
-		input: &[u8],
-		target_gas: Option<u64>,
-		context: &Context,
-		is_static: bool,
-	) -> PrecompileResult {
-		let mut helper = PrecompileHelper::<T>::new(input, target_gas, context, is_static);
-		let (selector, _data) = helper.split_input()?;
-		let action = Action::from_u32(selector)?;
+	#[precompile::public("state_storage(bytes)")]
+	#[precompile::view]
+	fn state_storage_at(
+		handle: &mut impl PrecompileHandle,
+		key: UnboundedBytes,
+	) -> EvmResult<UnboundedBytes> {
+		handle.record_cost(RuntimeHelper::<Runtime>::db_read_gas_cost())?;
 
-		// Check state modifiers
-		helper.check_state_modifier(StateMutability::View)?;
+		let bytes = key.as_bytes();
+		if bytes.len() < PALLET_PREFIX_LENGTH || !Filter::allow(&bytes[0..PALLET_PREFIX_LENGTH]) {
+			return Err(revert("Read restriction"));
+		}
 
-		let output = match action {
-			Action::StateGetStorage => {
-				let mut reader = helper.reader()?;
-				reader.expect_arguments(1)?;
-				let key: Bytes = reader.read()?;
-
-				if key.0.len() < PALLET_PREFIX_LENGTH || !F::allow(&key.0[0..PALLET_PREFIX_LENGTH])
-				{
-					return Err(revert("Read restriction"));
-				}
-
-				helper.record_db_gas(1, 0)?;
-
-				frame_support::storage::unhashed::get_raw(&key.0)
-			},
-		};
-
-		Ok(PrecompileOutput {
-			exit_status: ExitSucceed::Returned,
-			cost: helper.used_gas(),
-			output: EvmDataWriter::new()
-				.write::<Bytes>(output.unwrap_or_default().as_slice().into())
-				.build(),
-			logs: Default::default(),
-		})
+		let output = frame_support::storage::unhashed::get_raw(&bytes);
+		Ok(output.unwrap_or_default().as_slice().into())
 	}
 }
