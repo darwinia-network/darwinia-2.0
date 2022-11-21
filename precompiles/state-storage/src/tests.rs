@@ -36,9 +36,6 @@ fn precompiles() -> TestPrecompiles<TestRuntime> {
 
 #[test]
 fn selectors() {
-	// let signature: Vec<u8> =
-	// Keccak256::digest("state_storage(bytes)".as_ref())[..4].try_into().unwrap();
-	// println!("{:?}", signature);
 	assert!(PCall::state_storage_at_selectors().contains(&0x78943fb7));
 }
 
