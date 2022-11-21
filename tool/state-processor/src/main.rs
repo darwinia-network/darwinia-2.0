@@ -50,7 +50,7 @@ impl State {
 
 				self.0.remove(&k).or_else(|| {
 					log::warn!(
-						"`{}::{}` not found",
+						"`{}::{}: {k}` not found",
 						String::from_utf8_lossy(pallet),
 						String::from_utf8_lossy(item)
 					);
