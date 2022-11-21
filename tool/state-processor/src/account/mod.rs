@@ -16,7 +16,6 @@ impl State {
 			v.data.free_kton *= GWEI;
 			v.data.reserved_kton *= GWEI;
 		});
-
 		remaining_ring.into_iter().for_each(|(k, v)| {
 			if let Some(a) = account_infos.get_mut(&k) {
 				a.data.free += v;
