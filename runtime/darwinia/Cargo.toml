@@ -61,6 +61,9 @@ pallet-evm-precompile-bn128  = { default-features = false, git = "https://github
 pallet-evm-precompile-modexp = { default-features = false, git = "https://github.com/paritytech/frontier", branch = "polkadot-v0.9.30" }
 pallet-evm-precompile-simple = { default-features = false, git = "https://github.com/paritytech/frontier", branch = "polkadot-v0.9.30" }
 
+# moonbeam
+xcm-primitives = { default-features = false, git = "https://github.com/darwinia-network/moonbeam", branch = "polkadot-v0.9.30" }
+
 # polkadot
 pallet-xcm              = { default-features = false, git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.30" }
 polkadot-parachain      = { default-features = false, git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.30" }
@@ -146,6 +149,9 @@ std = [
 	"pallet-evm-precompile-bn128/std",
 	"pallet-evm-precompile-modexp/std",
 	"pallet-evm-precompile-simple/std",
+
+	# moonbeam
+	"xcm-primitives/std",
 
 	# polkadot
 	"pallet-xcm/std",
