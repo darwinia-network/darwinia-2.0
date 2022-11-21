@@ -23,7 +23,7 @@ fn main() -> Result<()> {
 	let mut ring_locks = Map::default();
 	let mut kton_locks = Map::default();
 
-	let _state = State::from_file("test-data/darwinia-node-export.json")?
+	State::from_file("test-data/darwinia-node-export.json")?
 		.process_account(&mut account_infos)
 		.process_lock(&mut ring_locks, &mut kton_locks)
 		.prune(b"Babe", None)
@@ -42,9 +42,9 @@ fn main() -> Result<()> {
 		.prune(b"DarwiniaHeaderMmr", None)
 		.prune(b"Democracy", None);
 
-	dbg!(account_infos);
-	dbg!(ring_locks);
-	dbg!(kton_locks);
+	let flat_accounts = account::flatten(account_infos, ring_locks, kton_locks);
+
+	dbg!(flat_accounts);
 
 	Ok(())
 }
