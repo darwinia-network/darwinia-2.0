@@ -6,5 +6,5 @@ members = [
 	"core/*",
 	"node",
 	"runtime/*",
-	"precompiles/*"
+	# "precompiles/*"
 ]
