@@ -2208,6 +2208,8 @@ dependencies = [
  "cumulus-primitives-timestamp",
  "cumulus-primitives-utility",
  "darwinia-common-runtime",
+ "darwinia-precompile-bls12-381",
+ "darwinia-precompile-state-storage",
  "dc-primitives",
  "fp-evm",
  "fp-rpc",

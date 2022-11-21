@@ -18,6 +18,8 @@
 
 // darwinia
 use crate::*;
+use darwinia_precompile_bls12_381::BLS12381;
+use darwinia_precompile_state_storage::{EthereumStorageFilter, StateStorage};
 use dc_primitives::EVM_ADDR_PREFIX;
 // frontier
 use pallet_ethereum::EthereumBlockHashMapping;
@@ -69,7 +71,6 @@ impl FeeCalculator for FixedGasPrice {
 		(U256::from(GWEI), Weight::zero())
 	}
 }
-
 pub struct ConcatAddressMapping;
 impl<AccountId> AddressMapping<AccountId> for ConcatAddressMapping
 where
@@ -119,6 +120,9 @@ where
 			a if a == addr(8) => Some(Bn128Pairing::execute(handle)),
 			a if a == addr(9) => Some(Blake2F::execute(handle)),
 			// Non-Frontier specific nor Ethereum precompiles:
+			a if a == addr(1024) =>
+				Some(<StateStorage<Runtime, EthereumStorageFilter>>::execute(handle)),
+			a if a == addr(2048) => Some(<BLS12381<Runtime>>::execute(handle)),
 			_ => None,
 		}
 	}

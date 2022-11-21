@@ -35,8 +35,10 @@ parachain-info                  = { default-features = false, git = "https://git
 cumulus-pallet-session-benchmarking = { optional = true, default-features = false, git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.30" }
 
 # darwinia
-darwinia-common-runtime = { default-features = false, path = "../common" }
-dc-primitives           = { default-features = false, path = "../../core/primitives" }
+darwinia-common-runtime           = { default-features = false, path = "../common" }
+darwinia-precompile-bls12-381     = { default-features = false, path = "../../precompiles/bls12-381" }
+darwinia-precompile-state-storage = { default-features = false, path = "../../precompiles/state-storage" }
+dc-primitives                     = { default-features = false, path = "../../core/primitives" }
 
 # darwinia-messages-substrate
 bp-message-dispatch    = { default-features = false, git = "https://github.com/darwinia-network/darwinia-messages-substrate", branch = "polkadot-v0.9.30" }
@@ -122,6 +124,8 @@ std = [
 
 	# darwinia
 	"darwinia-common-runtime/std",
+	"darwinia-precompile-bls12-381/std",
+	"darwinia-precompile-state-storage/std",
 	"dc-primitives/std",
 
 	# darwinia-messages-substrate

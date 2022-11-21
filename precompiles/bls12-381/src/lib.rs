@@ -24,6 +24,8 @@ use core::marker::PhantomData;
 use milagro_bls::{AggregatePublicKey, AggregateSignature, PublicKey, Signature};
 // moonbeam
 use precompile_utils::prelude::*;
+// substrate
+use sp_std::vec::Vec;
 
 pub(crate) const VERIFY_ESTIMATED_COST: u64 = 100_000;
 

@@ -27,6 +27,8 @@ mod tests;
 use core::marker::PhantomData;
 // moonbeam
 use precompile_utils::prelude::*;
+// substrate
+use frame_support::{StorageHasher, Twox128};
 
 const PALLET_PREFIX_LENGTH: usize = 16;
 
@@ -36,6 +38,13 @@ pub trait StorageFilterT {
 
 pub struct StateStorage<Runtime, Filter> {
 	_marker: PhantomData<(Runtime, Filter)>,
+}
+
+pub struct EthereumStorageFilter;
+impl StorageFilterT for EthereumStorageFilter {
+	fn allow(prefix: &[u8]) -> bool {
+		prefix != Twox128::hash(b"EVM") && prefix != Twox128::hash(b"Ethereum")
+	}
 }
 
 #[precompile_utils::precompile]
