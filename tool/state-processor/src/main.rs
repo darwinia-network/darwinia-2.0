@@ -1,3 +1,5 @@
+mod account;
+
 mod type_registry;
 use type_registry::*;
 
@@ -5,7 +7,7 @@ use type_registry::*;
 use std::{env, fs::File, io::Read};
 // crates.io
 use anyhow::Result;
-use fxhash::FxHashMap;
+use fxhash::FxHashMap as Map;
 use parity_scale_codec::Decode;
 // hack-ink
 use subspector::ChainSpec;
@@ -14,13 +16,9 @@ fn main() -> Result<()> {
 	env::set_var("RUST_LOG", "state_processor");
 	pretty_env_logger::init();
 
-	let mut accounts_infos = Vec::new();
-	let mut remaining_ring = Vec::new();
-	let mut remaining_kton = Vec::new();
+	let mut account_infos = Map::default();
 	let _state = State::from_file("test-data/darwinia-node-export.json")?
-		.take::<AccountInfo>(b"System", b"Account", &mut accounts_infos)
-		.take::<u128>(b"Ethereum", b"RemainingRingBalance", &mut remaining_ring)
-		.take::<u128>(b"Ethereum", b"RemainingKtonBalance", &mut remaining_kton)
+		.process_account(&mut account_infos)
 		.prune(b"Babe", None)
 		.prune(b"Timestamp", None)
 		.prune(b"TransactionPayment", None)
@@ -37,14 +35,12 @@ fn main() -> Result<()> {
 		.prune(b"DarwiniaHeaderMmr", None)
 		.prune(b"Democracy", None);
 
-	dbg!(accounts_infos);
-	dbg!(remaining_ring);
-	dbg!(remaining_kton);
+	dbg!(account_infos);
 
 	Ok(())
 }
 
-struct State(FxHashMap<String, String>);
+struct State(Map<String, String>);
 impl State {
 	fn from_file(path: &str) -> Result<Self> {
 		let mut f = File::open(path)?;
@@ -95,7 +91,7 @@ impl State {
 		self
 	}
 
-	fn take<T>(mut self, pallet: &[u8], item: &[u8], buffer: &mut Vec<(String, T)>) -> Self
+	fn take<T>(mut self, pallet: &[u8], item: &[u8], buffer: &mut Map<String, T>) -> Self
 	where
 		T: Decode,
 	{
@@ -104,8 +100,9 @@ impl State {
 		self.0.retain(|full_key, v| {
 			if full_key.starts_with(&item_key) {
 				match decode(v) {
-					Ok(v) =>
-						buffer.push((format!("0x{}", full_key.trim_start_matches(&item_key)), v)),
+					Ok(v) => {
+						buffer.insert(format!("0x{}", full_key.trim_start_matches(&item_key)), v);
+					},
 					Err(e) => log::warn!("failed to decode `{full_key}:{v}`, due to `{e}`"),
 				}
 
