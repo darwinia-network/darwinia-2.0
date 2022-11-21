@@ -19,7 +19,7 @@ pub struct AccountAll {
 impl Processor {
 	// System storage items.
 	// https://github.com/paritytech/substrate/blob/polkadot-v0.9.16/frame/system/src/lib.rs#L545-L639
-	// Balances  storage items.
+	// Balances storage items.
 	// https://github.com/paritytech/substrate/blob/polkadot-v0.9.16/frame/balances/src/lib.rs#L486-L535
 	pub fn process_system(&mut self) -> &mut Self {
 		let mut accounts = Map::default();
@@ -29,6 +29,7 @@ impl Processor {
 		let mut para_account_infos = Map::default();
 		let mut remaining_ring = Map::default();
 		let mut remaining_kton = Map::default();
+		let mut ring_total_issuance = 0;
 
 		log::info!("take solo and remaining balances");
 		self.solo_state
@@ -87,9 +88,13 @@ impl Processor {
 		});
 
 		log::info!("build accounts");
+		log::info!("calculate ring total issuance");
 		solo_account_infos.into_iter().for_each(|(k, v)| {
 			let ring_locks = solo_ring_locks.remove(&k).unwrap_or_default();
 			let kton_locks = solo_kton_locks.remove(&k).unwrap_or_default();
+
+			ring_total_issuance += v.data.free;
+			ring_total_issuance += v.data.reserved;
 
 			accounts.insert(
 				k.clone(),
@@ -112,6 +117,9 @@ impl Processor {
 			);
 		});
 		para_account_infos.into_iter().for_each(|(k, v)| {
+			ring_total_issuance += v.data.free;
+			ring_total_issuance += v.data.reserved;
+
 			accounts
 				.entry(k.clone())
 				.and_modify(|a| {
@@ -139,7 +147,9 @@ impl Processor {
 
 		let state = &mut self.shell_chain_spec.genesis.raw.top;
 
-		log::info!("set data to shell chain");
+		log::info!("set `Balances::TotalIssuance`");
+		state.insert(item_key(b"Balances", b"TotalIssuance"), encode_value(ring_total_issuance));
+
 		log::info!("update ring misc frozen and fee frozen");
 		log::info!("set `System::Account`");
 		log::info!("set `Balances::Locks`");
