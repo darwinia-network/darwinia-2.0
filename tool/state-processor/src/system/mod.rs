@@ -100,7 +100,7 @@ impl Processor {
 				k.clone(),
 				AccountAll {
 					key: k,
-					nonce: 0,
+					nonce: v.nonce,
 					// ---
 					// TODO: check if we could ignore para's.
 					consumers: v.consumers,
@@ -123,12 +123,13 @@ impl Processor {
 			accounts
 				.entry(k.clone())
 				.and_modify(|a| {
+					a.nonce = v.nonce.max(a.nonce);
 					a.ring += v.data.free;
 					a.ring_reserved += v.data.reserved;
 				})
 				.or_insert(AccountAll {
 					key: k,
-					nonce: 0,
+					nonce: v.nonce,
 					consumers: v.consumers,
 					providers: v.providers,
 					sufficients: v.sufficients,
