@@ -1,66 +1,74 @@
-mod account;
-mod lock;
+mod balances;
+mod system;
 
 mod type_registry;
 use type_registry::*;
 
 // std
-use std::{env, fs::File, io::Read};
+use std::{
+	env,
+	fs::File,
+	io::{Read, Write},
+};
 // crates.io
 use anyhow::Result;
 use fxhash::FxHashMap;
-use parity_scale_codec::Decode;
+use parity_scale_codec::{Decode, Encode};
+use serde::de::DeserializeOwned;
 // hack-ink
 use subspector::ChainSpec;
 
-type Map<T> = FxHashMap<String, T>;
+type Map<V> = FxHashMap<String, V>;
 
 fn main() -> Result<()> {
 	env::set_var("RUST_LOG", "state_processor");
 	pretty_env_logger::init();
 
-	let mut account_infos = Map::default();
-	let mut ring_locks = Map::default();
-	let mut kton_locks = Map::default();
-
-	State::from_file("test-data/darwinia-node-export.json")?
-		.process_account(&mut account_infos)
-		.process_lock(&mut ring_locks, &mut kton_locks)
-		.prune(b"Babe", None)
-		.prune(b"Timestamp", None)
-		.prune(b"TransactionPayment", None)
-		.prune(b"Authorship", None)
-		.prune(b"ElectionProviderMultiphase", None)
-		// TODO
-		.prune(b"Offences", None)
-		.prune(b"Historical", None)
-		// TODO
-		.prune(b"Session", None)
-		.prune(b"Grandpa", None)
-		.prune(b"ImOnline", None)
-		.prune(b"AuthorityDiscovery", None)
-		.prune(b"DarwiniaHeaderMmr", None)
-		.prune(b"Democracy", None);
-
-	let flat_accounts = account::flatten(account_infos, ring_locks, kton_locks);
-
-	dbg!(flat_accounts);
+	Processor::new()?.process()?;
 
 	Ok(())
+}
+
+struct Processor {
+	solo_state: State,
+	para_state: State,
+	shell_chain_spec: ChainSpec,
+}
+impl Processor {
+	fn new() -> Result<Self> {
+		Ok(Self {
+			solo_state: State::from_file("test-data/solo.json")?,
+			para_state: State::from_file("test-data/para.json")?,
+			shell_chain_spec: from_file("test-data/shell.json")?,
+		})
+	}
+
+	fn process(mut self) -> Result<()> {
+		self.process_system();
+
+		self.save()
+	}
+
+	fn save(self) -> Result<()> {
+		log::info!("save processed chain spec");
+
+		let mut f = File::create("test-data/processed.json")?;
+		let v = serde_json::to_vec(&self.shell_chain_spec)?;
+
+		f.write_all(&v)?;
+
+		Ok(())
+	}
 }
 
 struct State(Map<String>);
 impl State {
 	fn from_file(path: &str) -> Result<Self> {
-		let mut f = File::open(path)?;
-		let mut v = Vec::new();
-
-		f.read_to_end(&mut v)?;
-
-		Ok(Self(serde_json::from_slice::<ChainSpec>(&v)?.genesis.raw.top))
+		Ok(Self(from_file::<ChainSpec>(path)?.genesis.raw.top))
 	}
 
-	fn prune(mut self, pallet: &[u8], items: Option<&[&[u8]]>) -> Self {
+	#[allow(unused)]
+	fn prune(&mut self, pallet: &[u8], items: Option<&[&[u8]]>) -> &mut Self {
 		// Prune specific storages.
 		if let Some(items) = items {
 			for item in items {
@@ -100,16 +108,16 @@ impl State {
 		self
 	}
 
-	fn take<T, F>(
-		mut self,
+	fn take<D, F>(
+		&mut self,
 		pallet: &[u8],
 		item: &[u8],
-		buffer: &mut Map<T>,
+		buffer: &mut Map<D>,
 		preprocess_key: F,
-	) -> Self
+	) -> &mut Self
 	where
-		T: Decode,
-		F: Fn(&str) -> String,
+		D: Decode,
+		F: Fn(&str, &str) -> String,
 	{
 		let item_key = item_key(pallet, item);
 
@@ -117,7 +125,7 @@ impl State {
 			if full_key.starts_with(&item_key) {
 				match decode(v) {
 					Ok(v) => {
-						buffer.insert(preprocess_key(full_key), v);
+						buffer.insert(preprocess_key(full_key, &item_key), v);
 					},
 					Err(e) => log::warn!("failed to decode `{full_key}:{v}`, due to `{e}`"),
 				}
@@ -132,6 +140,20 @@ impl State {
 	}
 }
 
+fn from_file<D>(path: &str) -> Result<D>
+where
+	D: DeserializeOwned,
+{
+	log::info!("load data from {path:?}");
+
+	let mut f = File::open(path)?;
+	let mut v = Vec::new();
+
+	f.read_to_end(&mut v)?;
+
+	Ok(serde_json::from_slice(&v)?)
+}
+
 fn pallet_key(pallet: &[u8]) -> String {
 	let prefix = subhasher::twox128(pallet);
 
@@ -144,19 +166,27 @@ fn item_key(pallet: &[u8], item: &[u8]) -> String {
 	array_bytes::bytes2hex("0x", &k.0)
 }
 
-fn decode<T>(hex: &str) -> Result<T>
+fn encode_value<V>(v: V) -> String
 where
-	T: Decode,
+	V: Encode,
+{
+	array_bytes::bytes2hex("0x", &v.encode())
+}
+
+fn decode<D>(hex: &str) -> Result<D>
+where
+	D: Decode,
 {
 	let v = array_bytes::hex2bytes(hex).map_err(|e| anyhow::anyhow!("{e:?}"))?;
 
-	Ok(T::decode(&mut &*v)?)
+	Ok(D::decode(&mut &*v)?)
 }
 
-// fn id<T>(id: T) -> T {
-// 	id
-// }
+fn get_blake2_128_concat_suffix(full_key: &str, item_key: &str) -> String {
+	full_key.trim_start_matches(item_key).into()
+}
 
-fn get_blake2_256_concat_suffix(s: &str) -> String {
-	format!("0x{}", &s[s.len() - 64..])
+#[allow(unused)]
+fn get_concat_suffix(full_key: &str, _: &str) -> String {
+	format!("0x{}", &full_key[full_key.len() - 64..])
 }

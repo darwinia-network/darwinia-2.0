@@ -444,6 +444,7 @@ dependencies = [
  "log",
  "parity-scale-codec",
  "pretty_env_logger",
+ "serde",
  "serde_json",
  "subhasher",
  "subspector",
