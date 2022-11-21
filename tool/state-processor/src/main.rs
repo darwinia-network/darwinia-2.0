@@ -14,9 +14,13 @@ fn main() -> Result<()> {
 	env::set_var("RUST_LOG", "state_processor");
 	pretty_env_logger::init();
 
-	let mut accounts_infos = <Vec<AccountInfo>>::new();
+	let mut accounts_infos = Vec::new();
+	let mut remaining_ring = Vec::new();
+	let mut remaining_kton = Vec::new();
 	let _state = State::from_file("test-data/darwinia-node-export.json")?
-		.take(b"System", b"Account", &mut accounts_infos)
+		.take::<AccountInfo>(b"System", b"Account", &mut accounts_infos)
+		.take::<u128>(b"Ethereum", b"RemainingRingBalance", &mut remaining_ring)
+		.take::<u128>(b"Ethereum", b"RemainingKtonBalance", &mut remaining_kton)
 		.prune(b"Babe", None)
 		.prune(b"Timestamp", None)
 		.prune(b"TransactionPayment", None)
@@ -34,6 +38,8 @@ fn main() -> Result<()> {
 		.prune(b"Democracy", None);
 
 	dbg!(accounts_infos);
+	dbg!(remaining_ring);
+	dbg!(remaining_kton);
 
 	Ok(())
 }
@@ -89,7 +95,7 @@ impl State {
 		self
 	}
 
-	fn take<T>(mut self, pallet: &[u8], item: &[u8], buffer: &mut Vec<T>) -> Self
+	fn take<T>(mut self, pallet: &[u8], item: &[u8], buffer: &mut Vec<(String, T)>) -> Self
 	where
 		T: Decode,
 	{
@@ -98,7 +104,8 @@ impl State {
 		self.0.retain(|full_key, v| {
 			if full_key.starts_with(&item_key) {
 				match decode(v) {
-					Ok(v) => buffer.push(v),
+					Ok(v) =>
+						buffer.push((format!("0x{}", full_key.trim_start_matches(&item_key)), v)),
 					Err(e) => log::warn!("failed to decode `{full_key}:{v}`, due to `{e}`"),
 				}
 
