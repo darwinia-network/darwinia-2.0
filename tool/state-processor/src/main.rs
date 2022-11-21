@@ -1,4 +1,5 @@
 mod account;
+mod lock;
 
 mod type_registry;
 use type_registry::*;
@@ -7,18 +8,24 @@ use type_registry::*;
 use std::{env, fs::File, io::Read};
 // crates.io
 use anyhow::Result;
-use fxhash::FxHashMap as Map;
+use fxhash::FxHashMap;
 use parity_scale_codec::Decode;
 // hack-ink
 use subspector::ChainSpec;
+
+type Map<T> = FxHashMap<String, T>;
 
 fn main() -> Result<()> {
 	env::set_var("RUST_LOG", "state_processor");
 	pretty_env_logger::init();
 
 	let mut account_infos = Map::default();
+	let mut ring_locks = Map::default();
+	let mut kton_locks = Map::default();
+
 	let _state = State::from_file("test-data/darwinia-node-export.json")?
 		.process_account(&mut account_infos)
+		.process_lock(&mut ring_locks, &mut kton_locks)
 		.prune(b"Babe", None)
 		.prune(b"Timestamp", None)
 		.prune(b"TransactionPayment", None)
@@ -36,11 +43,13 @@ fn main() -> Result<()> {
 		.prune(b"Democracy", None);
 
 	dbg!(account_infos);
+	dbg!(ring_locks);
+	dbg!(kton_locks);
 
 	Ok(())
 }
 
-struct State(Map<String, String>);
+struct State(Map<String>);
 impl State {
 	fn from_file(path: &str) -> Result<Self> {
 		let mut f = File::open(path)?;
@@ -91,7 +100,7 @@ impl State {
 		self
 	}
 
-	fn take<T>(mut self, pallet: &[u8], item: &[u8], buffer: &mut Map<String, T>) -> Self
+	fn take<T>(mut self, pallet: &[u8], item: &[u8], buffer: &mut Map<T>) -> Self
 	where
 		T: Decode,
 	{
