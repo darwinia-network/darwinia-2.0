@@ -10,8 +10,6 @@ repository  = "https://github.com/darwinia-network/darwinia"
 version     = "6.0.0"
 
 [dependencies]
-# crates.io
-num_enum = { version = "0.5.3", default-features = false }
 # frontier
 fp-evm     = { default-features = false, git = "https://github.com/paritytech/frontier", branch = "polkadot-v0.9.30" }
 pallet-evm = { default-features = false, git = "https://github.com/paritytech/frontier", branch = "polkadot-v0.9.30" }
@@ -23,16 +21,10 @@ sp-std        = { default-features = false, git = "https://github.com/paritytech
 
 [dev-dependencies]
 # crates.io
-array-bytes = { version = "4.1" }
 codec       = { package = "parity-scale-codec", version = "3.2" }
-ethereum    = { version = "0.13", features = ["with-codec"] }
 scale-info  = { version = "2.3", features = ["derive"] }
-# darwinia
-pallet-fee-market = { git = "https://github.com/darwinia-network/darwinia-messages-substrate", branch = "polkadot-v0.9.30" }
-# frontier
-fp-evm            = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v0.9.30" }
-fp-self-contained = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v0.9.30" }
-pallet-ethereum   = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v0.9.30" }
+# moonbeam
+precompile-utils = { git = "https://github.com/darwinia-network/moonbeam.git", branch = "polkadot-v0.9.30", features = [ "testing" ] }
 # paritytech
 frame-system     = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
 pallet-balances  = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
@@ -45,14 +37,12 @@ sp-runtime       = { git = "https://github.com/paritytech/substrate", branch = "
 default = ["std"]
 
 std = [
-	# crates.io
-	"num_enum/std",
 	# frontier
 	"fp-evm/std",
 	"pallet-evm/std",
 	# moonbeam
 	"precompile-utils/std",
 	# paritytech
-	"frame-support/std",
+	# "frame-support/std",
 	"sp-std/std"
 ]
