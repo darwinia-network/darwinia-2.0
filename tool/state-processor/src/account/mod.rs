@@ -21,9 +21,24 @@ impl State {
 		let mut remaining_ring = Map::default();
 		let mut remaining_kton = Map::default();
 		let s = self
-			.take::<AccountInfo>(b"System", b"Account", account_infos)
-			.take::<u128>(b"Ethereum", b"RemainingRingBalance", &mut remaining_ring)
-			.take::<u128>(b"Ethereum", b"RemainingKtonBalance", &mut remaining_kton);
+			.take::<AccountInfo, _>(
+				b"System",
+				b"Account",
+				account_infos,
+				get_blake2_256_concat_suffix,
+			)
+			.take::<u128, _>(
+				b"Ethereum",
+				b"RemainingRingBalance",
+				&mut remaining_ring,
+				get_blake2_256_concat_suffix,
+			)
+			.take::<u128, _>(
+				b"Ethereum",
+				b"RemainingKtonBalance",
+				&mut remaining_kton,
+				get_blake2_256_concat_suffix,
+			);
 
 		account_infos.iter_mut().for_each(|(_, v)| {
 			v.data.free *= GWEI;

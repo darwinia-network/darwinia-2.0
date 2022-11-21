@@ -100,9 +100,16 @@ impl State {
 		self
 	}
 
-	fn take<T>(mut self, pallet: &[u8], item: &[u8], buffer: &mut Map<T>) -> Self
+	fn take<T, F>(
+		mut self,
+		pallet: &[u8],
+		item: &[u8],
+		buffer: &mut Map<T>,
+		preprocess_key: F,
+	) -> Self
 	where
 		T: Decode,
+		F: Fn(&str) -> String,
 	{
 		let item_key = item_key(pallet, item);
 
@@ -110,7 +117,7 @@ impl State {
 			if full_key.starts_with(&item_key) {
 				match decode(v) {
 					Ok(v) => {
-						buffer.insert(format!("0x{}", full_key.trim_start_matches(&item_key)), v);
+						buffer.insert(preprocess_key(full_key), v);
 					},
 					Err(e) => log::warn!("failed to decode `{full_key}:{v}`, due to `{e}`"),
 				}
@@ -144,4 +151,12 @@ where
 	let v = array_bytes::hex2bytes(hex).map_err(|e| anyhow::anyhow!("{e:?}"))?;
 
 	Ok(T::decode(&mut &*v)?)
+}
+
+// fn id<T>(id: T) -> T {
+// 	id
+// }
+
+fn get_blake2_256_concat_suffix(s: &str) -> String {
+	format!("0x{}", &s[s.len() - 64..])
 }
