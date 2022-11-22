@@ -30,6 +30,8 @@ use serde::{Deserialize, Serialize};
 // darwinia
 use dc_primitives::*;
 // substrate
+use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
+use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_core::{Pair, Public};
 use sp_runtime::traits::{IdentifyAccount, Verify};
 

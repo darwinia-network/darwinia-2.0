@@ -20,8 +20,6 @@
 
 // std
 use std::{collections::BTreeMap, str::FromStr};
-// crates.io
-use serde::{Deserialize, Serialize};
 // cumulus
 use cumulus_primitives_core::ParaId;
 // darwinia
@@ -31,9 +29,8 @@ use dc_primitives::*;
 // frontier
 use fp_evm::GenesisAccount;
 // substrate
-use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
 use sc_service::ChainType;
-use sp_core::{Pair, Public, H160};
+use sp_core::H160;
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
 pub type ChainSpec = sc_service::GenericChainSpec<crab_runtime::GenesisConfig, Extensions>;
@@ -290,4 +287,12 @@ fn testnet_genesis(
 		},
 		base_fee: Default::default(),
 	}
+}
+
+pub fn config() -> Result<ChainSpec, String> {
+	unimplemented!("TODO")
+}
+
+pub fn genesis_config() -> ChainSpec {
+	unimplemented!("TODO")
 }

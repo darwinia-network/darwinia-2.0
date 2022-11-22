@@ -48,8 +48,8 @@ frame_support::parameter_types! {
 pub struct FindAuthorTruncated<F>(PhantomData<F>);
 impl<F: FindAuthor<u32>> FindAuthor<H160> for FindAuthorTruncated<F> {
 	fn find_author<'a, I>(digests: I) -> Option<H160>
-		where
-			I: 'a + IntoIterator<Item = (ConsensusEngineId, &'a [u8])>,
+	where
+		I: 'a + IntoIterator<Item = (ConsensusEngineId, &'a [u8])>,
 	{
 		F::find_author(digests).and_then(|i| {
 			Aura::authorities().get(i as usize).and_then(|id| {
@@ -75,8 +75,8 @@ impl FeeCalculator for FixedGasPrice {
 // TODO: Integrate to the upstream repo
 pub struct FromH160;
 impl<T> AddressMapping<T> for FromH160
-	where
-		T: From<H160>,
+where
+	T: From<H160>,
 {
 	fn into_account_id(address: H160) -> T {
 		address.into()
