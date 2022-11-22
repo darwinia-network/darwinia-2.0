@@ -33,8 +33,7 @@ use fp_evm::GenesisAccount;
 // substrate
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
 use sc_service::ChainType;
-use sp_core::{sr25519, Pair, Public, H160, U256};
-use sp_runtime::traits::{IdentifyAccount, Verify};
+use sp_core::{Pair, Public, H160};
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
 pub type ChainSpec = sc_service::GenericChainSpec<pangolin_runtime::GenesisConfig, Extensions>;
@@ -64,27 +63,19 @@ pub fn development_config() -> ChainSpec {
 				// initial collators.
 				vec![
 					(
-						get_account_id_from_seed::<sr25519::Public>("Alice"),
+						array_bytes::hex_n_into_unchecked(COLLATOR_A),
+						// Make `--alice` available for testnet.
 						get_collator_keys_from_seed("Alice"),
 					),
 					(
-						get_account_id_from_seed::<sr25519::Public>("Bob"),
+						array_bytes::hex_n_into_unchecked(COLLATOR_B),
+						// Make `--bob` available for testnet.
 						get_collator_keys_from_seed("Bob"),
 					),
 				],
 				vec![
-					get_account_id_from_seed::<sr25519::Public>("Alice"),
-					get_account_id_from_seed::<sr25519::Public>("Bob"),
-					get_account_id_from_seed::<sr25519::Public>("Charlie"),
-					get_account_id_from_seed::<sr25519::Public>("Dave"),
-					get_account_id_from_seed::<sr25519::Public>("Eve"),
-					get_account_id_from_seed::<sr25519::Public>("Ferdie"),
-					get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
-					get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
-					get_account_id_from_seed::<sr25519::Public>("Charlie//stash"),
-					get_account_id_from_seed::<sr25519::Public>("Dave//stash"),
-					get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
-					get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
+					array_bytes::hex_n_into_unchecked(COLLATOR_A),
+					array_bytes::hex_n_into_unchecked(COLLATOR_B),
 				],
 				1000.into(),
 			)
@@ -104,7 +95,7 @@ pub fn development_config() -> ChainSpec {
 pub fn local_testnet_config() -> ChainSpec {
 	// Give your base currency a unit name and decimal places
 	let mut properties = sc_chain_spec::Properties::new();
-	properties.insert("tokenSymbol".into(), "RING".into());
+	properties.insert("tokenSymbol".into(), "PRING".into());
 	properties.insert("tokenDecimals".into(), 18.into());
 	properties.insert("ss58Format".into(), 18.into());
 
@@ -119,27 +110,19 @@ pub fn local_testnet_config() -> ChainSpec {
 				// initial collators.
 				vec![
 					(
-						get_account_id_from_seed::<sr25519::Public>("Alice"),
+						array_bytes::hex_n_into_unchecked(COLLATOR_A),
+						// Make `--alice` available for testnet.
 						get_collator_keys_from_seed("Alice"),
 					),
 					(
-						get_account_id_from_seed::<sr25519::Public>("Bob"),
+						array_bytes::hex_n_into_unchecked(COLLATOR_B),
+						// Make `--bob` available for testnet.
 						get_collator_keys_from_seed("Bob"),
 					),
 				],
 				vec![
-					get_account_id_from_seed::<sr25519::Public>("Alice"),
-					get_account_id_from_seed::<sr25519::Public>("Bob"),
-					get_account_id_from_seed::<sr25519::Public>("Charlie"),
-					get_account_id_from_seed::<sr25519::Public>("Dave"),
-					get_account_id_from_seed::<sr25519::Public>("Eve"),
-					get_account_id_from_seed::<sr25519::Public>("Ferdie"),
-					get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
-					get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
-					get_account_id_from_seed::<sr25519::Public>("Charlie//stash"),
-					get_account_id_from_seed::<sr25519::Public>("Dave//stash"),
-					get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
-					get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
+					array_bytes::hex_n_into_unchecked(COLLATOR_A),
+					array_bytes::hex_n_into_unchecked(COLLATOR_B),
 				],
 				1000.into(),
 			)
@@ -149,7 +132,7 @@ pub fn local_testnet_config() -> ChainSpec {
 		// Telemetry
 		None,
 		// Protocol ID
-		Some("pangolin"),
+		Some("crab"),
 		// Fork ID
 		None,
 		// Properties
@@ -165,7 +148,7 @@ pub fn local_testnet_config() -> ChainSpec {
 pub fn shell_config() -> ChainSpec {
 	// Give your base currency a unit name and decimal places
 	let mut properties = sc_chain_spec::Properties::new();
-	properties.insert("tokenSymbol".into(), "RING".into());
+	properties.insert("tokenSymbol".into(), "PRING".into());
 	properties.insert("tokenDecimals".into(), 18.into());
 	properties.insert("ss58Format".into(), 18.into());
 
@@ -184,14 +167,16 @@ pub fn shell_config() -> ChainSpec {
 				},
 				balances: Default::default(),
 				parachain_info: pangolin_runtime::ParachainInfoConfig { parachain_id: 2046.into() },
+				// TODO: update this before final release
 				collator_selection: pangolin_runtime::CollatorSelectionConfig {
-					invulnerables: vec![get_account_id_from_seed::<sr25519::Public>("Alice")],
+					invulnerables: vec![array_bytes::hex_n_into_unchecked(COLLATOR_A)],
 					..Default::default()
 				},
+				// TODO: update this before final release
 				session: pangolin_runtime::SessionConfig {
 					keys: vec![(
-						get_account_id_from_seed::<sr25519::Public>("Alice"),
-						get_account_id_from_seed::<sr25519::Public>("Alice"),
+						array_bytes::hex_n_into_unchecked(COLLATOR_A),
+						array_bytes::hex_n_into_unchecked(COLLATOR_A),
 						session_keys(get_collator_keys_from_seed("Alice")),
 					)],
 				},
@@ -233,12 +218,10 @@ fn testnet_genesis(
 ) -> pangolin_runtime::GenesisConfig {
 	pangolin_runtime::GenesisConfig {
 		system: pangolin_runtime::SystemConfig {
-			code: pangolin_runtime::WASM_BINARY
-				.expect("WASM binary was not build, please build it!")
-				.to_vec(),
+			code: pangolin_runtime::WASM_BINARY.unwrap().to_vec(),
 		},
 		balances: pangolin_runtime::BalancesConfig {
-			balances: endowed_accounts.iter().cloned().map(|k| (k, 1 << 60)).collect(),
+			balances: endowed_accounts.iter().cloned().map(|k| (k, 100_000_000 * UNIT)).collect(),
 		},
 		parachain_info: pangolin_runtime::ParachainInfoConfig { parachain_id: id },
 		collator_selection: pangolin_runtime::CollatorSelectionConfig {
@@ -251,7 +234,7 @@ fn testnet_genesis(
 				.into_iter()
 				.map(|(acc, aura)| {
 					(
-						acc.clone(),        // account id
+						acc,                // account id
 						acc,                // validator id
 						session_keys(aura), // session keys
 					)
@@ -269,43 +252,44 @@ fn testnet_genesis(
 		ethereum: Default::default(),
 		evm: EvmConfig {
 			accounts: {
-				let mut map = BTreeMap::new();
-				map.insert(
-					// Testing account.
-					H160::from_str("0x6be02d1d3665660d22ff9624b7be0551ee1ac91b")
-						.expect("internal `H160` is valid; qed"),
-					GenesisAccount {
-						balance: U256::from_str("0xffffffffffffffffffffffffffffffff")
-							.expect("internal `U256` is valid; qed"),
-						code: Default::default(),
-						nonce: Default::default(),
-						storage: Default::default(),
-					},
-				);
-				map.insert(
-					// Benchmarking account.
-					H160::from_str("1000000000000000000000000000000000000001")
-						.expect("internal `H160` is valid; qed"),
-					GenesisAccount {
-						nonce: U256::from(1),
-						balance: U256::from(1_000_000_000_000_000_000_000_000_u128),
-						storage: Default::default(),
-						code: vec![0x00],
-					},
-				);
-
-				for precompile in PangolinPrecompiles::<Runtime>::used_addresses() {
-					map.insert(
-						precompile,
-						GenesisAccount {
-							nonce: Default::default(),
-							balance: Default::default(),
-							storage: Default::default(),
-							code: REVERT_BYTECODE.to_vec(),
-						},
-					);
-				}
-				map
+				BTreeMap::from_iter(
+					PangolinPrecompiles::<Runtime>::used_addresses()
+						.iter()
+						.map(|p| {
+							(
+								p.to_owned(),
+								GenesisAccount {
+									nonce: Default::default(),
+									balance: Default::default(),
+									storage: Default::default(),
+									code: REVERT_BYTECODE.to_vec(),
+								},
+							)
+						})
+						.chain([
+							// Testing account.
+							(
+								H160::from_str("0x6be02d1d3665660d22ff9624b7be0551ee1ac91b")
+									.unwrap(),
+								GenesisAccount {
+									balance: (10_000_000 * UNIT).into(),
+									code: Default::default(),
+									nonce: Default::default(),
+									storage: Default::default(),
+								},
+							),
+							// Benchmarking account.
+							(
+								H160::from_str("1000000000000000000000000000000000000001").unwrap(),
+								GenesisAccount {
+									nonce: 1.into(),
+									balance: (10_000_000 * UNIT).into(),
+									storage: Default::default(),
+									code: vec![0x00],
+								},
+							),
+						]),
+				)
 			},
 		},
 		base_fee: Default::default(),
