@@ -37,7 +37,7 @@ use sp_core::{Pair, Public, H160, U256};
 /// Specialized `ChainSpec` for the normal parachain runtime.
 pub type ChainSpec = sc_service::GenericChainSpec<darwinia_runtime::GenesisConfig, Extensions>;
 
-// These are are testnet-only.
+// These are are testnet-only keys.
 // address     = "0x75a1807b6aff253070b96ed9e43c0c5c17c7e1d4"
 // public-key  = "036ae37e38766cd9be397dfd42486d8aeb46c30d4b0526d12dc9f5eb6a8e4c09f5"
 // secret-seed = "0x63c24046f3b744c8cd8f74e91d9e3603577035f3119ac1389db0f461e591375d"
@@ -221,12 +221,12 @@ pub fn shell_config() -> ChainSpec {
 				},
 				balances: Default::default(),
 				parachain_info: darwinia_runtime::ParachainInfoConfig { parachain_id: 2046.into() },
-				// TODO: on final release
+				// TODO: update this before final release
 				collator_selection: darwinia_runtime::CollatorSelectionConfig {
 					invulnerables: vec![array_bytes::hex_n_into_unchecked(COLLATOR_A)],
 					..Default::default()
 				},
-				// TODO: on final release
+				// TODO: update this before final release
 				session: darwinia_runtime::SessionConfig {
 					keys: vec![(
 						array_bytes::hex_n_into_unchecked(COLLATOR_A),
