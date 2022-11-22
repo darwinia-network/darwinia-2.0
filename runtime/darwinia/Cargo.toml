@@ -244,7 +244,9 @@ try-runtime = [
 	"parachain-info/try-runtime",
 
 	# frontier
+	"pallet-base-fee/try-runtime",
 	"pallet-ethereum/try-runtime",
+	"pallet-evm/try-runtime",
 
 	# polkadot
 	"pallet-xcm/try-runtime",
