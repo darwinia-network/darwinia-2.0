@@ -2054,6 +2054,7 @@ dependencies = [
 name = "darwinia"
 version = "6.0.0"
 dependencies = [
+ "array-bytes",
  "clap",
  "cumulus-client-cli",
  "cumulus-client-collator",

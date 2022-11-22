@@ -222,12 +222,6 @@ impl WeightToFeePolynomial for WeightToFee {
 	}
 }
 
-sp_runtime::impl_opaque_keys! {
-	pub struct SessionKeys {
-		pub aura: Aura,
-	}
-}
-
 /// Runtime version.
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
