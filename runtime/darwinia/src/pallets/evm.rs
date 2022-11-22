@@ -73,8 +73,8 @@ impl FeeCalculator for FixedGasPrice {
 }
 
 // TODO: Integrate to the upstream repo
-pub struct IntoAddressMapping;
-impl<T> AddressMapping<T> for IntoAddressMapping
+pub struct FromH160;
+impl<T> AddressMapping<T> for FromH160
 where
 	T: From<H160>,
 {
@@ -142,7 +142,7 @@ where
 }
 
 impl pallet_evm::Config for Runtime {
-	type AddressMapping = IntoAddressMapping;
+	type AddressMapping = FromH160;
 	type BlockGasLimit = BlockGasLimit;
 	type BlockHashMapping = EthereumBlockHashMapping<Self>;
 	type CallOrigin = EnsureAddressRoot<AccountId>;

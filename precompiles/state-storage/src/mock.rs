@@ -22,7 +22,7 @@
 use codec::{Decode, Encode, MaxEncodedLen};
 // frontier
 use fp_evm::{Precompile, PrecompileSet};
-use pallet_evm::{AddressMapping, IdentityAddressMapping};
+use pallet_evm::IdentityAddressMapping;
 // parity
 use frame_support::{
 	pallet_prelude::Weight,
@@ -33,7 +33,6 @@ use sp_core::{H160, H256, U256};
 use sp_runtime::{
 	testing::Header,
 	traits::{BlakeTwo256, IdentityLookup},
-	AccountId32,
 };
 use sp_std::{marker::PhantomData, prelude::*};
 // darwinia
