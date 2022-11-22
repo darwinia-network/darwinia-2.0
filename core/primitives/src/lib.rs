@@ -83,19 +83,19 @@ pub const HOURS: BlockNumber = MINUTES * 60;
 pub const DAYS: BlockNumber = HOURS * 24;
 
 // Unit = the base number of indivisible units for balances
-/// 1e18 wei — 1,000,000,000,000,000,000
+/// 1e18 WEI — 1,000,000,000,000,000,000
 pub const UNIT: Balance = 1_000 * MILLIUNIT;
-/// 1e15 wei — 1,000,000,000,000,000
+/// 1e15 WEI — 1,000,000,000,000,000
 pub const MILLIUNIT: Balance = 1_000 * MICROUNIT;
-/// 1e12 wei — 1,000,000,000,000
+/// 1e12 WEI — 1,000,000,000,000
 pub const MICROUNIT: Balance = 1_000 * GWEI;
-/// 1e9 wei — 1,000,000,000
+/// 1e9 WEI — 1,000,000,000
 pub const GWEI: Balance = 1_000 * MWEI;
-/// 1e6 wei — 1,000,000
+/// 1e6 WEI — 1,000,000
 pub const MWEI: Balance = 1_000 * KWEI;
-/// 1e3 wei — 1,000
+/// 1e3 WEI — 1,000
 pub const KWEI: Balance = 1_000 * WEI;
-/// 1 wei — 1
+/// 1 WEI — 1
 pub const WEI: Balance = 1;
 
 /// Darwinia EVM addresses specific prefix.

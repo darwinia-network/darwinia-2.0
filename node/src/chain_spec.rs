@@ -322,7 +322,7 @@ fn testnet_genesis(
 					H160::from_str("0x6be02d1d3665660d22ff9624b7be0551ee1ac91b")
 						.expect("internal `H160` is valid; qed"),
 					GenesisAccount {
-						balance: U256::from(10_000_000_000_000_000_000_000_000_u128),
+						balance: U256::from(10_000_000 * UNIT),
 						code: Default::default(),
 						nonce: Default::default(),
 						storage: Default::default(),
@@ -334,7 +334,7 @@ fn testnet_genesis(
 						.expect("internal `H160` is valid; qed"),
 					GenesisAccount {
 						nonce: U256::from(1),
-						balance: U256::from(10_000_000_000_000_000_000_000_000_u128),
+						balance: U256::from(10_000_000 * UNIT),
 						storage: Default::default(),
 						code: vec![0x00],
 					},
