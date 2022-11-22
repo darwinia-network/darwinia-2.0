@@ -1,17 +1,29 @@
+// This file is part of Darwinia.
+//
+// Copyright (C) 2018-2022 Darwinia Network
+// SPDX-License-Identifier: GPL-3.0
+//
+// Darwinia is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Darwinia is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Darwinia. If not, see <https://www.gnu.org/licenses/>.
+
 mod darwinia;
-pub use darwinia::{
-	self as darwinia_chain_spec, ChainSpec as DarwiniaChainSpec
-};
+pub use darwinia::{self as darwinia_chain_spec, ChainSpec as DarwiniaChainSpec};
 
 mod crab;
-pub use darwinia::{
-	self as crab_chain_spec, ChainSpec as CrabChainSpec
-};
+pub use darwinia::{self as crab_chain_spec, ChainSpec as CrabChainSpec};
 
 mod pangolin;
-pub use darwinia::{
-	self as pangolin_chain_spec, ChainSpec as PangolinChainSpec
-};
+pub use darwinia::{self as pangolin_chain_spec, ChainSpec as PangolinChainSpec};
 
 // darwinia
 use dc_primitives::*;
@@ -54,8 +66,8 @@ pub fn get_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Pu
 
 /// Helper function to generate an account ID from seed
 pub fn get_account_id_from_seed<TPublic: Public>(seed: &str) -> AccountId
-	where
-		AccountPublic: From<<TPublic::Pair as Pair>::Public>,
+where
+	AccountPublic: From<<TPublic::Pair as Pair>::Public>,
 {
 	AccountPublic::from(get_from_seed::<TPublic>(seed)).into_account()
 }

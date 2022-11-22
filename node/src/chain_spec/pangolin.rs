@@ -26,8 +26,8 @@ use serde::{Deserialize, Serialize};
 use cumulus_primitives_core::ParaId;
 // darwinia
 use super::*;
-use pangolin_runtime::{AuraId, PangolinPrecompiles, EvmConfig, Runtime};
 use dc_primitives::*;
+use pangolin_runtime::{AuraId, EvmConfig, PangolinPrecompiles, Runtime};
 // frontier
 use fp_evm::GenesisAccount;
 // substrate
