@@ -72,9 +72,9 @@ impl FeeCalculator for FixedGasPrice {
 	}
 }
 
-// TODO: move to common runtime
-pub struct FromH160;
-impl<T> AddressMapping<T> for FromH160
+// TODO: Integrate to the upstream repo
+pub struct IntoAddressMapping;
+impl<T> AddressMapping<T> for IntoAddressMapping
 where
 	T: From<H160>,
 {
@@ -142,10 +142,9 @@ where
 }
 
 impl pallet_evm::Config for Runtime {
-	type AddressMapping = FromH160;
+	type AddressMapping = IntoAddressMapping;
 	type BlockGasLimit = BlockGasLimit;
 	type BlockHashMapping = EthereumBlockHashMapping<Self>;
-	// TODO: review
 	type CallOrigin = EnsureAddressRoot<AccountId>;
 	type ChainId = ChainId;
 	type Currency = Balances;
@@ -158,7 +157,6 @@ impl pallet_evm::Config for Runtime {
 	type Runner = pallet_evm::runner::stack::Runner<Self>;
 	type RuntimeEvent = RuntimeEvent;
 	type WeightPerGas = WeightPerGas;
-	// TODO: review
 	type WithdrawOrigin = EnsureAddressNever<AccountId>;
 }
 
