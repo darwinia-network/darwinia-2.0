@@ -8374,7 +8374,7 @@ checksum = "5b40af805b3121feab8a3c29f04d8ad262fa8e0561883e7653e024ae4479e6de"
 [[package]]
 name = "precompile-utils"
 version = "0.1.0"
-source = "git+https://github.com/darwinia-network/moonbeam.git?branch=polkadot-v0.9.30#aaa5bfa82da81503996829efd43b334fbacffde9"
+source = "git+https://github.com/darwinia-network/moonbeam.git?branch=polkadot-v0.9.30#38c37cc41b9a97482292717aec58b305d5f627f4"
 dependencies = [
  "affix",
  "evm",
@@ -8400,7 +8400,7 @@ dependencies = [
 [[package]]
 name = "precompile-utils-macro"
 version = "0.1.0"
-source = "git+https://github.com/darwinia-network/moonbeam.git?branch=polkadot-v0.9.30#aaa5bfa82da81503996829efd43b334fbacffde9"
+source = "git+https://github.com/darwinia-network/moonbeam.git?branch=polkadot-v0.9.30#38c37cc41b9a97482292717aec58b305d5f627f4"
 dependencies = [
  "case",
  "num_enum",
