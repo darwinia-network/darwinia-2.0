@@ -17,19 +17,19 @@
 // along with Darwinia. If not, see <https://www.gnu.org/licenses/>.
 
 // std
-use std::net::SocketAddr;
+use std::{env, net::SocketAddr};
 // crates.io
 use codec::Encode;
 // cumulus
 use cumulus_primitives_core::ParaId;
 // darwinia
 use crate::{
-	chain_spec,
+	chain_spec::*,
 	cli::{Cli, RelayChainCli, Subcommand},
 	frontier_service,
-	service::{self, DarwiniaRuntimeExecutor},
+	service::{self, *},
 };
-use darwinia_runtime::{Block, RuntimeApi};
+use dc_primitives::Block;
 // frontier
 use fc_db::frontier_database_dir;
 // substrate
@@ -42,25 +42,8 @@ use sc_service::{
 	config::{BasePath, PrometheusConfig},
 	DatabaseSource, PartialComponents, TaskManager,
 };
-use sp_core::hexdisplay::HexDisplay;
+use sp_core::{crypto::Ss58AddressFormatRegistry, hexdisplay::HexDisplay};
 use sp_runtime::traits::{AccountIdConversion, Block as BlockT};
-
-macro_rules! construct_async_run {
-	(|$components:ident, $cli:ident, $cmd:ident, $config:ident| $( $code:tt )* ) => {{
-		let runner = $cli.create_runner($cmd)?;
-		runner.async_run(|$config| {
-			let $components = service::new_partial::<
-				RuntimeApi,
-				DarwiniaRuntimeExecutor,
-			>(
-				&$config,
-				&$cli.eth_args.build_eth_rpc_config()
-			)?;
-			let task_manager = $components.task_manager;
-			{ $( $code )* }.map(|v| (v, task_manager))
-		})
-	}}
-}
 
 impl SubstrateCli for Cli {
 	fn impl_name() -> String {
@@ -126,11 +109,11 @@ impl SubstrateCli for RelayChainCli {
 	}
 
 	fn support_url() -> String {
-		"https://github.com/paritytech/cumulus/issues/new".into()
+		"https://github.com/darwinia-network/darwinia/issues/new".into()
 	}
 
 	fn copyright_start_year() -> i32 {
-		2020
+		2018
 	}
 
 	fn load_spec(&self, id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
@@ -276,6 +259,63 @@ impl CliConfiguration<Self> for RelayChainCli {
 
 /// Parse command line arguments into service configuration.
 pub fn run() -> Result<()> {
+	/// Creates partial components for the runtimes that are supported by the benchmarks.
+	macro_rules! construct_benchmark_partials {
+		($config:expr, |$partials:ident| $code:expr) => {
+			if $config.chain_spec.is_crab() {
+				let $partials =
+					new_partial::<CrabRuntimeApi, _>(&$config, service::build_import_queue)?;
+				$code
+			} else if $config.chain_spec.is_pangolin() {
+				let $partials =
+					new_partial::<PangolinRuntimeApi, _>(&$config, service::build_import_queue)?;
+				$code
+			} else {
+				let $partials =
+					new_partial::<DarwiniaRuntimeApi, _>(&$config, service::build_import_queue)?;
+				$code
+			}
+		};
+	}
+
+	macro_rules! construct_async_run {
+		(|$components:ident, $cli:ident, $cmd:ident, $config:ident| $( $code:tt )* ) => {{
+			let runner = $cli.create_runner($cmd)?;
+			let chain_spec = &runner.config().chain_spec;
+
+			set_default_ss58_version(chain_spec);
+
+			if chain_spec.is_crab() {
+				runner.async_run(|$config| {
+					let $components = new_partial::<CrabRuntimeApi, _>(
+						&$config,
+						service::build_import_queue,
+					)?;
+					let task_manager = $components.task_manager;
+					{ $( $code )* }.map(|v| (v, task_manager))
+				})
+			} else if chain_spec.is_pangolin() {
+				runner.async_run(|$config| {
+					let $components = new_partial::<PangolinRuntimeApi, _>(
+						&$config,
+						service::build_import_queue,
+					)?;
+					let task_manager = $components.task_manager;
+					{ $( $code )* }.map(|v| (v, task_manager))
+				})
+			} else {
+				runner.async_run(|$config| {
+					let $components = new_partial::<DarwiniaRuntimeApi, _>(
+						&$config,
+						service::build_import_queue,
+					)?;
+					let task_manager = $components.task_manager;
+					{ $( $code )* }.map(|v| (v, task_manager))
+				})
+			}
+		}}
+	}
+
 	let cli = Cli::from_args();
 
 	match &cli.subcommand {
@@ -446,7 +486,7 @@ pub fn run() -> Result<()> {
 				} else {
 					None
 				};
-				let para_id = chain_spec::Extensions::try_get(&*config.chain_spec)
+				let para_id = darwinia_chain_spec::Extensions::try_get(&*config.chain_spec)
 					.map(|e| e.para_id)
 					.ok_or("Could not find parachain ID in chain-spec.")?;
 				let polkadot_cli = RelayChainCli::new(
@@ -491,11 +531,58 @@ pub fn run() -> Result<()> {
 	}
 }
 
-fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
-	Ok(match id {
-		"dev" => Box::new(chain_spec::development_config()),
-		"" | "local" => Box::new(chain_spec::local_testnet_config()),
-		"shell" => Box::new(chain_spec::shell_config()),
-		path => Box::new(chain_spec::ChainSpec::from_json_file(std::path::PathBuf::from(path))?),
+fn load_spec(&self, id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
+	let id = if id.is_empty() {
+		let n = get_exec_name().unwrap_or_default();
+		["darwinia", "crab", "pangolin"]
+			.iter()
+			.cloned()
+			.find(|&chain| n.starts_with(chain))
+			.unwrap_or("darwinia")
+	} else {
+		id
+	};
+
+	Ok(match id.to_lowercase().as_ref() {
+		"darwinia" => Box::new(darwinia_chain_spec::config()?),
+		"darwinia-genesis" => Box::new(darwinia_chain_spec::genesis_config()),
+		"darwinia-dev" => Box::new(darwinia_chain_spec::development_config()),
+		"crab" => Box::new(crab_chain_spec::config()?),
+		"crab-genesis" => Box::new(crab_chain_spec::genesis_config()),
+		"crab-dev" => Box::new(crab_chain_spec::development_config()),
+		"pangolin" => Box::new(pangolin_chain_spec::config()?),
+		"pangolin-genesis" => Box::new(pangolin_chain_spec::genesis_config()),
+		"pangolin-dev" => Box::new(pangolin_chain_spec::development_config()),
+		_ => {
+			let path = PathBuf::from(id);
+			let chain_spec =
+				Box::new(DarwiniaChainSpec::from_json_file(path.clone())?) as Box<dyn ChainSpec>;
+
+			if chain_spec.is_crab() {
+				Box::new(CrabChainSpec::from_json_file(path)?)
+			} else if chain_spec.is_pangolin() {
+				Box::new(PangolinChainSpec::from_json_file(path)?)
+			} else {
+				chain_spec
+			}
+		},
 	})
+}
+
+fn get_exec_name() -> Option<String> {
+	env::current_exe()
+		.ok()
+		.and_then(|pb| pb.file_name().map(|s| s.to_os_string()))
+		.and_then(|s| s.into_string().ok())
+}
+
+fn set_default_ss58_version(chain_spec: &dyn IdentifyVariant) {
+	let ss58_version = if chain_spec.is_crab() || chain_spec.is_pangolin() {
+		Ss58AddressFormatRegistry::SubstrateAccount
+	} else {
+		Ss58AddressFormatRegistry::DarwiniaAccount
+	}
+	.into();
+
+	sp_core::crypto::set_default_ss58_version(ss58_version);
 }
