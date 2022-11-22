@@ -16,15 +16,17 @@
 // You should have received a copy of the GNU General Public License
 // along with Darwinia. If not, see <https://www.gnu.org/licenses/>.
 
-mod darwinia;
+pub mod darwinia;
 pub use darwinia::{self as darwinia_chain_spec, ChainSpec as DarwiniaChainSpec};
 
-mod crab;
+pub mod crab;
 pub use darwinia::{self as crab_chain_spec, ChainSpec as CrabChainSpec};
 
-mod pangolin;
+pub mod pangolin;
 pub use darwinia::{self as pangolin_chain_spec, ChainSpec as PangolinChainSpec};
 
+// crates.io
+use serde::{Deserialize, Serialize};
 // darwinia
 use dc_primitives::*;
 // substrate

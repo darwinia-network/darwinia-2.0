@@ -497,7 +497,7 @@ pub fn run() -> Result<()> {
 
 				set_default_ss58_version(chain_spec);
 
-				let para_id = darwinia_chain_spec::Extensions::try_get(&*config.chain_spec)
+				let para_id = chain_spec::Extensions::try_get(&*config.chain_spec)
 					.map(|e| e.para_id)
 					.ok_or("Could not find parachain ID in chain-spec.")?;
 				let polkadot_cli = RelayChainCli::new(
@@ -526,49 +526,23 @@ pub fn run() -> Result<()> {
 					if config.role.is_authority() { "yes" } else { "no" }
 				);
 
-				if chain_spec.is_crab() {
-					service::start_parachain_node::<CrabRuntimeApi>(
-						config,
-						polkadot_config,
-						collator_options,
-						id,
-						hwbench,
-						&eth_rpc_config,
-					)
-						.await
-						.map(|r| r.0)
-						.map_err(Into::into)
-				} else if chain_spec.is_pangolin() {
-					service::start_parachain_node::<PangolinRuntimeApi>(
-						config,
-						polkadot_config,
-						collator_options,
-						id,
-						hwbench,
-						&eth_rpc_config,
-					)
-						.await
-						.map(|r| r.0)
-						.map_err(Into::into)
-				} else {
-					service::start_parachain_node::<DarwiniaRuntimeApi>(
-						config,
-						polkadot_config,
-						collator_options,
-						id,
-						hwbench,
-						&eth_rpc_config,
-					)
-						.await
-						.map(|r| r.0)
-						.map_err(Into::into)
-				}
+				crate::service::start_parachain_node(
+					config,
+					polkadot_config,
+					collator_options,
+					id,
+					hwbench,
+					&eth_rpc_config,
+				)
+					.await
+					.map(|r| r.0)
+					.map_err(Into::into)
 			})
 		},
 	}
 }
 
-fn load_spec(&self, id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
+fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 	let id = if id.is_empty() {
 		let n = get_exec_name().unwrap_or_default();
 		["darwinia", "crab", "pangolin"]

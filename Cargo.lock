@@ -1332,6 +1332,8 @@ dependencies = [
  "cumulus-primitives-timestamp",
  "cumulus-primitives-utility",
  "darwinia-common-runtime",
+ "darwinia-precompile-bls12-381",
+ "darwinia-precompile-state-storage",
  "dc-primitives",
  "fp-evm",
  "fp-rpc",
@@ -1355,6 +1357,7 @@ dependencies = [
  "pallet-evm",
  "pallet-evm-precompile-blake2",
  "pallet-evm-precompile-bn128",
+ "pallet-evm-precompile-dispatch",
  "pallet-evm-precompile-modexp",
  "pallet-evm-precompile-simple",
  "pallet-fee-market",
@@ -1386,6 +1389,7 @@ dependencies = [
  "xcm",
  "xcm-builder",
  "xcm-executor",
+ "xcm-primitives",
 ]
 
 [[package]]
@@ -2173,6 +2177,7 @@ version = "6.0.0"
 dependencies = [
  "array-bytes",
  "clap",
+ "crab-runtime",
  "cumulus-client-cli",
  "cumulus-client-collator",
  "cumulus-client-consensus-aura",
@@ -2201,6 +2206,7 @@ dependencies = [
  "jsonrpsee",
  "log",
  "pallet-transaction-payment-rpc",
+ "pangolin-runtime",
  "parity-scale-codec",
  "polkadot-cli",
  "polkadot-parachain",
@@ -2231,6 +2237,7 @@ dependencies = [
  "sp-consensus-aura",
  "sp-core",
  "sp-inherents",
+ "sp-io",
  "sp-keystore",
  "sp-offchain",
  "sp-runtime",
@@ -7088,6 +7095,8 @@ dependencies = [
  "cumulus-primitives-timestamp",
  "cumulus-primitives-utility",
  "darwinia-common-runtime",
+ "darwinia-precompile-bls12-381",
+ "darwinia-precompile-state-storage",
  "dc-primitives",
  "fp-evm",
  "fp-rpc",
@@ -7111,6 +7120,7 @@ dependencies = [
  "pallet-evm",
  "pallet-evm-precompile-blake2",
  "pallet-evm-precompile-bn128",
+ "pallet-evm-precompile-dispatch",
  "pallet-evm-precompile-modexp",
  "pallet-evm-precompile-simple",
  "pallet-fee-market",
@@ -7142,6 +7152,7 @@ dependencies = [
  "xcm",
  "xcm-builder",
  "xcm-executor",
+ "xcm-primitives",
 ]
 
 [[package]]
