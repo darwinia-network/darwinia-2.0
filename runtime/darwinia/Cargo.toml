@@ -214,6 +214,9 @@ runtime-benchmarks = [
 	"pallet-ethereum/runtime-benchmarks",
 	"pallet-evm/runtime-benchmarks",
 
+	# moonbeam
+	"xcm-primitives/runtime-benchmarks",
+
 	# polkadot
 	"pallet-xcm/runtime-benchmarks",
 	"polkadot-parachain/runtime-benchmarks",
