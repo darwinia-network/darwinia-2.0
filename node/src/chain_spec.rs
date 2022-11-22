@@ -32,7 +32,7 @@ use fp_evm::GenesisAccount;
 // substrate
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
 use sc_service::ChainType;
-use sp_core::{Pair, Public, H160, U256};
+use sp_core::{Pair, Public, H160};
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
 pub type ChainSpec = sc_service::GenericChainSpec<darwinia_runtime::GenesisConfig, Extensions>;
@@ -306,40 +306,44 @@ fn testnet_genesis(
 		ethereum: Default::default(),
 		evm: EvmConfig {
 			accounts: {
-				let mut map = BTreeMap::new();
-				map.insert(
-					// Testing account.
-					H160::from_str("0x6be02d1d3665660d22ff9624b7be0551ee1ac91b").unwrap(),
-					GenesisAccount {
-						balance: U256::from_str("0xffffffffffffffffffffffffffffffff").unwrap(),
-						code: Default::default(),
-						nonce: Default::default(),
-						storage: Default::default(),
-					},
-				);
-				map.insert(
-					// Benchmarking account.
-					H160::from_str("1000000000000000000000000000000000000001").unwrap(),
-					GenesisAccount {
-						nonce: U256::from(1),
-						balance: U256::from(1_000_000_000_000_000_000_000_000_u128),
-						storage: Default::default(),
-						code: vec![0x00],
-					},
-				);
-
-				for precompile in DarwiniaPrecompiles::<Runtime>::used_addresses() {
-					map.insert(
-						precompile,
-						GenesisAccount {
-							nonce: Default::default(),
-							balance: Default::default(),
-							storage: Default::default(),
-							code: REVERT_BYTECODE.to_vec(),
-						},
-					);
-				}
-				map
+				BTreeMap::from_iter(
+					DarwiniaPrecompiles::<Runtime>::used_addresses()
+						.iter()
+						.map(|p| {
+							(
+								p.to_owned(),
+								GenesisAccount {
+									nonce: Default::default(),
+									balance: Default::default(),
+									storage: Default::default(),
+									code: REVERT_BYTECODE.to_vec(),
+								},
+							)
+						})
+						.chain([
+							// Testing account.
+							(
+								H160::from_str("0x6be02d1d3665660d22ff9624b7be0551ee1ac91b")
+									.unwrap(),
+								GenesisAccount {
+									balance: (10_000_000 * UNIT).into(),
+									code: Default::default(),
+									nonce: Default::default(),
+									storage: Default::default(),
+								},
+							),
+							// Benchmarking account.
+							(
+								H160::from_str("1000000000000000000000000000000000000001").unwrap(),
+								GenesisAccount {
+									nonce: 1.into(),
+									balance: (10_000_000 * UNIT).into(),
+									storage: Default::default(),
+									code: vec![0x00],
+								},
+							),
+						]),
+				)
 			},
 		},
 		base_fee: Default::default(),
