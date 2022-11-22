@@ -419,18 +419,20 @@ pub fn run() -> Result<()> {
 			match cmd {
 				BenchmarkCmd::Pallet(cmd) =>
 					if cfg!(feature = "runtime-benchmarks") {
-						runner.sync_run(|config| cmd.run::<Block, DarwiniaRuntimeExecutor>(config))
+						if config.chain_spec.is_crab() {
+							cmd.run::<Block, CrabRuntimeExecutor>(config)
+						} else if config.chain_spec.is_pangolin() {
+							cmd.run::<Block, PangolinRuntimeExecutor>(config)
+						} else {
+							cmd.run::<Block, DarwiniaRuntimeExecutor>(config)
+						}
 					} else {
 						Err("Benchmarking wasn't enabled when building the node. \
 					You can enable it with `--features runtime-benchmarks`."
 							.into())
 					},
 				BenchmarkCmd::Block(cmd) => runner.sync_run(|config| {
-					let partials = service::new_partial::<RuntimeApi, DarwiniaRuntimeExecutor>(
-						&config,
-						&cli.eth_args.build_eth_rpc_config(),
-					)?;
-					cmd.run(partials.client)
+					construct_benchmark_partials!(config, |partials| cmd.run(partials.client))
 				}),
 				#[cfg(not(feature = "runtime-benchmarks"))]
 				BenchmarkCmd::Storage(_) => Err(sc_cli::Error::Input(
@@ -440,14 +442,12 @@ pub fn run() -> Result<()> {
 				)),
 				#[cfg(feature = "runtime-benchmarks")]
 				BenchmarkCmd::Storage(cmd) => runner.sync_run(|config| {
-					let partials = service::new_partial::<RuntimeApi, DarwiniaRuntimeExecutor, _>(
-						&config,
-						crate::service::parachain_build_import_queue,
-					)?;
-					let db = partials.backend.expose_db();
-					let storage = partials.backend.expose_storage();
+					construct_benchmark_partials!(config, |partials| {
+						let db = partials.backend.expose_db();
+						let storage = partials.backend.expose_storage();
 
-					cmd.run(config, partials.client.clone(), db, storage)
+						cmd.run(config, partials.client.clone(), db, storage)
+					})
 				}),
 				BenchmarkCmd::Machine(cmd) =>
 					runner.sync_run(|config| cmd.run(&config, SUBSTRATE_REFERENCE_HARDWARE.clone())),
@@ -460,21 +460,29 @@ pub fn run() -> Result<()> {
 		Some(Subcommand::TryRuntime(cmd)) => {
 			if cfg!(feature = "try-runtime") {
 				let runner = cli.create_runner(cmd)?;
+				let chain_spec = &runner.config().chain_spec;
+
+				set_default_ss58_version(chain_spec);
 				// grab the task manager.
 				let registry = &runner.config().prometheus_config.as_ref().map(|cfg| &cfg.registry);
 				let task_manager =
 					TaskManager::new(runner.config().tokio_handle.clone(), *registry)
 						.map_err(|e| format!("Error: {:?}", e))?;
 
-				runner.async_run(|config| {
+				if config.chain_spec.is_crab() {
+					Ok((cmd.run::<Block, CrabRuntimeExecutor>(config), task_manager))
+				} else if config.chain_spec.is_pangolin() {
+					Ok((cmd.run::<Block, PangolinRuntimeExecutor>(config), task_manager))
+				} else {
 					Ok((cmd.run::<Block, DarwiniaRuntimeExecutor>(config), task_manager))
-				})
+				}
 			} else {
 				Err("Try-runtime must be enabled by `--features try-runtime`.".into())
 			}
 		},
 		None => {
 			let runner = cli.create_runner(&cli.run.normalize())?;
+			let chain_spec = &config.chain_spec;
 			let collator_options = cli.run.collator_options();
 
 			runner.run_node_until_exit(|config| async move {
@@ -486,6 +494,9 @@ pub fn run() -> Result<()> {
 				} else {
 					None
 				};
+
+				set_default_ss58_version(chain_spec);
+
 				let para_id = darwinia_chain_spec::Extensions::try_get(&*config.chain_spec)
 					.map(|e| e.para_id)
 					.ok_or("Could not find parachain ID in chain-spec.")?;
@@ -515,17 +526,43 @@ pub fn run() -> Result<()> {
 					if config.role.is_authority() { "yes" } else { "no" }
 				);
 
-				crate::service::start_parachain_node(
-					config,
-					polkadot_config,
-					collator_options,
-					id,
-					hwbench,
-					&eth_rpc_config,
-				)
-				.await
-				.map(|r| r.0)
-				.map_err(Into::into)
+				if chain_spec.is_crab() {
+					service::start_parachain_node::<CrabRuntimeApi>(
+						config,
+						polkadot_config,
+						collator_options,
+						id,
+						hwbench,
+						&eth_rpc_config,
+					)
+						.await
+						.map(|r| r.0)
+						.map_err(Into::into)
+				} else if chain_spec.is_pangolin() {
+					service::start_parachain_node::<PangolinRuntimeApi>(
+						config,
+						polkadot_config,
+						collator_options,
+						id,
+						hwbench,
+						&eth_rpc_config,
+					)
+						.await
+						.map(|r| r.0)
+						.map_err(Into::into)
+				} else {
+					service::start_parachain_node::<DarwiniaRuntimeApi>(
+						config,
+						polkadot_config,
+						collator_options,
+						id,
+						hwbench,
+						&eth_rpc_config,
+					)
+						.await
+						.map(|r| r.0)
+						.map_err(Into::into)
+				}
 			})
 		},
 	}
