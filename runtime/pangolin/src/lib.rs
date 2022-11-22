@@ -199,8 +199,8 @@ sp_runtime::impl_opaque_keys! {
 /// Runtime version.
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
-	spec_name: sp_runtime::create_runtime_str!("Darwinia"),
-	impl_name: sp_runtime::create_runtime_str!("Darwinia"),
+	spec_name: sp_runtime::create_runtime_str!("Pangolin"),
+	impl_name: sp_runtime::create_runtime_str!("Pangolin"),
 	authoring_version: 1,
 	spec_version: 1,
 	impl_version: 0,

@@ -38,7 +38,7 @@ const WEIGHT_PER_GAS: u64 = 40_000;
 
 frame_support::parameter_types! {
 	pub BlockGasLimit: U256 = U256::from(NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT.ref_time() / WEIGHT_PER_GAS);
-	pub PrecompilesValue: DarwiniaPrecompiles<Runtime> = DarwiniaPrecompiles::<_>::new();
+	pub PrecompilesValue: CrabPrecompiles<Runtime> = CrabPrecompiles::<_>::new();
 	pub WeightPerGas: Weight = Weight::from_ref_time(WEIGHT_PER_GAS);
 	pub const ChainId: u64 = 43;
 }
@@ -88,8 +88,8 @@ where
 	}
 }
 
-pub struct DarwiniaPrecompiles<R>(PhantomData<R>);
-impl<R> DarwiniaPrecompiles<R>
+pub struct CrabPrecompiles<R>(PhantomData<R>);
+impl<R> CrabPrecompiles<R>
 where
 	R: pallet_evm::Config,
 {
@@ -102,7 +102,7 @@ where
 		[addr(1), addr(2), addr(3), addr(4), addr(5), addr(6), addr(7), addr(8), addr(9)]
 	}
 }
-impl<R> PrecompileSet for DarwiniaPrecompiles<R>
+impl<R> PrecompileSet for CrabPrecompiles<R>
 where
 	R: pallet_evm::Config,
 {
@@ -139,7 +139,7 @@ impl pallet_evm::Config for Runtime {
 	type FindAuthor = FindAuthorTruncated<Aura>;
 	type GasWeightMapping = FixedGasWeightMapping<Self>;
 	type OnChargeTransaction = ();
-	type PrecompilesType = DarwiniaPrecompiles<Self>;
+	type PrecompilesType = CrabPrecompiles<Self>;
 	type PrecompilesValue = PrecompilesValue;
 	type Runner = pallet_evm::runner::stack::Runner<Self>;
 	type RuntimeEvent = RuntimeEvent;
