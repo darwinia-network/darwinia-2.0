@@ -39,17 +39,17 @@ pub type ChainSpec = sc_service::GenericChainSpec<darwinia_runtime::GenesisConfi
 
 // These are are testnet-only keys.
 // address     = "0x75a1807b6aff253070b96ed9e43c0c5c17c7e1d4"
-// public-key  = "036ae37e38766cd9be397dfd42486d8aeb46c30d4b0526d12dc9f5eb6a8e4c09f5"
+// public-key  = "0x036ae37e38766cd9be397dfd42486d8aeb46c30d4b0526d12dc9f5eb6a8e4c09f5"
 // secret-seed = "0x63c24046f3b744c8cd8f74e91d9e3603577035f3119ac1389db0f461e591375d"
 #[allow(unused)]
 const COLLATOR_A: &str = "0x75a1807b6aff253070b96ed9e43c0c5c17c7e1d4";
 // address     = "0x5f69def84585715b92d397b1e92d4bf26d48d6b7"
-// public-key  = "03f6230f7fd8bd24a3814753c5bdd0417d5e00149e15b4bac130887e925c6a53a0"
+// public-key  = "0x03f6230f7fd8bd24a3814753c5bdd0417d5e00149e15b4bac130887e925c6a53a0"
 // secret-seed = "0xee92a5c93339cb59bdad8c088c1b3adbae7ec94110681d871ab3beb8ac6530b2"
 #[allow(unused)]
 const COLLATOR_B: &str = "0x5f69def84585715b92d397b1e92d4bf26d48d6b7";
 // address     = "0xa4e3cf11462254ed4b7ce00079eb11ca2a8b5393"
-// public-key  = "0218893313cc713836d57c60daedd28ee0b0823a167469af37e16f970fdb5305ef"
+// public-key  = "0x0218893313cc713836d57c60daedd28ee0b0823a167469af37e16f970fdb5305ef"
 // secret-seed = "0x68ade89c684eb715ad047d9a54f8a07457840194091622736d742503d148966a"
 #[allow(unused)]
 const COLLATOR_C: &str = "0xa4e3cf11462254ed4b7ce00079eb11ca2a8b5393";
