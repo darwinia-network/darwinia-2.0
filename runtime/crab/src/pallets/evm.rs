@@ -18,15 +18,17 @@
 
 // darwinia
 use crate::*;
-use dc_primitives::EVM_ADDR_PREFIX;
+use darwinia_precompile_bls12_381::BLS12381;
+use darwinia_precompile_state_storage::{EthereumStorageFilter, StateStorage};
 // frontier
 use pallet_ethereum::EthereumBlockHashMapping;
 use pallet_evm::{
-	AddressMapping, EnsureAddressTruncated, FeeCalculator, FixedGasWeightMapping, Precompile,
-	PrecompileHandle, PrecompileResult, PrecompileSet,
+	AddressMapping, EnsureAddressNever, EnsureAddressRoot, FeeCalculator, FixedGasWeightMapping,
+	Precompile, PrecompileHandle, PrecompileResult, PrecompileSet,
 };
 use pallet_evm_precompile_blake2::Blake2F;
 use pallet_evm_precompile_bn128::{Bn128Add, Bn128Mul, Bn128Pairing};
+use pallet_evm_precompile_dispatch::Dispatch;
 use pallet_evm_precompile_modexp::Modexp;
 use pallet_evm_precompile_simple::{ECRecover, Identity, Ripemd160, Sha256};
 // substrate
@@ -46,8 +48,8 @@ frame_support::parameter_types! {
 pub struct FindAuthorTruncated<F>(PhantomData<F>);
 impl<F: FindAuthor<u32>> FindAuthor<H160> for FindAuthorTruncated<F> {
 	fn find_author<'a, I>(digests: I) -> Option<H160>
-	where
-		I: 'a + IntoIterator<Item = (ConsensusEngineId, &'a [u8])>,
+		where
+			I: 'a + IntoIterator<Item = (ConsensusEngineId, &'a [u8])>,
 	{
 		F::find_author(digests).and_then(|i| {
 			Aura::authorities().get(i as usize).and_then(|id| {
@@ -70,21 +72,14 @@ impl FeeCalculator for FixedGasPrice {
 	}
 }
 
-pub struct ConcatAddressMapping;
-impl<AccountId> AddressMapping<AccountId> for ConcatAddressMapping
-where
-	AccountId: From<[u8; 32]>,
+// TODO: Integrate to the upstream repo
+pub struct FromH160;
+impl<T> AddressMapping<T> for FromH160
+	where
+		T: From<H160>,
 {
-	fn into_account_id(address: H160) -> AccountId {
-		let check_sum = |account_id: &[u8; 32]| -> u8 {
-			account_id[1..31].iter().fold(account_id[0], |sum, &byte| sum ^ byte)
-		};
-
-		let mut raw_account = [0u8; 32];
-		raw_account[0..4].copy_from_slice(EVM_ADDR_PREFIX);
-		raw_account[11..31].copy_from_slice(&address[..]);
-		raw_account[31] = check_sum(&raw_account);
-		raw_account.into()
+	fn into_account_id(address: H160) -> T {
+		address.into()
 	}
 }
 
@@ -98,8 +93,21 @@ where
 		Self(Default::default())
 	}
 
-	pub fn used_addresses() -> [H160; 9] {
-		[addr(1), addr(2), addr(3), addr(4), addr(5), addr(6), addr(7), addr(8), addr(9)]
+	pub fn used_addresses() -> [H160; 12] {
+		[
+			addr(1),
+			addr(2),
+			addr(3),
+			addr(4),
+			addr(5),
+			addr(6),
+			addr(7),
+			addr(8),
+			addr(9),
+			addr(1024),
+			addr(1025),
+			addr(2048),
+		]
 	}
 }
 impl<R> PrecompileSet for CrabPrecompiles<R>
@@ -118,7 +126,12 @@ where
 			a if a == addr(7) => Some(Bn128Mul::execute(handle)),
 			a if a == addr(8) => Some(Bn128Pairing::execute(handle)),
 			a if a == addr(9) => Some(Blake2F::execute(handle)),
-			// Non-Frontier specific nor Ethereum precompiles:
+			// Darwinia precompiles: 1024+ for stable precompiles.
+			a if a == addr(1024) =>
+				Some(<StateStorage<Runtime, EthereumStorageFilter>>::execute(handle)),
+			a if a == addr(1025) => Some(<Dispatch<Runtime>>::execute(handle)),
+			// Darwinia precompiles: 2048+ for experimental precompiles.
+			a if a == addr(2048) => Some(<BLS12381<Runtime>>::execute(handle)),
 			_ => None,
 		}
 	}
@@ -129,10 +142,10 @@ where
 }
 
 impl pallet_evm::Config for Runtime {
-	type AddressMapping = ConcatAddressMapping;
+	type AddressMapping = FromH160;
 	type BlockGasLimit = BlockGasLimit;
 	type BlockHashMapping = EthereumBlockHashMapping<Self>;
-	type CallOrigin = EnsureAddressTruncated;
+	type CallOrigin = EnsureAddressRoot<AccountId>;
 	type ChainId = ChainId;
 	type Currency = Balances;
 	type FeeCalculator = FixedGasPrice;
@@ -144,7 +157,7 @@ impl pallet_evm::Config for Runtime {
 	type Runner = pallet_evm::runner::stack::Runner<Self>;
 	type RuntimeEvent = RuntimeEvent;
 	type WeightPerGas = WeightPerGas;
-	type WithdrawOrigin = EnsureAddressTruncated;
+	type WithdrawOrigin = EnsureAddressNever<AccountId>;
 }
 
 fn addr(a: u64) -> H160 {
