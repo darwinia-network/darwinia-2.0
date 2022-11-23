@@ -26,36 +26,27 @@ mod system;
 pub use system::*;
 
 mod parachain_system;
-pub use parachain_system::*;
 
 mod timestamp;
-pub use timestamp::*;
 
 mod parachain_info_;
-pub use parachain_info_::*;
 
 // Monetary stuff.
 mod balances;
-pub use balances::*;
 
 mod transaction_payment;
-pub use transaction_payment::*;
 
 // Consensus stuff.
 mod authorship;
-pub use authorship::*;
 
 mod collator_selection;
-pub use collator_selection::*;
 
 mod session;
 pub use session::*;
 
 mod aura;
-pub use aura::*;
 
 mod aura_ext;
-pub use aura_ext::*;
 
 // Governance stuff.
 // Democracy: pallet_democracy = 11,
@@ -68,12 +59,11 @@ pub use aura_ext::*;
 
 // Utility stuff.
 mod sudo;
-pub use sudo::*;
 
 mod vesting;
-pub use vesting::*;
 
-// Utility: pallet_utility = 20,
+mod utility;
+
 // Identity: pallet_identity = 21,
 // Scheduler: pallet_scheduler = 22,
 // Preimage: pallet_preimage = 23,
@@ -82,20 +72,16 @@ pub use vesting::*;
 
 // XCM stuff.
 mod xcmp_queue;
-pub use xcmp_queue::*;
 
 mod polkadot_xcm;
 pub use polkadot_xcm::*;
 
 mod dmp_queue;
-pub use dmp_queue::*;
 
 // EVM stuff.
 mod ethereum;
-pub use ethereum::*;
 
 mod evm;
 pub use evm::*;
 
 mod base_fee;
-pub use base_fee::*;
