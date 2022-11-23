@@ -98,9 +98,9 @@ pub fn local_testnet_config() -> ChainSpec {
 
 	ChainSpec::from_genesis(
 		// Name
-		"Local Testnet",
+		"Pangolin Local Testnet",
 		// ID
-		"local_testnet",
+		"pangolin_local_testnet",
 		ChainType::Local,
 		move || {
 			testnet_genesis(
@@ -142,7 +142,7 @@ pub fn local_testnet_config() -> ChainSpec {
 	)
 }
 
-pub fn shell_config() -> ChainSpec {
+pub fn config() -> ChainSpec {
 	// Give your base currency a unit name and decimal places
 	let mut properties = sc_chain_spec::Properties::new();
 	properties.insert("tokenSymbol".into(), "PRING".into());
@@ -163,7 +163,7 @@ pub fn shell_config() -> ChainSpec {
 						.to_vec(),
 				},
 				balances: Default::default(),
-				parachain_info: pangolin_runtime::ParachainInfoConfig { parachain_id: 2046.into() },
+				parachain_info: pangolin_runtime::ParachainInfoConfig { parachain_id: 2105.into() },
 				// TODO: update this before final release
 				collator_selection: pangolin_runtime::CollatorSelectionConfig {
 					invulnerables: vec![array_bytes::hex_n_into_unchecked(COLLATOR_A)],
@@ -202,8 +202,8 @@ pub fn shell_config() -> ChainSpec {
 		Some(properties),
 		// Extensions
 		Extensions {
-			relay_chain: "polkadot".into(), // You MUST set this to the correct network!
-			para_id: 2046,
+			relay_chain: "rococo".into(), // You MUST set this to the correct network!
+			para_id: 2105,
 		},
 	)
 }
@@ -291,10 +291,6 @@ fn testnet_genesis(
 		},
 		base_fee: Default::default(),
 	}
-}
-
-pub fn config() -> Result<ChainSpec, String> {
-	unimplemented!("TODO")
 }
 
 pub fn genesis_config() -> ChainSpec {

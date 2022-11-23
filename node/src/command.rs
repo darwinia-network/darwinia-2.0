@@ -80,8 +80,14 @@ impl SubstrateCli for Cli {
 		load_spec(id)
 	}
 
-	fn native_runtime_version(_: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
-		&darwinia_runtime::VERSION
+	fn native_runtime_version(spec: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
+		if spec.is_crab() {
+			&crab_runtime::VERSION
+		} else if spec.is_pangolin() {
+			&pangolin_runtime::VERSION
+		} else {
+			&darwinia_runtime::VERSION
+		}
 	}
 }
 
@@ -594,15 +600,18 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 	};
 
 	Ok(match id.to_lowercase().as_ref() {
-		"darwinia" => Box::new(darwinia_chain_spec::config()?),
+		"darwinia" => Box::new(darwinia_chain_spec::config()),
 		"darwinia-genesis" => Box::new(darwinia_chain_spec::genesis_config()),
 		"darwinia-dev" => Box::new(darwinia_chain_spec::development_config()),
-		"crab" => Box::new(crab_chain_spec::config()?),
+		"darwinia-local" => Box::new(darwinia_chain_spec::local_testnet_config()),
+		"crab" => Box::new(crab_chain_spec::config()),
 		"crab-genesis" => Box::new(crab_chain_spec::genesis_config()),
 		"crab-dev" => Box::new(crab_chain_spec::development_config()),
-		"pangolin" => Box::new(pangolin_chain_spec::config()?),
+		"crab-local" => Box::new(crab_chain_spec::local_testnet_config()),
+		"pangolin" => Box::new(pangolin_chain_spec::config()),
 		"pangolin-genesis" => Box::new(pangolin_chain_spec::genesis_config()),
 		"pangolin-dev" => Box::new(pangolin_chain_spec::development_config()),
+		"pangolin-local" => Box::new(pangolin_chain_spec::local_testnet_config()),
 		_ => {
 			let path = PathBuf::from(id);
 			let chain_spec =

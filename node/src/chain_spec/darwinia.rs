@@ -98,9 +98,9 @@ pub fn local_testnet_config() -> ChainSpec {
 
 	ChainSpec::from_genesis(
 		// Name
-		"Local Testnet",
+		"Darwinia Local Testnet",
 		// ID
-		"local_testnet",
+		"darwinia_local_testnet",
 		ChainType::Local,
 		move || {
 			testnet_genesis(
@@ -142,7 +142,7 @@ pub fn local_testnet_config() -> ChainSpec {
 	)
 }
 
-pub fn shell_config() -> ChainSpec {
+pub fn config() -> ChainSpec {
 	// Give your base currency a unit name and decimal places
 	let mut properties = sc_chain_spec::Properties::new();
 	properties.insert("tokenSymbol".into(), "RING".into());
@@ -291,10 +291,6 @@ fn testnet_genesis(
 		},
 		base_fee: Default::default(),
 	}
-}
-
-pub fn config() -> Result<ChainSpec, String> {
-	unimplemented!("TODO")
 }
 
 pub fn genesis_config() -> ChainSpec {

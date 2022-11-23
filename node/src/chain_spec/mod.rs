@@ -20,20 +20,17 @@ pub mod darwinia;
 pub use darwinia::{self as darwinia_chain_spec, ChainSpec as DarwiniaChainSpec};
 
 pub mod crab;
-pub use darwinia::{self as crab_chain_spec, ChainSpec as CrabChainSpec};
+pub use crab::{self as crab_chain_spec, ChainSpec as CrabChainSpec};
 
 pub mod pangolin;
-pub use darwinia::{self as pangolin_chain_spec, ChainSpec as PangolinChainSpec};
+pub use pangolin::{self as pangolin_chain_spec, ChainSpec as PangolinChainSpec};
 
 // crates.io
 use serde::{Deserialize, Serialize};
-// darwinia
-use dc_primitives::*;
 // substrate
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_core::{Pair, Public};
-use sp_runtime::traits::{IdentifyAccount, Verify};
 
 // These are are testnet-only keys.
 // address     = "0x75a1807b6aff253070b96ed9e43c0c5c17c7e1d4"
@@ -60,8 +57,6 @@ const SAFE_XCM_VERSION: u32 = xcm::prelude::XCM_VERSION;
 /// contracts. (PUSH1 0x00 PUSH1 0x00 REVERT)
 pub const REVERT_BYTECODE: [u8; 5] = [0x60, 0x00, 0x60, 0x00, 0xFD];
 
-type AccountPublic = <Signature as Verify>::Signer;
-
 /// The extensions for the [`ChainSpec`].
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, ChainSpecGroup, ChainSpecExtension)]
 #[serde(deny_unknown_fields)]
@@ -83,14 +78,6 @@ pub fn get_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Pu
 	TPublic::Pair::from_string(&format!("//{}", seed), None)
 		.expect("static values are valid; qed")
 		.public()
-}
-
-/// Helper function to generate an account ID from seed
-pub fn get_account_id_from_seed<TPublic: Public>(seed: &str) -> AccountId
-where
-	AccountPublic: From<<TPublic::Pair as Pair>::Public>,
-{
-	AccountPublic::from(get_from_seed::<TPublic>(seed)).into_account()
 }
 
 /// Generate collator keys from seed.
