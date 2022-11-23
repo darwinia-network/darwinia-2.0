@@ -165,13 +165,20 @@ pub fn config() -> ChainSpec {
 		ChainType::Live,
 		move || {
 			crab_runtime::GenesisConfig {
+				// System stuff.
 				system: crab_runtime::SystemConfig {
 					code: crab_runtime::WASM_BINARY
 						.expect("WASM binary was not build, please build it!")
 						.to_vec(),
 				},
+				parachain_system: Default::default(),
+				parachain_info: crab_runtime::ParachainInfoConfig { parachain_id: 2105.into() },
+
+				// Monetary stuff.
 				balances: Default::default(),
-				parachain_info: crab_runtime::ParachainInfoConfig { parachain_id: 2046.into() },
+				transaction_payment: Default::default(),
+
+				// Consensus stuff.
 				// TODO: update this before final release
 				collator_selection: crab_runtime::CollatorSelectionConfig {
 					invulnerables: vec![array_bytes::hex_n_into_unchecked(ALITH)],
@@ -189,10 +196,17 @@ pub fn config() -> ChainSpec {
 				// take care of this.
 				aura: Default::default(),
 				aura_ext: Default::default(),
-				parachain_system: Default::default(),
+
+				// Utility stuff.
+				sudo: Default::default(),
+				vesting: Default::default(),
+
+				// XCM stuff.
 				polkadot_xcm: crab_runtime::PolkadotXcmConfig {
 					safe_xcm_version: Some(SAFE_XCM_VERSION),
 				},
+
+				// EVM stuff.
 				ethereum: Default::default(),
 				evm: Default::default(),
 				base_fee: Default::default(),
@@ -222,11 +236,17 @@ fn testnet_genesis(
 	id: ParaId,
 ) -> crab_runtime::GenesisConfig {
 	crab_runtime::GenesisConfig {
+		// System stuff.
 		system: crab_runtime::SystemConfig { code: crab_runtime::WASM_BINARY.unwrap().to_vec() },
+		parachain_system: Default::default(),
+		parachain_info: crab_runtime::ParachainInfoConfig { parachain_id: id },
+
+		// Monetary stuff.
 		balances: crab_runtime::BalancesConfig {
 			balances: endowed_accounts.iter().cloned().map(|k| (k, 100_000_000 * UNIT)).collect(),
 		},
-		parachain_info: crab_runtime::ParachainInfoConfig { parachain_id: id },
+
+		// Consensus stuff.
 		collator_selection: crab_runtime::CollatorSelectionConfig {
 			invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
 			candidacy_bond: UNIT,
@@ -248,8 +268,15 @@ fn testnet_genesis(
 		// of this.
 		aura: Default::default(),
 		aura_ext: Default::default(),
-		parachain_system: Default::default(),
+
+		// Utility stuff.
+		sudo: Default::default(),
+		vesting: Default::default(),
+
+		// XCM stuff.
 		polkadot_xcm: crab_runtime::PolkadotXcmConfig { safe_xcm_version: Some(SAFE_XCM_VERSION) },
+
+		// EVM stuff.
 		ethereum: Default::default(),
 		evm: EvmConfig {
 			accounts: {
