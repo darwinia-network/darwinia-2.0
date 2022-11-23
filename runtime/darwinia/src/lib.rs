@@ -31,8 +31,6 @@ mod weights;
 
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 
-// crates.io
-use smallvec::smallvec;
 // cumulus
 use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
 // darwinia
@@ -43,6 +41,7 @@ use xcm_executor::XcmExecutor;
 // substrate
 use frame_support::{
 	dispatch::DispatchClass,
+	traits::{Imbalance, OnUnbalanced},
 	weights::{
 		ConstantMultiplier, Weight, WeightToFeeCoefficient, WeightToFeeCoefficients,
 		WeightToFeePolynomial,
@@ -105,9 +104,9 @@ pub struct DealWithFees<R>(sp_std::marker::PhantomData<R>);
 impl<R> frame_support::traits::OnUnbalanced<pallet_balances::NegativeImbalance<R>>
 	for DealWithFees<R>
 where
-	R: pallet_balances::Config, /* R: pallet_balances::Config + pallet_treasury::Config,
-	                             * pallet_treasury::Pallet<R>:
-	                             * OnUnbalanced<pallet_balances::NegativeImbalance<R>>, */
+	R: pallet_balances::Config,
+	R: pallet_balances::Config + pallet_treasury::Config,
+	pallet_treasury::Pallet<R>: OnUnbalanced<pallet_balances::NegativeImbalance<R>>,
 {
 	// this seems to be called for substrate-based transactions
 	fn on_unbalanceds<B>(
@@ -115,10 +114,11 @@ where
 	) {
 		if let Some(fees) = fees_then_tips.next() {
 			// for fees, 80% are burned, 20% to the treasury
-			// let (_, to_treasury) = fees.ration(80, 20);
+			let (_, to_treasury) = fees.ration(80, 20);
+
 			// Balances pallet automatically burns dropped Negative Imbalances by decreasing
 			// total_supply accordingly
-			// <pallet_treasury::Pallet<R> as OnUnbalanced<_>>::on_unbalanced(to_treasury);
+			<pallet_treasury::Pallet<R> as OnUnbalanced<_>>::on_unbalanced(to_treasury);
 		}
 	}
 
@@ -127,8 +127,9 @@ where
 	fn on_nonzero_unbalanced(amount: pallet_balances::NegativeImbalance<R>) {
 		// Balances pallet automatically burns dropped Negative Imbalances by decreasing
 		// total_supply accordingly
-		// let (_, to_treasury) = amount.ration(80, 20);
-		// <pallet_treasury::Pallet<R> as OnUnbalanced<_>>::on_unbalanced(to_treasury);
+		let (_, to_treasury) = amount.ration(80, 20);
+
+		<pallet_treasury::Pallet<R> as OnUnbalanced<_>>::on_unbalanced(to_treasury);
 	}
 }
 
@@ -213,7 +214,7 @@ impl WeightToFeePolynomial for WeightToFee {
 		// here, we map to 1/10 of that, or 1/10 MILLIUNIT
 		let p = MILLIUNIT / 10;
 		let q = 100 * Balance::from(weights::ExtrinsicBaseWeight::get().ref_time());
-		smallvec![WeightToFeeCoefficient {
+		smallvec::smallvec![WeightToFeeCoefficient {
 			degree: 1,
 			negative: false,
 			coeff_frac: Perbill::from_rational(p % q, q),
@@ -284,8 +285,8 @@ frame_support::construct_runtime! {
 		Identity: pallet_identity = 21,
 		Scheduler: pallet_scheduler = 22,
 		Preimage: pallet_preimage = 23,
-		// Proxy: pallet_proxy = 24,
-		// Multisig: pallet_multisig = 25,
+		Proxy: pallet_proxy = 24,
+		Multisig: pallet_multisig = 25,
 
 		// XCM stuff.
 		XcmpQueue: cumulus_pallet_xcmp_queue = 26,

@@ -78,8 +78,9 @@ mod scheduler;
 
 mod preimage;
 
-// Proxy: pallet_proxy = 24,
-// Multisig: pallet_multisig = 25,
+mod proxy;
+
+mod multisig;
 
 // XCM stuff.
 mod xcmp_queue;

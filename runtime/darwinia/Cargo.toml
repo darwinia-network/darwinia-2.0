@@ -89,7 +89,9 @@ pallet-democracy                           = { default-features = false, git = "
 pallet-elections-phragmen                  = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
 pallet-identity                            = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
 pallet-membership                          = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
+pallet-multisig                            = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
 pallet-preimage                            = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
+pallet-proxy                               = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
 pallet-scheduler                           = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
 pallet-session                             = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
 pallet-sudo                                = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
@@ -192,7 +194,9 @@ std = [
 	"pallet-elections-phragmen/std",
 	"pallet-membership/std",
 	"pallet-identity/std",
+	"pallet-multisig/std",
 	"pallet-preimage/std",
+	"pallet-proxy/std",
 	"pallet-scheduler/std",
 	"pallet-session/std",
 	"pallet-sudo/std",
@@ -262,7 +266,9 @@ runtime-benchmarks = [
 	"pallet-elections-phragmen/runtime-benchmarks",
 	"pallet-membership/runtime-benchmarks",
 	"pallet-identity/runtime-benchmarks",
+	"pallet-multisig/runtime-benchmarks",
 	"pallet-preimage/runtime-benchmarks",
+	"pallet-proxy/runtime-benchmarks",
 	"pallet-scheduler/runtime-benchmarks",
 	"pallet-timestamp/runtime-benchmarks",
 	"pallet-tips/runtime-benchmarks",
@@ -306,7 +312,9 @@ try-runtime = [
 	"pallet-elections-phragmen/try-runtime",
 	"pallet-membership/try-runtime",
 	"pallet-identity/try-runtime",
+	"pallet-multisig/try-runtime",
 	"pallet-preimage/try-runtime",
+	"pallet-proxy/try-runtime",
 	"pallet-scheduler/try-runtime",
 	"pallet-session/try-runtime",
 	"pallet-sudo/try-runtime",
