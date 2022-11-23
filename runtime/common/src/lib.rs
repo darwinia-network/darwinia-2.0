@@ -18,4 +18,5 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
+pub mod gov_origin;
 pub mod xcm_barrier;

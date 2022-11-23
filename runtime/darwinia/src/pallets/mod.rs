@@ -17,6 +17,9 @@
 // along with Darwinia. If not, see <https://www.gnu.org/licenses/>.
 
 mod shared_imports {
+	// darwinia
+	pub use darwinia_common_runtime::gov_origin::*;
+	// substrate
 	pub use sp_runtime::traits::{ConstU128, ConstU16, ConstU32, ConstU64, ConstU8};
 }
 pub use shared_imports::*;
@@ -50,11 +53,16 @@ mod aura_ext;
 
 // Governance stuff.
 // Democracy: pallet_democracy = 11,
-// Council: pallet_collective::<Instance1> = 12,
-// TechnicalCommittee: pallet_collective::<Instance2> = 13,
-// PhragmenElection: pallet_elections_phragmen = 14,
+
+mod collective;
+pub use collective::*;
+
+mod elections_phragmen;
+
 // TechnicalMembership: pallet_membership::<Instance1> = 15,
-// Treasury: pallet_treasury = 16,
+
+mod treasury;
+
 // Tips: pallet_tips = 17,
 
 // Utility stuff.
@@ -64,7 +72,8 @@ mod vesting;
 
 mod utility;
 
-// Identity: pallet_identity = 21,
+mod identity;
+
 // Scheduler: pallet_scheduler = 22,
 // Preimage: pallet_preimage = 23,
 // Proxy: pallet_proxy = 24,

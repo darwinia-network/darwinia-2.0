@@ -2172,7 +2172,10 @@ dependencies = [
 name = "darwinia-common-runtime"
 version = "6.0.0"
 dependencies = [
+ "dc-primitives",
  "frame-support",
+ "frame-system",
+ "pallet-collective",
  "xcm",
  "xcm-executor",
 ]
@@ -2257,6 +2260,8 @@ dependencies = [
  "pallet-bridge-grandpa",
  "pallet-bridge-messages",
  "pallet-collator-selection",
+ "pallet-collective",
+ "pallet-elections-phragmen",
  "pallet-ethereum",
  "pallet-evm",
  "pallet-evm-precompile-blake2",
@@ -2265,11 +2270,13 @@ dependencies = [
  "pallet-evm-precompile-modexp",
  "pallet-evm-precompile-simple",
  "pallet-fee-market",
+ "pallet-identity",
  "pallet-session",
  "pallet-sudo",
  "pallet-timestamp",
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc-runtime-api",
+ "pallet-treasury",
  "pallet-utility",
  "pallet-vesting",
  "pallet-xcm",
@@ -2291,6 +2298,7 @@ dependencies = [
  "sp-std",
  "sp-transaction-pool",
  "sp-version",
+ "static_assertions",
  "substrate-wasm-builder",
  "xcm",
  "xcm-builder",

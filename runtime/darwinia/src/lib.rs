@@ -270,18 +270,18 @@ frame_support::construct_runtime! {
 
 		// Governance stuff.
 		// Democracy: pallet_democracy = 11,
-		// Council: pallet_collective::<Instance1> = 12,
-		// TechnicalCommittee: pallet_collective::<Instance2> = 13,
-		// PhragmenElection: pallet_elections_phragmen = 14,
+		Council: pallet_collective::<Instance1> = 12,
+		TechnicalCommittee: pallet_collective::<Instance2> = 13,
+		PhragmenElection: pallet_elections_phragmen = 14,
 		// TechnicalMembership: pallet_membership::<Instance1> = 15,
-		// Treasury: pallet_treasury = 16,
+		Treasury: pallet_treasury = 16,
 		// Tips: pallet_tips = 17,
 
 		// Utility stuff.
 		Sudo: pallet_sudo = 18,
 		Vesting: pallet_vesting = 19,
 		Utility: pallet_utility = 20,
-		// Identity: pallet_identity = 21,
+		Identity: pallet_identity = 21,
 		// Scheduler: pallet_scheduler = 22,
 		// Preimage: pallet_preimage = 23,
 		// Proxy: pallet_proxy = 24,
