@@ -13,6 +13,7 @@ version     = "6.0.0"
 # crates.io
 codec      = { package = "parity-scale-codec", version = "3.2", default-features = false, features = ["derive"] }
 scale-info = { version = "2.3", default-features = false }
+
 # paritytech
 frame-support = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
 frame-system  = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
@@ -25,9 +26,12 @@ std = [
 	# crates.io
 	"codec/std",
 	"scale-info/std",
+
 	# paritytech
 	"frame-support/std",
 	"frame-system/std",
 	"sp-core/std",
 	"sp-runtime/std",
 ]
+
+# TODO: runtime-benchmarks, try-runtime
