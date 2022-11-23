@@ -59,20 +59,24 @@ pub fn development_config() -> ChainSpec {
 			testnet_genesis(
 				// initial collators.
 				vec![
+					// Bind the `Alice` to `Alith` to make `--alice` available for testnet.
 					(
-						array_bytes::hex_n_into_unchecked(COLLATOR_A),
-						// Make `--alice` available for testnet.
+						array_bytes::hex_n_into_unchecked(ALITH),
 						get_collator_keys_from_seed("Alice"),
 					),
+					// Bind the `Bob` to `Balthar` to make `--bob` available for testnet.
 					(
-						array_bytes::hex_n_into_unchecked(COLLATOR_B),
-						// Make `--bob` available for testnet.
+						array_bytes::hex_n_into_unchecked(BALTATHAR),
 						get_collator_keys_from_seed("Bob"),
 					),
 				],
 				vec![
-					array_bytes::hex_n_into_unchecked(COLLATOR_A),
-					array_bytes::hex_n_into_unchecked(COLLATOR_B),
+					array_bytes::hex_n_into_unchecked(ALITH),
+					array_bytes::hex_n_into_unchecked(BALTATHAR),
+					array_bytes::hex_n_into_unchecked(CHARLETH),
+					array_bytes::hex_n_into_unchecked(DOROTHY),
+					array_bytes::hex_n_into_unchecked(ETHAN),
+					array_bytes::hex_n_into_unchecked(FAITH),
 				],
 				1000.into(),
 			)
@@ -106,20 +110,24 @@ pub fn local_testnet_config() -> ChainSpec {
 			testnet_genesis(
 				// initial collators.
 				vec![
+					// Bind the `Alice` to `Alith` to make `--alice` available for testnet.
 					(
-						array_bytes::hex_n_into_unchecked(COLLATOR_A),
-						// Make `--alice` available for testnet.
+						array_bytes::hex_n_into_unchecked(ALITH),
 						get_collator_keys_from_seed("Alice"),
 					),
+					// Bind the `Bob` to `Balthar` to make `--bob` available for testnet.
 					(
-						array_bytes::hex_n_into_unchecked(COLLATOR_B),
-						// Make `--bob` available for testnet.
+						array_bytes::hex_n_into_unchecked(BALTATHAR),
 						get_collator_keys_from_seed("Bob"),
 					),
 				],
 				vec![
-					array_bytes::hex_n_into_unchecked(COLLATOR_A),
-					array_bytes::hex_n_into_unchecked(COLLATOR_B),
+					array_bytes::hex_n_into_unchecked(ALITH),
+					array_bytes::hex_n_into_unchecked(BALTATHAR),
+					array_bytes::hex_n_into_unchecked(CHARLETH),
+					array_bytes::hex_n_into_unchecked(DOROTHY),
+					array_bytes::hex_n_into_unchecked(ETHAN),
+					array_bytes::hex_n_into_unchecked(FAITH),
 				],
 				1000.into(),
 			)
@@ -166,14 +174,14 @@ pub fn config() -> ChainSpec {
 				parachain_info: pangolin_runtime::ParachainInfoConfig { parachain_id: 2105.into() },
 				// TODO: update this before final release
 				collator_selection: pangolin_runtime::CollatorSelectionConfig {
-					invulnerables: vec![array_bytes::hex_n_into_unchecked(COLLATOR_A)],
+					invulnerables: vec![array_bytes::hex_n_into_unchecked(ALITH)],
 					..Default::default()
 				},
 				// TODO: update this before final release
 				session: pangolin_runtime::SessionConfig {
 					keys: vec![(
-						array_bytes::hex_n_into_unchecked(COLLATOR_A),
-						array_bytes::hex_n_into_unchecked(COLLATOR_A),
+						array_bytes::hex_n_into_unchecked(ALITH),
+						array_bytes::hex_n_into_unchecked(ALITH),
 						session_keys(get_collator_keys_from_seed("Alice")),
 					)],
 				},
