@@ -259,45 +259,47 @@ frame_support::construct_runtime! {
 		ParachainInfo: parachain_info = 3,
 
 		// Monetary stuff.
-		Balances: pallet_balances = 4,
-		TransactionPayment: pallet_transaction_payment = 5,
+		// Leave 4 here.
+		// To keep balances consistent with the existing XCM configurations.
+		Balances: pallet_balances = 5,
+		TransactionPayment: pallet_transaction_payment = 6,
 
 		// Consensus stuff.
-		Authorship: pallet_authorship = 6,
-		CollatorSelection: pallet_collator_selection = 7,
-		Session: pallet_session = 8,
-		Aura: pallet_aura = 9,
-		AuraExt: cumulus_pallet_aura_ext = 10,
+		Authorship: pallet_authorship = 7,
+		CollatorSelection: pallet_collator_selection = 8,
+		Session: pallet_session = 9,
+		Aura: pallet_aura = 10,
+		AuraExt: cumulus_pallet_aura_ext = 11,
 
 		// Governance stuff.
-		Democracy: pallet_democracy = 11,
-		Council: pallet_collective::<Instance1> = 12,
-		TechnicalCommittee: pallet_collective::<Instance2> = 13,
-		PhragmenElection: pallet_elections_phragmen = 14,
-		TechnicalMembership: pallet_membership::<Instance1> = 15,
-		Treasury: pallet_treasury = 16,
-		Tips: pallet_tips = 17,
+		Democracy: pallet_democracy = 12,
+		Council: pallet_collective::<Instance1> = 13,
+		TechnicalCommittee: pallet_collective::<Instance2> = 14,
+		PhragmenElection: pallet_elections_phragmen = 15,
+		TechnicalMembership: pallet_membership::<Instance1> = 16,
+		Treasury: pallet_treasury = 17,
+		Tips: pallet_tips = 18,
 
 		// Utility stuff.
-		Sudo: pallet_sudo = 18,
-		Vesting: pallet_vesting = 19,
-		Utility: pallet_utility = 20,
-		Identity: pallet_identity = 21,
-		Scheduler: pallet_scheduler = 22,
-		Preimage: pallet_preimage = 23,
-		Proxy: pallet_proxy = 24,
-		Multisig: pallet_multisig = 25,
+		Sudo: pallet_sudo = 19,
+		Vesting: pallet_vesting = 20,
+		Utility: pallet_utility = 21,
+		Identity: pallet_identity = 22,
+		Scheduler: pallet_scheduler = 23,
+		Preimage: pallet_preimage = 24,
+		Proxy: pallet_proxy = 25,
+		Multisig: pallet_multisig = 26,
 
 		// XCM stuff.
-		XcmpQueue: cumulus_pallet_xcmp_queue = 26,
-		PolkadotXcm: pallet_xcm = 27,
-		CumulusXcm: cumulus_pallet_xcm = 28,
-		DmpQueue: cumulus_pallet_dmp_queue = 29,
+		XcmpQueue: cumulus_pallet_xcmp_queue = 27,
+		PolkadotXcm: pallet_xcm = 28,
+		CumulusXcm: cumulus_pallet_xcm = 29,
+		DmpQueue: cumulus_pallet_dmp_queue = 30,
 
 		// EVM stuff.
-		Ethereum: pallet_ethereum = 30,
-		Evm: pallet_evm = 31,
-		BaseFee: pallet_base_fee = 32,
+		Ethereum: pallet_ethereum = 31,
+		Evm: pallet_evm = 32,
+		BaseFee: pallet_base_fee = 33,
 	}
 }
 
