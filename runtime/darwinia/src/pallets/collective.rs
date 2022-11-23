@@ -22,7 +22,8 @@ pub use pallet_collective::{Instance1 as CouncilCollective, Instance2 as Technic
 use crate::*;
 
 pub const COLLECTIVE_DESIRED_MEMBERS: u32 = 7;
-const COLLECTIVE_MAX_MEMBERS: u32 = 100;
+pub const COLLECTIVE_MAX_MEMBERS: u32 = 100;
+pub const COLLECTIVE_MAX_PROPOSALS: u32 = 100;
 
 // Make sure that there are no more than `COLLECTIVE_MAX_MEMBERS` members elected via phragmen.
 static_assertions::const_assert!(COLLECTIVE_DESIRED_MEMBERS <= COLLECTIVE_MAX_MEMBERS);

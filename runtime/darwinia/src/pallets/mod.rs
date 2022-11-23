@@ -20,7 +20,7 @@ mod shared_imports {
 	// darwinia
 	pub use darwinia_common_runtime::gov_origin::*;
 	// substrate
-	pub use sp_runtime::traits::{ConstU128, ConstU16, ConstU32, ConstU64, ConstU8};
+	pub use sp_runtime::traits::{ConstBool, ConstU128, ConstU16, ConstU32, ConstU64, ConstU8};
 }
 pub use shared_imports::*;
 
@@ -52,18 +52,18 @@ mod aura;
 mod aura_ext;
 
 // Governance stuff.
-// Democracy: pallet_democracy = 11,
+mod democracy;
 
 mod collective;
 pub use collective::*;
 
 mod elections_phragmen;
 
-// TechnicalMembership: pallet_membership::<Instance1> = 15,
+mod membership;
 
 mod treasury;
 
-// Tips: pallet_tips = 17,
+mod tips;
 
 // Utility stuff.
 mod sudo;

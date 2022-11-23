@@ -245,9 +245,11 @@ pub fn shell_config() -> ChainSpec {
 				aura_ext: Default::default(),
 
 				// Governance stuff.
+				democracy: Default::default(),
 				council: Default::default(),
 				technical_committee: Default::default(),
 				phragmen_election: Default::default(),
+				technical_membership: Default::default(),
 				treasury: Default::default(),
 
 				// Utility stuff.
@@ -326,9 +328,11 @@ fn testnet_genesis(
 		aura_ext: Default::default(),
 
 		// Governance stuff.
+		democracy: Default::default(),
 		council: Default::default(),
 		technical_committee: Default::default(),
 		phragmen_election: Default::default(),
+		technical_membership: Default::default(),
 		treasury: Default::default(),
 
 		// Utility stuff.

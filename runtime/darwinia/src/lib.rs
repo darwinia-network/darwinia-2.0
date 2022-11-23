@@ -269,13 +269,13 @@ frame_support::construct_runtime! {
 		AuraExt: cumulus_pallet_aura_ext = 10,
 
 		// Governance stuff.
-		// Democracy: pallet_democracy = 11,
+		Democracy: pallet_democracy = 11,
 		Council: pallet_collective::<Instance1> = 12,
 		TechnicalCommittee: pallet_collective::<Instance2> = 13,
 		PhragmenElection: pallet_elections_phragmen = 14,
-		// TechnicalMembership: pallet_membership::<Instance1> = 15,
+		TechnicalMembership: pallet_membership::<Instance1> = 15,
 		Treasury: pallet_treasury = 16,
-		// Tips: pallet_tips = 17,
+		Tips: pallet_tips = 17,
 
 		// Utility stuff.
 		Sudo: pallet_sudo = 18,
