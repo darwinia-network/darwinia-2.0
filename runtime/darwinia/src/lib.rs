@@ -252,34 +252,51 @@ frame_support::construct_runtime! {
 		UncheckedExtrinsic = UncheckedExtrinsic,
 	{
 		// System stuff.
-		System: frame_system::{Pallet, Call, Config, Storage, Event<T>} = 0,
-		ParachainSystem: cumulus_pallet_parachain_system::{
-			Pallet, Call, Config, Storage, Inherent, Event<T>, ValidateUnsigned,
-		} = 1,
-		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent} = 2,
-		ParachainInfo: parachain_info::{Pallet, Storage, Config} = 3,
+		System: frame_system = 0,
+		ParachainSystem: cumulus_pallet_parachain_system = 1,
+		Timestamp: pallet_timestamp = 2,
+		ParachainInfo: parachain_info = 3,
 
 		// Monetary stuff.
-		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 4,
-		TransactionPayment: pallet_transaction_payment::{Pallet, Storage, Event<T>} = 5,
+		Balances: pallet_balances = 4,
+		TransactionPayment: pallet_transaction_payment = 5,
 
 		// Consensus stuff.
-		Authorship: pallet_authorship::{Pallet, Call, Storage} = 6,
-		CollatorSelection: pallet_collator_selection::{Pallet, Call, Storage, Event<T>, Config<T>} = 7,
-		Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>} = 8,
-		Aura: pallet_aura::{Pallet, Storage, Config<T>} = 9,
-		AuraExt: cumulus_pallet_aura_ext::{Pallet, Storage, Config} = 10,
+		Authorship: pallet_authorship = 6,
+		CollatorSelection: pallet_collator_selection = 7,
+		Session: pallet_session = 8,
+		Aura: pallet_aura = 9,
+		AuraExt: cumulus_pallet_aura_ext = 10,
+
+		// Governance stuff.
+		// Democracy: pallet_democracy = 11,
+		// Council: pallet_collective::<Instance1> = 12,
+		// TechnicalCommittee: pallet_collective::<Instance2> = 13,
+		// PhragmenElection: pallet_elections_phragmen = 14,
+		// TechnicalMembership: pallet_membership::<Instance1> = 15,
+		// Treasury: pallet_treasury = 16,
+		// Tips: pallet_tips = 17,
+
+		// Utility stuff.
+		Sudo: pallet_sudo = 18,
+		// Vesting: pallet_vesting = 19,
+		// Utility: pallet_utility = 20,
+		// Identity: pallet_identity = 21,
+		// Scheduler: pallet_scheduler = 22,
+		// Preimage: pallet_preimage = 23,
+		// Proxy: pallet_proxy = 24,
+		// Multisig: pallet_multisig = 25,
 
 		// XCM stuff.
-		XcmpQueue: cumulus_pallet_xcmp_queue::{Pallet, Call, Storage, Event<T>} = 11,
-		PolkadotXcm: pallet_xcm::{Pallet, Call, Event<T>, Origin, Config} = 12,
-		CumulusXcm: cumulus_pallet_xcm::{Pallet, Event<T>, Origin} = 13,
-		DmpQueue: cumulus_pallet_dmp_queue::{Pallet, Call, Storage, Event<T>} = 14,
+		XcmpQueue: cumulus_pallet_xcmp_queue = 26,
+		PolkadotXcm: pallet_xcm = 27,
+		CumulusXcm: cumulus_pallet_xcm = 28,
+		DmpQueue: cumulus_pallet_dmp_queue = 29,
 
 		// EVM stuff.
-		Ethereum: pallet_ethereum::{Pallet, Call, Storage, Config, Event, Origin} = 15,
-		Evm: pallet_evm::{Pallet, Call, Storage, Config, Event<T>} = 16,
-		BaseFee: pallet_base_fee::{Pallet, Call, Storage, Config<T>, Event} = 17,
+		Ethereum: pallet_ethereum = 30,
+		Evm: pallet_evm = 31,
+		BaseFee: pallet_base_fee = 32,
 	}
 }
 

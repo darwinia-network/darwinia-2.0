@@ -16,35 +16,32 @@
 // You should have received a copy of the GNU General Public License
 // along with Darwinia. If not, see <https://www.gnu.org/licenses/>.
 
+// System stuffs.
 mod system;
 pub use system::*;
+
+mod parachain_system;
+pub use parachain_system::*;
 
 mod timestamp;
 pub use timestamp::*;
 
-mod authorship;
-pub use authorship::*;
+mod parachain_info_;
+pub use parachain_info_::*;
 
+// Monetary stuff.
 mod balances;
 pub use balances::*;
 
 mod transaction_payment;
 pub use transaction_payment::*;
 
-mod parachain_system;
-pub use parachain_system::*;
+// Consensus stuff.
+mod authorship;
+pub use authorship::*;
 
-mod parachain_info_;
-pub use parachain_info_::*;
-
-mod aura_ext;
-pub use aura_ext::*;
-
-mod xcmp_queue;
-pub use xcmp_queue::*;
-
-mod dmp_queue;
-pub use dmp_queue::*;
+mod collator_selection;
+pub use collator_selection::*;
 
 mod session;
 pub use session::*;
@@ -52,9 +49,41 @@ pub use session::*;
 mod aura;
 pub use aura::*;
 
-mod collator_selection;
-pub use collator_selection::*;
+mod aura_ext;
+pub use aura_ext::*;
 
+// Governance stuff.
+// Democracy: pallet_democracy = 11,
+// Council: pallet_collective::<Instance1> = 12,
+// TechnicalCommittee: pallet_collective::<Instance2> = 13,
+// PhragmenElection: pallet_elections_phragmen = 14,
+// TechnicalMembership: pallet_membership::<Instance1> = 15,
+// Treasury: pallet_treasury = 16,
+// Tips: pallet_tips = 17,
+
+// Utility stuff.
+mod sudo;
+pub use sudo::*;
+
+// Vesting: pallet_vesting = 19,
+// Utility: pallet_utility = 20,
+// Identity: pallet_identity = 21,
+// Scheduler: pallet_scheduler = 22,
+// Preimage: pallet_preimage = 23,
+// Proxy: pallet_proxy = 24,
+// Multisig: pallet_multisig = 25,
+
+// XCM stuff.
+mod xcmp_queue;
+pub use xcmp_queue::*;
+
+mod polkadot_xcm;
+pub use polkadot_xcm::*;
+
+mod dmp_queue;
+pub use dmp_queue::*;
+
+// EVM stuff.
 mod ethereum;
 pub use ethereum::*;
 
@@ -63,6 +92,3 @@ pub use evm::*;
 
 mod base_fee;
 pub use base_fee::*;
-
-mod polkadot_xcm;
-pub use polkadot_xcm::*;
