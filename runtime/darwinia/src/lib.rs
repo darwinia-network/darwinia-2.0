@@ -436,7 +436,7 @@ sp_api::impl_runtime_apis! {
 
 	impl fp_rpc::EthereumRuntimeRPCApi<Block> for Runtime {
 		fn chain_id() -> u64 {
-			<Runtime as pallet_evm::Config>::ChainId::get()
+			<<Runtime as pallet_evm::Config>::ChainId as frame_support::traits::Get<u64>>::get()
 		}
 
 		fn account_basic(address: H160) -> pallet_evm::Account {
