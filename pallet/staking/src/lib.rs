@@ -19,6 +19,7 @@
 //! # Darwinia parachain staking
 
 #![cfg_attr(not(feature = "std"), no_std)]
+#![deny(missing_docs)]
 
 #[cfg(test)]
 mod mock;
