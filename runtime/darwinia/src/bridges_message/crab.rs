@@ -32,81 +32,81 @@ use bridge_runtime_common::{
 	messages::{source::*, target::*, *},
 };
 
-/// Message delivery proof for CrabParachain -> Crab messages.
+/// Message delivery proof for Darwinia -> Crab messages.
 pub type ToCrabMessagesDeliveryProof = FromBridgedChainMessagesDeliveryProof<bp_crab::Hash>;
-/// Message proof for Crab -> CrabParachain  messages.
+/// Message proof for Crab -> Darwinia messages.
 pub type FromCrabMessagesProof = FromBridgedChainMessagesProof<bp_crab::Hash>;
 
-/// Message payload for CrabParachain -> Crab messages.
+/// Message payload for Darwinia -> Crab messages.
 pub type ToCrabMessagePayload = FromThisChainMessagePayload<WithCrabMessageBridge>;
-/// Message payload for Crab -> CrabParachain messages.
+/// Message payload for Crab -> Darwinia messages.
 pub type FromCrabMessagePayload = FromBridgedChainMessagePayload<WithCrabMessageBridge>;
 
-/// Message verifier for CrabParachain -> Crab messages.
+/// Message verifier for Darwinia -> Crab messages.
 pub type ToCrabMessageVerifier<R> =
 FromThisChainMessageVerifier<WithCrabMessageBridge, R, WithCrabFeeMarket>;
 
 /// Encoded Crab Call as it comes from Crab.
 pub type FromCrabEncodedCall = FromBridgedChainEncodedMessageCall<Call>;
 
-/// Call-dispatch based message dispatch for Crab -> CrabParachain messages.
+/// Call-dispatch based message dispatch for Crab -> Darwinia messages.
 pub type FromCrabMessageDispatch =
 FromBridgedChainMessageDispatch<WithCrabMessageBridge, Runtime, Ring, WithCrabDispatch>;
 
-pub const INITIAL_CRAB_TO_CRAB_PARACHAIN_CONVERSION_RATE: FixedU128 =
+pub const INITIAL_CRAB_TO_DARWINIA_CONVERSION_RATE: FixedU128 =
 	FixedU128::from_inner(FixedU128::DIV);
 
 frame_support::parameter_types! {
-	/// CrabParachain to Crab conversion rate. Initially we trate both tokens as equal.
-	pub storage CrabToCrabParachainConversionRate: FixedU128 = INITIAL_CRAB_TO_CRAB_PARACHAIN_CONVERSION_RATE;
+	/// Darwinia to Crab conversion rate. Initially we treate both tokens as equal.
+	pub storage CrabToDarwiniaConversionRate: FixedU128 = INITIAL_CRAB_TO_DARWINIA_CONVERSION_RATE;
 }
 
 #[derive(Clone, PartialEq, Eq, Encode, Decode, RuntimeDebug, TypeInfo)]
-pub enum CrabParachainToCrabParameter {
-	/// The conversion formula we use is: `CrabTokens = CrabParachainTokens *
+pub enum DarwiniaToCrabParameter {
+	/// The conversion formula we use is: `CrabTokens = DarwiniaTokens *
 	/// conversion_rate`.
-	CrabToCrabParachainConversionRate(FixedU128),
+	CrabToDarwiniaConversionRate(FixedU128),
 }
-impl Parameter for CrabParachainToCrabParameter {
+impl Parameter for DarwiniaToCrabParameter {
 	fn save(&self) {
 		match *self {
-			CrabParachainToCrabParameter::CrabToCrabParachainConversionRate(
+			DarwiniaToCrabParameter::CrabToDarwiniaConversionRate(
 				ref conversion_rate,
-			) => CrabToCrabParachainConversionRate::set(conversion_rate),
+			) => CrabToDarwiniaConversionRate::set(conversion_rate),
 		}
 	}
 }
 
-/// Crab <-> CrabParachain message bridge.
+/// Crab <-> Darwinia message bridge.
 #[derive(Clone, Copy, RuntimeDebug)]
 pub struct WithCrabMessageBridge;
 impl MessageBridge for WithCrabMessageBridge {
 	type BridgedChain = Crab;
-	type ThisChain = CrabParachain;
+	type ThisChain = Darwinia;
 
 	const BRIDGED_CHAIN_ID: ChainId = CRAB_CHAIN_ID;
 	const BRIDGED_MESSAGES_PALLET_NAME: &'static str =
-		bp_crab_parachain::WITH_CRAB_PARACHAIN_MESSAGES_PALLET_NAME;
+		bp_darwinia::WITH_DARWINIA_MESSAGES_PALLET_NAME;
 	const RELAYER_FEE_PERCENT: u32 = 10;
-	const THIS_CHAIN_ID: ChainId = CRAB_PARACHAIN_CHAIN_ID;
+	const THIS_CHAIN_ID: ChainId = DARWINIA_CHAIN_ID;
 }
 
 #[derive(Clone, Copy, RuntimeDebug)]
-pub struct CrabParachain;
-impl ChainWithMessages for CrabParachain {
-	type AccountId = bp_crab_parachain::AccountId;
-	type Balance = bp_crab_parachain::Balance;
-	type Hash = bp_crab_parachain::Hash;
-	type Signature = bp_crab_parachain::Signature;
-	type Signer = bp_crab_parachain::AccountPublic;
+pub struct Darwinia;
+impl ChainWithMessages for Darwinia {
+	type AccountId = bp_darwinia::AccountId;
+	type Balance = bp_darwinia::Balance;
+	type Hash = bp_darwinia::Hash;
+	type Signature = bp_darwinia::Signature;
+	type Signer = bp_darwinia::AccountPublic;
 	type Weight = Weight;
 }
-impl ThisChainWithMessages for CrabParachain {
+impl ThisChainWithMessages for Darwinia {
 	type Call = Call;
 	type Origin = Origin;
 
 	fn is_message_accepted(_send_origin: &Self::Origin, lane: &LaneId) -> bool {
-		*lane == CRAB_CRAB_PARACHAIN_LANE
+		*lane == CRAB_DARWINIA_LANE
 	}
 
 	fn maximal_pending_messages_at_outbound_lane() -> MessageNonce {
