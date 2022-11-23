@@ -27,6 +27,9 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 mod pallets;
 pub use pallets::*;
 
+mod bridges_message;
+pub use bridges_message::*;
+
 mod weights;
 
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
