@@ -158,14 +158,14 @@ pub fn local_testnet_config() -> ChainSpec {
 			testnet_genesis(
 				// initial collators.
 				vec![
+					// Bind the `Alice` to `Alith` to make `--alice` available for testnet.
 					(
 						array_bytes::hex_n_into_unchecked(ALITH),
-						// Make `--alice` available for testnet.
 						get_collator_keys_from_seed("Alice"),
 					),
+					// Bind the `Bob` to `Balthar` to make `--bob` available for testnet.
 					(
 						array_bytes::hex_n_into_unchecked(BALTAHAR),
-						// Make `--bob` available for testnet.
 						get_collator_keys_from_seed("Bob"),
 					),
 				],
