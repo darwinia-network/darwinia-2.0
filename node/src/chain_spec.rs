@@ -44,7 +44,7 @@ pub const REVERT_BYTECODE: [u8; 5] = [0x60, 0x00, 0x60, 0x00, 0xFD];
 
 // These are are testnet-only keys.
 const ALITH: &str = "0xf24FF3a9CF04c71Dbc94D0b566f7A27B94566cac";
-const BALTAHAR: &str = "0x3Cd0A705a2DC65e5b1E1205896BaA2be8A07c6e0";
+const BALTATHAR: &str = "0x3Cd0A705a2DC65e5b1E1205896BaA2be8A07c6e0";
 const CHARLETH: &str = "0x798d4Ba9baf0064Ec19eB4F0a1a45785ae9D6DFc";
 const DOROTHY: &str = "0x773539d4Ac0e786233D90A233654ccEE26a613D9";
 const ETHAN: &str = "0xFf64d3F6efE2317EE2807d223a0Bdc4c0c49dfDB";
@@ -114,13 +114,13 @@ pub fn development_config() -> ChainSpec {
 					),
 					// Bind the `Bob` to `Balthar` to make `--bob` available for testnet.
 					(
-						array_bytes::hex_n_into_unchecked(BALTAHAR),
+						array_bytes::hex_n_into_unchecked(BALTATHAR),
 						get_collator_keys_from_seed("Bob"),
 					),
 				],
 				vec![
 					array_bytes::hex_n_into_unchecked(ALITH),
-					array_bytes::hex_n_into_unchecked(BALTAHAR),
+					array_bytes::hex_n_into_unchecked(BALTATHAR),
 					array_bytes::hex_n_into_unchecked(CHARLETH),
 					array_bytes::hex_n_into_unchecked(DOROTHY),
 					array_bytes::hex_n_into_unchecked(ETHAN),
@@ -165,13 +165,13 @@ pub fn local_testnet_config() -> ChainSpec {
 					),
 					// Bind the `Bob` to `Balthar` to make `--bob` available for testnet.
 					(
-						array_bytes::hex_n_into_unchecked(BALTAHAR),
+						array_bytes::hex_n_into_unchecked(BALTATHAR),
 						get_collator_keys_from_seed("Bob"),
 					),
 				],
 				vec![
 					array_bytes::hex_n_into_unchecked(ALITH),
-					array_bytes::hex_n_into_unchecked(BALTAHAR),
+					array_bytes::hex_n_into_unchecked(BALTATHAR),
 					array_bytes::hex_n_into_unchecked(CHARLETH),
 					array_bytes::hex_n_into_unchecked(DOROTHY),
 					array_bytes::hex_n_into_unchecked(ETHAN),
