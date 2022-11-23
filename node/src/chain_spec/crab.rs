@@ -51,9 +51,9 @@ pub fn development_config() -> ChainSpec {
 
 	ChainSpec::from_genesis(
 		// Name
-		"Development",
+		"Crab Development",
 		// ID
-		"dev",
+		"crab-dev",
 		ChainType::Development,
 		move || {
 			testnet_genesis(
