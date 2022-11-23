@@ -19,9 +19,12 @@
 // darwinia
 use crate::*;
 
-impl pallet_utility::Config for Runtime {
-	type PalletsOrigin = OriginCaller;
-	type RuntimeCall = RuntimeCall;
+impl pallet_preimage::Config for Runtime {
+	type BaseDeposit = ConstU128<{ 500 * UNIT }>;
+	type ByteDeposit = ConstU128<{ darwinia_deposit(0, 1) }>;
+	type Currency = Balances;
+	type ManagerOrigin = Root;
+	type MaxSize = ConstU32<{ 4096 * 1024 }>;
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = ();
 }

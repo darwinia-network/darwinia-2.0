@@ -74,8 +74,10 @@ mod utility;
 
 mod identity;
 
-// Scheduler: pallet_scheduler = 22,
-// Preimage: pallet_preimage = 23,
+mod scheduler;
+
+mod preimage;
+
 // Proxy: pallet_proxy = 24,
 // Multisig: pallet_multisig = 25,
 

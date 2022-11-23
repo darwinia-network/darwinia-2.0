@@ -282,8 +282,8 @@ frame_support::construct_runtime! {
 		Vesting: pallet_vesting = 19,
 		Utility: pallet_utility = 20,
 		Identity: pallet_identity = 21,
-		// Scheduler: pallet_scheduler = 22,
-		// Preimage: pallet_preimage = 23,
+		Scheduler: pallet_scheduler = 22,
+		Preimage: pallet_preimage = 23,
 		// Proxy: pallet_proxy = 24,
 		// Multisig: pallet_multisig = 25,
 
