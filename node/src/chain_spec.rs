@@ -221,9 +221,11 @@ pub fn shell_config() -> ChainSpec {
 				},
 				parachain_system: Default::default(),
 				parachain_info: darwinia_runtime::ParachainInfoConfig { parachain_id: 2046.into() },
+
 				// Monetary stuff.
 				balances: Default::default(),
 				transaction_payment: Default::default(),
+
 				// Consensus stuff.
 				// TODO: update this before final release
 				collator_selection: darwinia_runtime::CollatorSelectionConfig {
@@ -242,12 +244,16 @@ pub fn shell_config() -> ChainSpec {
 				// take care of this.
 				aura: Default::default(),
 				aura_ext: Default::default(),
+
 				// Utility stuff.
 				sudo: Default::default(),
+				vesting: Default::default(),
+
 				// XCM stuff.
 				polkadot_xcm: darwinia_runtime::PolkadotXcmConfig {
 					safe_xcm_version: Some(SAFE_XCM_VERSION),
 				},
+
 				// EVM stuff.
 				ethereum: Default::default(),
 				evm: Default::default(),
@@ -284,11 +290,13 @@ fn testnet_genesis(
 		},
 		parachain_system: Default::default(),
 		parachain_info: darwinia_runtime::ParachainInfoConfig { parachain_id: id },
+
 		// Monetary stuff.
 		balances: darwinia_runtime::BalancesConfig {
 			balances: endowed_accounts.iter().cloned().map(|k| (k, 100_000_000 * UNIT)).collect(),
 		},
 		transaction_payment: Default::default(),
+
 		// Consensus stuff.
 		collator_selection: darwinia_runtime::CollatorSelectionConfig {
 			invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
@@ -311,12 +319,16 @@ fn testnet_genesis(
 		// of this.
 		aura: Default::default(),
 		aura_ext: Default::default(),
+
 		// Utility stuff.
 		sudo: Default::default(),
+		vesting: Default::default(),
+
 		// XCM stuff.
 		polkadot_xcm: darwinia_runtime::PolkadotXcmConfig {
 			safe_xcm_version: Some(SAFE_XCM_VERSION),
 		},
+
 		// EVM stuff.
 		ethereum: Default::default(),
 		evm: EvmConfig {

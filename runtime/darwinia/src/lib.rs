@@ -279,7 +279,7 @@ frame_support::construct_runtime! {
 
 		// Utility stuff.
 		Sudo: pallet_sudo = 18,
-		// Vesting: pallet_vesting = 19,
+		Vesting: pallet_vesting = 19,
 		// Utility: pallet_utility = 20,
 		// Identity: pallet_identity = 21,
 		// Scheduler: pallet_scheduler = 22,

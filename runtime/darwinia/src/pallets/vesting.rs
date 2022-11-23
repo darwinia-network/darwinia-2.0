@@ -19,12 +19,14 @@
 // darwinia
 use crate::*;
 
-impl pallet_transaction_payment::Config for Runtime {
-	type FeeMultiplierUpdate = polkadot_runtime_common::SlowAdjustingFeeUpdate<Self>;
-	// Relay Chain `TransactionByteFee` / 10
-	type LengthToFee = ConstantMultiplier<Balance, ConstU128<{ 10 * MICROUNIT }>>;
-	type OnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, ()>;
-	type OperationalFeeMultiplier = sp_runtime::traits::ConstU8<5>;
+impl pallet_vesting::Config for Runtime {
+	type BlockNumberToBalance = sp_runtime::traits::ConvertInto;
+	type Currency = Balances;
+	type MinVestedTransfer = ConstU128<UNIT>;
 	type RuntimeEvent = RuntimeEvent;
-	type WeightToFee = WeightToFee;
+	type WeightInfo = ();
+
+	// `VestingInfo` encode length is 36bytes. 28 schedules gets encoded as 1009 bytes, which is the
+	// highest number of schedules that encodes less than 2^10.
+	const MAX_VESTING_SCHEDULES: u32 = 28;
 }

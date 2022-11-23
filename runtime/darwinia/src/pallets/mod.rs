@@ -16,6 +16,11 @@
 // You should have received a copy of the GNU General Public License
 // along with Darwinia. If not, see <https://www.gnu.org/licenses/>.
 
+mod shared_imports {
+	pub use sp_runtime::traits::{ConstU128, ConstU16, ConstU32, ConstU64, ConstU8};
+}
+pub use shared_imports::*;
+
 // System stuffs.
 mod system;
 pub use system::*;
@@ -65,7 +70,9 @@ pub use aura_ext::*;
 mod sudo;
 pub use sudo::*;
 
-// Vesting: pallet_vesting = 19,
+mod vesting;
+pub use vesting::*;
+
 // Utility: pallet_utility = 20,
 // Identity: pallet_identity = 21,
 // Scheduler: pallet_scheduler = 22,
