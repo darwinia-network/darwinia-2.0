@@ -99,6 +99,30 @@ pub type Executive = frame_executive::Executive<
 	AllPalletsWithSystem,
 >;
 
+/// Darwinia proposal base fee.
+pub const DARWINIA_PROPOSAL_REQUIREMENT: Balance = 5000 * UNIT;
+
+/// Runtime version.
+#[sp_version::runtime_version]
+pub const VERSION: RuntimeVersion = RuntimeVersion {
+	spec_name: sp_runtime::create_runtime_str!("Darwinia2"),
+	impl_name: sp_runtime::create_runtime_str!("DarwiniaOfficialRust"),
+	authoring_version: 0,
+	spec_version: 6_0_0_0,
+	impl_version: 0,
+	apis: RUNTIME_API_VERSIONS,
+	transaction_version: 0,
+	state_version: 0,
+};
+
+/// Deposit calculator for Darwinia.
+/// 100 UNIT for the base fee, 102.4 UNIT/MB.
+pub const fn darwinia_deposit(items: u32, bytes: u32) -> Balance {
+	// First try.
+	items as Balance * 100 * UNIT + (bytes as Balance) * 100 * MICROUNIT
+	// items as Balance * 100 * UNIT + (bytes as Balance) * 100 * MILLIUNIT
+}
+
 // TODO: move to impl.rs
 pub struct DealWithFees<R>(sp_std::marker::PhantomData<R>);
 impl<R> frame_support::traits::OnUnbalanced<pallet_balances::NegativeImbalance<R>>
@@ -222,22 +246,6 @@ impl WeightToFeePolynomial for WeightToFee {
 		}]
 	}
 }
-
-/// Runtime version.
-#[sp_version::runtime_version]
-pub const VERSION: RuntimeVersion = RuntimeVersion {
-	spec_name: sp_runtime::create_runtime_str!("Darwinia2"),
-	impl_name: sp_runtime::create_runtime_str!("DarwiniaOfficialRust"),
-	authoring_version: 0,
-	spec_version: 6_0_0_0,
-	impl_version: 0,
-	apis: RUNTIME_API_VERSIONS,
-	transaction_version: 0,
-	state_version: 0,
-};
-
-/// The existential deposit.
-pub const EXISTENTIAL_DEPOSIT: Balance = 0;
 
 /// The version information used to identify this runtime when compiled natively.
 #[cfg(feature = "std")]

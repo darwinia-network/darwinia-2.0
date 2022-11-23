@@ -97,14 +97,3 @@ pub const MWEI: Balance = 1_000 * KWEI;
 pub const KWEI: Balance = 1_000 * WEI;
 /// 1 wei — 1
 pub const WEI: Balance = 1;
-
-/// Darwinia proposal base fee.
-pub const DARWINIA_PROPOSAL_REQUIREMENT: Balance = 5000 * UNIT;
-
-/// Deposit calculator for Darwinia.
-/// 100 UNIT for the base fee, 102.4 UNIT/MB.
-pub const fn darwinia_deposit(items: u32, bytes: u32) -> Balance {
-	// First try.
-	items as Balance * 100 * UNIT + (bytes as Balance) * 100 * MICROUNIT
-	// items as Balance * 100 * UNIT + (bytes as Balance) * 100 * MILLIUNIT
-}
