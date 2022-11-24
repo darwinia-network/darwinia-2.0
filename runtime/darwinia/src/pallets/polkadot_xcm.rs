@@ -73,8 +73,8 @@ pub type XcmOriginToTransactDispatchOrigin = (
 	// Native converter for sibling Parachains; will convert to a `SiblingPara` origin when
 	// recognized.
 	SiblingParachainAsNative<cumulus_pallet_xcm::Origin, RuntimeOrigin>,
-	// Native signed account converter; this just converts an `AccountId32` origin into a normal
-	// `RuntimeOrigin::Signed` origin of the same 32-byte value.
+	// Native signed account converter; this just converts an `AccountKey20` origin into a normal
+	// `RuntimeOrigin::Signed` origin of the same 20-byte value.
 	SignedAccountKey20AsNative<RelayNetwork, RuntimeOrigin>,
 	// Xcm origins can be represented natively under the Xcm pallet's Xcm origin.
 	XcmPassthrough<RuntimeOrigin>,
