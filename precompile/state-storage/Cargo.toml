@@ -17,7 +17,7 @@ pallet-evm = { default-features = false, git = "https://github.com/paritytech/fr
 # moonbeam
 precompile-utils = { default-features = false, git = "https://github.com/darwinia-network/moonbeam.git", branch = "polkadot-v0.9.30" }
 
-# paritytech
+# substrate
 frame-support = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
 sp-std        = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
 
@@ -29,7 +29,7 @@ scale-info = { version = "2.3", features = ["derive"] }
 # moonbeam
 precompile-utils = { git = "https://github.com/darwinia-network/moonbeam.git", branch = "polkadot-v0.9.30", features = ["testing"] }
 
-# paritytech
+# substrate
 frame-system     = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
 pallet-balances  = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
 pallet-timestamp = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
@@ -47,7 +47,7 @@ std = [
 	# moonbeam
 	"precompile-utils/std",
 
-	# paritytech
+	# substrate
 	"frame-support/std",
 	"sp-std/std",
 ]

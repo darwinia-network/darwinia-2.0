@@ -29,7 +29,7 @@ mod tests;
 mod weights;
 pub use weights::WeightInfo;
 
-// paritytech
+// substrate
 use frame_support::pallet_prelude::*;
 
 #[frame_support::pallet]
@@ -70,7 +70,7 @@ pub mod pallet {
 	}
 
 	#[pallet::pallet]
-	#[pallet::without_storage_info]
+	#[pallet::generate_store(pub(super) trait Store)]
 	pub struct Pallet<T>(PhantomData<T>);
 	#[pallet::hooks]
 	impl<T: Config> Hooks<T::BlockNumber> for Pallet<T> {
@@ -78,6 +78,10 @@ pub mod pallet {
 			0
 		}
 	}
-	impl<T: Config> Pallet<T> {}
+	#[pallet::call]
+	impl<T> Pallet<T> where T: Config {
+
+	}
+	impl<T> Pallet<T> where T: Config {}
 }
 pub use pallet::*;
