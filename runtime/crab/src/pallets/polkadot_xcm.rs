@@ -35,7 +35,7 @@ pub type LocalAssetTransactor = CurrencyAdapter<
 	// Use this currency:
 	Balances,
 	// Use this currency when it is a fungible asset matching the given location or name:
-	IsConcrete<RelayLocation>,
+	IsConcrete<AnchoringSelfReserve>,
 	// Do a simple punn to convert an AccountId32 MultiLocation into a native chain account ID:
 	LocationToAccountId,
 	// Our chain's account ID type (we can't get away without mentioning it explicitly):
@@ -45,7 +45,7 @@ pub type LocalAssetTransactor = CurrencyAdapter<
 >;
 
 frame_support::parameter_types! {
-	pub const RelayNetwork: NetworkId = NetworkId::Any;
+	pub const RelayNetwork: NetworkId = NetworkId::Kusama;
 	pub RelayChainOrigin: RuntimeOrigin = cumulus_pallet_xcm::Origin::Relay.into();
 }
 /// Type for specifying how a `MultiLocation` can be converted into an `AccountId`. This is used
@@ -73,8 +73,8 @@ pub type XcmOriginToTransactDispatchOrigin = (
 	// Native converter for sibling Parachains; will convert to a `SiblingPara` origin when
 	// recognized.
 	SiblingParachainAsNative<cumulus_pallet_xcm::Origin, RuntimeOrigin>,
-	// Native signed account converter; this just converts an `AccountId32` origin into a normal
-	// `RuntimeOrigin::Signed` origin of the same 32-byte value.
+	// Native signed account converter; this just converts an `AccountKey20` origin into a normal
+	// `RuntimeOrigin::Signed` origin of the same 20-byte value.
 	SignedAccountKey20AsNative<RelayNetwork, RuntimeOrigin>,
 	// Xcm origins can be represented natively under the Xcm pallet's Xcm origin.
 	XcmPassthrough<RuntimeOrigin>,
@@ -95,15 +95,18 @@ pub type Barrier = DenyThenTry<
 >;
 
 frame_support::parameter_types! {
-	pub const RelayLocation: MultiLocation = MultiLocation::parent();
 	pub const MaxInstructions: u32 = 100;
+	pub AnchoringSelfReserve: MultiLocation = MultiLocation::new(
+		0,
+		X1(PalletInstance(<Balances as PalletInfoAccess>::index() as u8))
+	);
 	// One XCM operation is 1_000_000_000 weight - almost certainly a conservative estimate.
 	pub Ancestry: MultiLocation = Parachain(ParachainInfo::parachain_id().into()).into();
 	pub UnitWeightCost: u64 = 1_000_000_000;
 }
 
-pub struct XcmConfig;
-impl xcm_executor::Config for XcmConfig {
+pub struct XcmExecutorConfig;
+impl xcm_executor::Config for XcmExecutorConfig {
 	type AssetClaims = PolkadotXcm;
 	// How to withdraw and deposit an asset.
 	type AssetTransactor = LocalAssetTransactor;
@@ -117,8 +120,13 @@ impl xcm_executor::Config for XcmConfig {
 	type ResponseHandler = PolkadotXcm;
 	type RuntimeCall = RuntimeCall;
 	type SubscriptionService = PolkadotXcm;
-	type Trader =
-		UsingComponents<WeightToFee, RelayLocation, AccountId, Balances, DealWithFees<Runtime>>;
+	type Trader = UsingComponents<
+		WeightToFee,
+		AnchoringSelfReserve,
+		AccountId,
+		Balances,
+		DealWithFees<Runtime>,
+	>;
 	type Weigher = FixedWeightBounds<UnitWeightCost, RuntimeCall, MaxInstructions>;
 	type XcmSender = XcmRouter;
 }
@@ -147,15 +155,15 @@ impl pallet_xcm::Config for Runtime {
 	type XcmExecuteFilter = Nothing;
 	// ^ Disable dispatchable execute on the XCM pallet.
 	// Needs to be `Everything` for local testing.
-	type XcmExecutor = XcmExecutor<XcmConfig>;
+	type XcmExecutor = XcmExecutor<XcmExecutorConfig>;
 	type XcmReserveTransferFilter = Nothing;
 	type XcmRouter = XcmRouter;
-	type XcmTeleportFilter = Everything;
+	type XcmTeleportFilter = Nothing;
 
 	const VERSION_DISCOVERY_QUEUE_SIZE: u32 = 100;
 }
 
 impl cumulus_pallet_xcm::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
-	type XcmExecutor = XcmExecutor<XcmConfig>;
+	type XcmExecutor = XcmExecutor<XcmExecutorConfig>;
 }
