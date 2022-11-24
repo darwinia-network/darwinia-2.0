@@ -35,7 +35,7 @@ pub type LocalAssetTransactor = CurrencyAdapter<
 	// Use this currency:
 	Balances,
 	// Use this currency when it is a fungible asset matching the given location or name:
-	IsConcrete<RelayLocation>,
+	IsConcrete<AnchoringSelfReserve>,
 	// Do a simple punn to convert an AccountId32 MultiLocation into a native chain account ID:
 	LocationToAccountId,
 	// Our chain's account ID type (we can't get away without mentioning it explicitly):
@@ -97,6 +97,10 @@ pub type Barrier = DenyThenTry<
 frame_support::parameter_types! {
 	pub const RelayLocation: MultiLocation = MultiLocation::parent();
 	pub const MaxInstructions: u32 = 100;
+	pub AnchoringSelfReserve: MultiLocation = MultiLocation::new(
+		0,
+		X1(PalletInstance(<Balances as PalletInfoAccess>::index() as u8))
+	);
 	// One XCM operation is 1_000_000_000 weight - almost certainly a conservative estimate.
 	pub Ancestry: MultiLocation = Parachain(ParachainInfo::parachain_id().into()).into();
 	pub UnitWeightCost: u64 = 1_000_000_000;
