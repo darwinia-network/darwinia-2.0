@@ -157,6 +157,7 @@ pub fn config() -> ChainSpec {
 	properties.insert("tokenDecimals".into(), 18.into());
 	properties.insert("ss58Format".into(), 18.into());
 
+	// TODO: update this before final release
 	ChainSpec::from_genesis(
 		// Name
 		"Darwinia",
@@ -179,12 +180,10 @@ pub fn config() -> ChainSpec {
 				transaction_payment: Default::default(),
 
 				// Consensus stuff.
-				// TODO: update this before final release
 				collator_selection: darwinia_runtime::CollatorSelectionConfig {
 					invulnerables: vec![array_bytes::hex_n_into_unchecked(ALITH)],
 					..Default::default()
 				},
-				// TODO: update this before final release
 				session: darwinia_runtime::SessionConfig {
 					keys: vec![(
 						array_bytes::hex_n_into_unchecked(ALITH),
@@ -196,6 +195,14 @@ pub fn config() -> ChainSpec {
 				// take care of this.
 				aura: Default::default(),
 				aura_ext: Default::default(),
+
+				// Governance stuff.
+				democracy: Default::default(),
+				council: Default::default(),
+				technical_committee: Default::default(),
+				phragmen_election: Default::default(),
+				technical_membership: Default::default(),
+				treasury: Default::default(),
 
 				// Utility stuff.
 				sudo: Default::default(),
@@ -271,6 +278,14 @@ fn testnet_genesis(
 		// of this.
 		aura: Default::default(),
 		aura_ext: Default::default(),
+
+		// Governance stuff.
+		democracy: Default::default(),
+		council: Default::default(),
+		technical_committee: Default::default(),
+		phragmen_election: Default::default(),
+		technical_membership: Default::default(),
+		treasury: Default::default(),
 
 		// Utility stuff.
 		sudo: Default::default(),
