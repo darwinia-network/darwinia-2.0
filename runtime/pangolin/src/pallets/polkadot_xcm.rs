@@ -120,8 +120,13 @@ impl xcm_executor::Config for XcmExecutorConfig {
 	type ResponseHandler = PolkadotXcm;
 	type RuntimeCall = RuntimeCall;
 	type SubscriptionService = PolkadotXcm;
-	type Trader =
-		UsingComponents<WeightToFee, AnchoringSelfReserve, AccountId, Balances, DealWithFees<Runtime>>;
+	type Trader = UsingComponents<
+		WeightToFee,
+		AnchoringSelfReserve,
+		AccountId,
+		Balances,
+		DealWithFees<Runtime>,
+	>;
 	type Weigher = FixedWeightBounds<UnitWeightCost, RuntimeCall, MaxInstructions>;
 	type XcmSender = XcmRouter;
 }
