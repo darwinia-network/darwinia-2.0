@@ -17,10 +17,14 @@
 // along with Darwinia. If not, see <https://www.gnu.org/licenses/>.
 
 // darwinia
-use crate::mock::{
-	Account::{Alice, Bob, Precompile},
-	Assets, ExtBuilder, InternalCall, PrecompilesValue, RuntimeOrigin, System, TestPrecompiles,
-	TestRuntime, TEST_ID,
+use crate::{
+	log3,
+	mock::{
+		Account::{Alice, Bob, Charlie, Precompile},
+		Assets, ExtBuilder, InternalCall, PrecompilesValue, RuntimeOrigin, System, TestPrecompiles,
+		TestRuntime, TEST_ID,
+	},
+	SELECTOR_LOG_APPROVAL, SELECTOR_LOG_TRANSFER,
 };
 // moonbeam
 use precompile_utils::{
@@ -31,7 +35,8 @@ use precompile_utils::{
 // substrate
 use frame_support::{assert_ok, StorageHasher, Twox128};
 use sha3::{Digest, Keccak256};
-use sp_core::U256;
+use sp_core::{H256, U256};
+use sp_std::str::from_utf8;
 
 fn precompiles() -> TestPrecompiles<TestRuntime> {
 	PrecompilesValue::get()
@@ -160,5 +165,150 @@ fn get_balances_unknown_user() {
 			.prepare_test(Alice, Precompile, InternalCall::balance_of { who: Address(Bob.into()) })
 			.expect_no_logs()
 			.execute_returns_encoded(U256::from(0u64));
+	});
+}
+
+#[test]
+fn approve() {
+	ExtBuilder::default().with_balances(vec![(Alice.into(), 1000)]).build().execute_with(|| {
+		assert_ok!(Assets::force_create(RuntimeOrigin::root(), TEST_ID, Alice.into(), true, 1));
+		assert_ok!(Assets::mint(RuntimeOrigin::signed(Alice.into()), TEST_ID, Alice.into(), 1000));
+
+		precompiles()
+			.prepare_test(
+				Alice,
+				Precompile,
+				InternalCall::approve { spender: Address(Bob.into()), value: 500.into() },
+			)
+			.expect_log(log3(
+				Precompile,
+				SELECTOR_LOG_APPROVAL,
+				H256::from(Alice),
+				H256::from(Bob),
+				EvmDataWriter::new().write(U256::from(500)).build(),
+			))
+			.execute_returns_encoded(true);
+	});
+}
+
+#[test]
+fn approve_overflow() {
+	ExtBuilder::default().with_balances(vec![(Alice.into(), 1000)]).build().execute_with(|| {
+		assert_ok!(Assets::force_create(RuntimeOrigin::root(), TEST_ID, Alice.into(), true, 1));
+		assert_ok!(Assets::mint(RuntimeOrigin::signed(Alice.into()), TEST_ID, Alice.into(), 1000));
+
+		precompiles()
+			.prepare_test(
+				Alice,
+				Precompile,
+				InternalCall::approve { spender: Address(Bob.into()), value: U256::MAX },
+			)
+			.execute_reverts(|e| e == b"value: Value is too large for balance type");
+	});
+}
+
+#[test]
+fn check_allowance_existing() {
+	ExtBuilder::default().with_balances(vec![(Alice.into(), 1000)]).build().execute_with(|| {
+		assert_ok!(Assets::force_create(RuntimeOrigin::root(), TEST_ID, Alice.into(), true, 1));
+		assert_ok!(Assets::mint(RuntimeOrigin::signed(Alice.into()), TEST_ID, Alice.into(), 1000));
+
+		precompiles()
+			.prepare_test(
+				Alice,
+				Precompile,
+				InternalCall::approve { spender: Address(Bob.into()), value: 500.into() },
+			)
+			.execute_some();
+
+		precompiles()
+			.prepare_test(
+				Alice,
+				Precompile,
+				InternalCall::allowance {
+					owner: Address(Alice.into()),
+					spender: Address(Bob.into()),
+				},
+			)
+			.expect_cost(0)
+			.expect_no_logs()
+			.execute_returns_encoded(U256::from(500u64));
+	});
+}
+
+#[test]
+fn check_allowance_not_existing() {
+	ExtBuilder::default().with_balances(vec![(Alice.into(), 1000)]).build().execute_with(|| {
+		assert_ok!(Assets::force_create(RuntimeOrigin::root(), TEST_ID, Alice.into(), true, 1));
+
+		precompiles()
+			.prepare_test(
+				Alice,
+				Precompile,
+				InternalCall::allowance {
+					owner: Address(Alice.into()),
+					spender: Address(Bob.into()),
+				},
+			)
+			.expect_cost(0)
+			.expect_no_logs()
+			.execute_returns_encoded(U256::from(0u64));
+	});
+}
+
+#[test]
+fn transfer() {
+	ExtBuilder::default().with_balances(vec![(Alice.into(), 1000)]).build().execute_with(|| {
+		assert_ok!(Assets::force_create(RuntimeOrigin::root(), TEST_ID, Alice.into(), true, 1));
+		assert_ok!(Assets::mint(RuntimeOrigin::signed(Alice.into()), TEST_ID, Alice.into(), 1000));
+
+		precompiles()
+			.prepare_test(
+				Alice,
+				Precompile,
+				InternalCall::transfer { to: Address(Bob.into()), value: 400.into() },
+			)
+			.expect_log(log3(
+				Precompile,
+				SELECTOR_LOG_TRANSFER,
+				H256::from(Alice),
+				H256::from(Bob),
+				EvmDataWriter::new().write(U256::from(400)).build(),
+			))
+			.execute_returns_encoded(true);
+
+		precompiles()
+			.prepare_test(Bob, Precompile, InternalCall::balance_of { who: Address(Bob.into()) })
+			.expect_no_logs()
+			.execute_returns_encoded(U256::from(400));
+
+		precompiles()
+			.prepare_test(
+				Alice,
+				Precompile,
+				InternalCall::balance_of { who: Address(Alice.into()) },
+			)
+			.expect_cost(0)
+			.expect_no_logs()
+			.execute_returns_encoded(U256::from(600));
+	});
+}
+
+#[test]
+fn transfer_not_enough_founds() {
+	ExtBuilder::default().with_balances(vec![(Alice.into(), 1000)]).build().execute_with(|| {
+		assert_ok!(Assets::force_create(RuntimeOrigin::root(), TEST_ID, Alice.into(), true, 1));
+		assert_ok!(Assets::mint(RuntimeOrigin::signed(Alice.into()), TEST_ID, Alice.into(), 1));
+
+		precompiles()
+			.prepare_test(
+				Alice,
+				Precompile,
+				InternalCall::transfer { to: Address(Charlie.into()), value: 50.into() },
+			)
+			.execute_reverts(|output| {
+				from_utf8(&output).unwrap().contains("Dispatched call failed with error: ")
+					&& from_utf8(&output).unwrap().contains("BalanceLow")
+			});
 	});
 }

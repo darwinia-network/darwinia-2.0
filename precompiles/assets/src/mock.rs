@@ -85,6 +85,13 @@ impl Into<H160> for Account {
 	}
 }
 
+impl From<Account> for H256 {
+	fn from(x: Account) -> H256 {
+		let x: H160 = x.into();
+		x.into()
+	}
+}
+
 frame_support::parameter_types! {
 	pub const BlockHashCount: u64 = 250;
 }
