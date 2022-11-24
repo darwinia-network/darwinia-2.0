@@ -95,7 +95,6 @@ pub type Barrier = DenyThenTry<
 >;
 
 frame_support::parameter_types! {
-	pub const RelayLocation: MultiLocation = MultiLocation::parent();
 	pub const MaxInstructions: u32 = 100;
 	pub AnchoringSelfReserve: MultiLocation = MultiLocation::new(
 		0,
@@ -122,7 +121,7 @@ impl xcm_executor::Config for XcmConfig {
 	type RuntimeCall = RuntimeCall;
 	type SubscriptionService = PolkadotXcm;
 	type Trader =
-		UsingComponents<WeightToFee, RelayLocation, AccountId, Balances, DealWithFees<Runtime>>;
+		UsingComponents<WeightToFee, AnchoringSelfReserve, AccountId, Balances, DealWithFees<Runtime>>;
 	type Weigher = FixedWeightBounds<UnitWeightCost, RuntimeCall, MaxInstructions>;
 	type XcmSender = XcmRouter;
 }
