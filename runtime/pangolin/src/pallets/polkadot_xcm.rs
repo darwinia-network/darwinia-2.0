@@ -105,8 +105,8 @@ frame_support::parameter_types! {
 	pub UnitWeightCost: u64 = 1_000_000_000;
 }
 
-pub struct XcmConfig;
-impl xcm_executor::Config for XcmConfig {
+pub struct XcmExecutorConfig;
+impl xcm_executor::Config for XcmExecutorConfig {
 	type AssetClaims = PolkadotXcm;
 	// How to withdraw and deposit an asset.
 	type AssetTransactor = LocalAssetTransactor;
@@ -150,7 +150,7 @@ impl pallet_xcm::Config for Runtime {
 	type XcmExecuteFilter = Nothing;
 	// ^ Disable dispatchable execute on the XCM pallet.
 	// Needs to be `Everything` for local testing.
-	type XcmExecutor = XcmExecutor<XcmConfig>;
+	type XcmExecutor = XcmExecutor<XcmExecutorConfig>;
 	type XcmReserveTransferFilter = Nothing;
 	type XcmRouter = XcmRouter;
 	type XcmTeleportFilter = Nothing;
@@ -160,5 +160,5 @@ impl pallet_xcm::Config for Runtime {
 
 impl cumulus_pallet_xcm::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
-	type XcmExecutor = XcmExecutor<XcmConfig>;
+	type XcmExecutor = XcmExecutor<XcmExecutorConfig>;
 }
