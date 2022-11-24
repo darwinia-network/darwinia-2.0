@@ -53,9 +53,14 @@ type BalanceOf<R> = <R as pallet_assets::Config>::Balance;
 /// AssetId of the specific assets.
 type AssetIdOf<R> = <R as pallet_assets::Config>::AssetId;
 
+/// AccountId of the runtime.
 type AccountIdOf<R> = <R as frame_system::pallet::Config>::AccountId;
 
+/// Convert from precompile AccountId to AssetId
+///
+/// Note: The AssetId generation must follow our precompile AccountId rule.
 pub trait AccountToAssetId<AccountId, AssetId> {
+	/// Get asset id from account id
 	fn account_to_asset_id(account_id: AccountId) -> AssetId;
 }
 
@@ -177,7 +182,6 @@ where
 
 		let to: H160 = to.into();
 		let value = Self::u256_to_amount(value).in_field("value")?;
-
 		{
 			let origin: AccountIdOf<Runtime> = handle.context().caller.into();
 			let to: AccountIdOf<Runtime> = to.into();
@@ -218,7 +222,6 @@ where
 		let from: H160 = from.into();
 		let to: H160 = to.into();
 		let value = Self::u256_to_amount(value).in_field("value")?;
-
 		{
 			let caller: AccountIdOf<Runtime> = handle.context().caller.into();
 			let from: AccountIdOf<Runtime> = from.clone().into();
@@ -295,7 +298,6 @@ where
 
 		let to: H160 = to.into();
 		let value = Self::u256_to_amount(value).in_field("value")?;
-
 		{
 			let origin: AccountIdOf<Runtime> = handle.context().caller.into();
 			let to: AccountIdOf<Runtime> = to.clone().into();
@@ -330,7 +332,6 @@ where
 
 		let from: H160 = from.into();
 		let value = Self::u256_to_amount(value).in_field("value")?;
-
 		{
 			let origin: AccountIdOf<Runtime> = handle.context().caller.into();
 			let from: AccountIdOf<Runtime> = from.clone().into();
@@ -361,8 +362,8 @@ where
 	#[precompile::public("transfer_ownership(address)")]
 	fn transfer_ownership(handle: &mut impl PrecompileHandle, owner: Address) -> EvmResult<bool> {
 		let asset_id = Self::asset_id(handle)?;
-		let owner: H160 = owner.into();
 
+		let owner: H160 = owner.into();
 		{
 			let origin: AccountIdOf<Runtime> = handle.context().caller.into();
 			let owner: AccountIdOf<Runtime> = owner.into();
@@ -407,7 +408,6 @@ where
 		let asset_id = Self::asset_id(handle)?;
 
 		let account: H160 = account.into();
-
 		{
 			let origin: AccountIdOf<Runtime> = handle.context().caller.into();
 			let account: AccountIdOf<Runtime> = account.into();
@@ -427,6 +427,7 @@ where
 
 	fn asset_id(handle: &mut impl PrecompileHandle) -> EvmResult<AssetIdOf<Runtime>> {
 		let asset_id = Runtime::account_to_asset_id(handle.code_address().into());
+
 		if pallet_assets::Pallet::<Runtime>::maybe_total_supply(asset_id).is_some() {
 			return Ok(asset_id);
 		}

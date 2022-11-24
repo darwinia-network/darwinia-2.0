@@ -135,7 +135,7 @@ where
 			a if (1026..1536).contains(&Runtime::account_to_asset_id(a.into())) =>
 				Some(<ERC20Assets<Runtime>>::execute(handle)),
 			// [1536, 2048) reserved for other stable precompiles.
-			// [2048..] reserved for the experimental precompiles.
+			// [2048..) reserved for the experimental precompiles.
 			a if a == addr(2048) => Some(<BLS12381<Runtime>>::execute(handle)),
 			_ => None,
 		}
