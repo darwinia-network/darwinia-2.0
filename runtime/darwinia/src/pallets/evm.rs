@@ -18,6 +18,7 @@
 
 // darwinia
 use crate::*;
+use darwinia_precompile_assets_erc20::ERC20Assets;
 use darwinia_precompile_bls12_381::BLS12381;
 use darwinia_precompile_state_storage::{EthereumStorageFilter, StateStorage};
 // frontier
@@ -129,6 +130,7 @@ where
 			a if a == addr(1024) =>
 				Some(<StateStorage<Runtime, EthereumStorageFilter>>::execute(handle)),
 			a if a == addr(1025) => Some(<Dispatch<Runtime>>::execute(handle)),
+			// a if a == addr(1026) => Some(ERC20Assets::<Runtime>::execute(&self, handle)),
 			// Darwinia precompiles: 2048+ for experimental precompiles.
 			a if a == addr(2048) => Some(<BLS12381<Runtime>>::execute(handle)),
 			_ => None,

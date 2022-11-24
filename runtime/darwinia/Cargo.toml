@@ -37,6 +37,7 @@ cumulus-pallet-session-benchmarking = { optional = true, default-features = fals
 
 # darwinia
 darwinia-common-runtime           = { default-features = false, path = "../common" }
+darwinia-precompile-assets-erc20  = { default-features = false, path = "../../precompiles/assets-erc20" }
 darwinia-precompile-bls12-381     = { default-features = false, path = "../../precompiles/bls12-381" }
 darwinia-precompile-state-storage = { default-features = false, path = "../../precompiles/state-storage" }
 dc-primitives                     = { default-features = false, path = "../../core/primitives" }
@@ -143,6 +144,7 @@ std = [
 
 	# darwinia
 	"darwinia-common-runtime/std",
+	"darwinia-precompile-assets-erc20/std",
 	"darwinia-precompile-bls12-381/std",
 	"darwinia-precompile-state-storage/std",
 	"dc-primitives/std",

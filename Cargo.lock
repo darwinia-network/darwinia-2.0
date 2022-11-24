@@ -2181,7 +2181,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "darwinia-precompile-asserts-erc20"
+name = "darwinia-precompile-assets-erc20"
 version = "6.0.0"
 dependencies = [
  "fp-evm",
@@ -2259,6 +2259,7 @@ dependencies = [
  "cumulus-primitives-timestamp",
  "cumulus-primitives-utility",
  "darwinia-common-runtime",
+ "darwinia-precompile-assets-erc20",
  "darwinia-precompile-bls12-381",
  "darwinia-precompile-state-storage",
  "dc-primitives",
