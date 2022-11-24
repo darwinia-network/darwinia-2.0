@@ -51,7 +51,7 @@ pub fn development_config() -> ChainSpec {
 
 	ChainSpec::from_genesis(
 		// Name
-		"Darwinia Development",
+		"Darwinia2 Development",
 		// ID
 		"darwinia-dev",
 		ChainType::Development,
@@ -102,7 +102,7 @@ pub fn local_testnet_config() -> ChainSpec {
 
 	ChainSpec::from_genesis(
 		// Name
-		"Darwinia Local Testnet",
+		"Darwinia2 Local Testnet",
 		// ID
 		"darwinia_local_testnet",
 		ChainType::Local,
@@ -160,7 +160,7 @@ pub fn config() -> ChainSpec {
 	// TODO: update this before final release
 	ChainSpec::from_genesis(
 		// Name
-		"Darwinia",
+		"Darwinia2",
 		// ID
 		"darwinia",
 		ChainType::Live,

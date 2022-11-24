@@ -51,7 +51,7 @@ pub fn development_config() -> ChainSpec {
 
 	ChainSpec::from_genesis(
 		// Name
-		"Pangolin Development",
+		"Pangolin2 Development",
 		// ID
 		"pangolin-dev",
 		ChainType::Development,
@@ -102,7 +102,7 @@ pub fn local_testnet_config() -> ChainSpec {
 
 	ChainSpec::from_genesis(
 		// Name
-		"Pangolin Local Testnet",
+		"Pangolin2 Local Testnet",
 		// ID
 		"pangolin_local_testnet",
 		ChainType::Local,
@@ -160,7 +160,7 @@ pub fn config() -> ChainSpec {
 	// TODO: update this before final release
 	ChainSpec::from_genesis(
 		// Name
-		"Pangolin",
+		"Pangolin2",
 		// ID
 		"pangolin",
 		ChainType::Live,
