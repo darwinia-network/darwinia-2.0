@@ -184,7 +184,9 @@ pub mod pallet {
 
 	#[derive(Default)]
 	#[pallet::genesis_config]
-	pub struct GenesisConfig {}
+	pub struct GenesisConfig {
+		// TODO
+	}
 	#[pallet::genesis_build]
 	impl<T: Config> GenesisBuild<T> for GenesisConfig {
 		fn build(&self) {}
@@ -257,6 +259,16 @@ pub mod pallet {
 			let who = ensure_signed(origin)?;
 
 			<Nominators<T>>::insert(who, target);
+
+			Ok(())
+		}
+
+		/// TODO
+		#[pallet::weight(0)]
+		pub fn chill(origin: OriginFor<T>) -> DispatchResult {
+			let who = ensure_signed(origin)?;
+
+			// TODO
 
 			Ok(())
 		}
@@ -391,6 +403,7 @@ pub mod pallet {
 				};
 
 				l.staked_ring = nr;
+				// TODO: unstake time lock
 
 				Ok(())
 			})?;
@@ -412,6 +425,7 @@ pub mod pallet {
 				};
 
 				l.staked_kton = nk;
+				// TODO: unstake time lock
 
 				Ok(())
 			})?;
@@ -433,6 +447,7 @@ pub mod pallet {
 				};
 
 				l.staked_deposits.remove(i);
+				// TODO: no need unstake time lock
 
 				Ok(())
 			})?;
@@ -462,7 +477,6 @@ pub mod pallet {
 			(Perquintill::from_rational(amount, P::get().max(1)) * 500_000_000_u128) as _
 		}
 
-		// Calculate the power of an account.
 		fn power_of(who: &T::AccountId) -> Power {
 			<Ledgers<T>>::get(who)
 				.map(|l| {
@@ -477,7 +491,9 @@ pub mod pallet {
 		}
 
 		/// Pay the reward to the collators.
-		pub fn payout() {}
+		pub fn payout() {
+			// TODO
+		}
 
 		/// Elect the new collators.
 		///
