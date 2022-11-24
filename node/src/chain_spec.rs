@@ -265,6 +265,8 @@ pub fn shell_config() -> ChainSpec {
 				ethereum: Default::default(),
 				evm: Default::default(),
 				base_fee: Default::default(),
+
+				assets: Default::default(),
 			}
 		},
 		// Bootnodes
@@ -389,5 +391,6 @@ fn testnet_genesis(
 			},
 		},
 		base_fee: Default::default(),
+		assets: Default::default(),
 	}
 }

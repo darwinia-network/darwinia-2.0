@@ -24,7 +24,6 @@ impl pallet_identity::Config for Runtime {
 	// 258 bytes on-chain.
 	type BasicDeposit = ConstU128<{ darwinia_deposit(1, 258) }>;
 	type Currency = Balances;
-	type RuntimeEvent = RuntimeEvent;
 	// 66 bytes on-chain.
 	type FieldDeposit = ConstU128<{ darwinia_deposit(0, 66) }>;
 	type ForceOrigin = RootOrMoreThanHalf<CouncilCollective>;
@@ -32,6 +31,7 @@ impl pallet_identity::Config for Runtime {
 	type MaxRegistrars = ConstU32<20>;
 	type MaxSubAccounts = ConstU32<100>;
 	type RegistrarOrigin = RootOrMoreThanHalf<CouncilCollective>;
+	type RuntimeEvent = RuntimeEvent;
 	type Slashed = Treasury;
 	// 53 bytes on-chain.
 	type SubAccountDeposit = ConstU128<{ darwinia_deposit(1, 53) }>;

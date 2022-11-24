@@ -19,14 +19,22 @@
 // darwinia
 use crate::*;
 
-impl pallet_multisig::Config for Runtime {
+impl pallet_assets::Config for Runtime {
+	type ApprovalDeposit = ConstU128<0>;
+	type AssetAccountDeposit = ConstU128<2>;
+	type AssetDeposit = ConstU128<2>;
+	type AssetId = u32;
+	type Balance = u128;
 	type Currency = Balances;
-	// One storage item; key size is 32; value is size 4+4+16+32 bytes = 56 bytes.
-	type DepositBase = ConstU128<{ darwinia_deposit(1, 88) }>;
-	// Additional storage item size of 32 bytes.
-	type DepositFactor = ConstU128<{ darwinia_deposit(0, 32) }>;
-	type MaxSignatories = ConstU16<100>;
-	type RuntimeCall = RuntimeCall;
+	type Extra = ();
+	// TODO: Restrict the create asset origin. https://github.com/paritytech/substrate/pull/12586
+	// type CreateOrigin = EnsureRoot<AccountId>;
+	type ForceOrigin = EnsureRoot<AccountId>;
+	type Freezer = ();
+	type MetadataDepositBase = ConstU128<0>;
+	type MetadataDepositPerByte = ConstU128<0>;
+	// type RemoveItemsLimit = ConstU32<1000>;
 	type RuntimeEvent = RuntimeEvent;
+	type StringLimit = ConstU32<20>;
 	type WeightInfo = ();
 }
