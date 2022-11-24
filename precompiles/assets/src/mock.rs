@@ -45,6 +45,8 @@ pub type AssetId = u64;
 pub type AccountId = H160;
 pub type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<TestRuntime>;
 
+pub const TEST_ID: AssetId = 1026;
+
 #[derive(
 	Eq,
 	PartialEq,
@@ -78,7 +80,7 @@ impl Into<H160> for Account {
 			Account::Bob => H160::repeat_byte(0xBB),
 			Account::Charlie => H160::repeat_byte(0xCC),
 			Account::Bogus => H160::repeat_byte(0xDD),
-			Account::Precompile => H160::from_low_u64_be(1),
+			Account::Precompile => H160::from_low_u64_be(TEST_ID),
 		}
 	}
 }
@@ -148,7 +150,7 @@ where
 	}
 
 	pub fn used_addresses() -> [H160; 1] {
-		[addr(1046)]
+		[addr(TEST_ID)]
 	}
 }
 
@@ -159,7 +161,7 @@ where
 {
 	fn execute(&self, handle: &mut impl PrecompileHandle) -> Option<EvmResult<PrecompileOutput>> {
 		match handle.code_address() {
-			a if a == addr(1046) => Some(<ERC20Assets<R>>::execute(handle)),
+			a if a == addr(TEST_ID) => Some(<ERC20Assets<R>>::execute(handle)),
 			_ => None,
 		}
 	}
@@ -187,7 +189,7 @@ frame_support::parameter_types! {
 	pub PrecompilesValue: TestPrecompiles<TestRuntime> = TestPrecompiles::<_>::new();
 }
 
-pub type PCall = ERC20AssetsCall<TestRuntime>;
+pub type InternalCall = ERC20AssetsCall<TestRuntime>;
 
 impl pallet_evm::Config for TestRuntime {
 	type AddressMapping = IdentityAddressMapping;

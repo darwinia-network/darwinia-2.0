@@ -28,6 +28,7 @@ sp-core       = { default-features = false, git = "https://github.com/paritytech
 # crates.io
 codec      = { package = "parity-scale-codec", version = "3.2" }
 scale-info = { version = "2.3", features = ["derive"] }
+sha3       = { version = "0.8" }
 
 # moonbeam
 precompile-utils = { git = "https://github.com/darwinia-network/moonbeam.git", branch = "polkadot-v0.9.30", features = ["testing"] }
