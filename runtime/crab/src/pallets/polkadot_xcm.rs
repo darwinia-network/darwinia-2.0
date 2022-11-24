@@ -153,7 +153,7 @@ impl pallet_xcm::Config for Runtime {
 	type XcmExecutor = XcmExecutor<XcmConfig>;
 	type XcmReserveTransferFilter = Nothing;
 	type XcmRouter = XcmRouter;
-	type XcmTeleportFilter = Everything;
+	type XcmTeleportFilter = Nothing;
 
 	const VERSION_DISCOVERY_QUEUE_SIZE: u32 = 100;
 }
