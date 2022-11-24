@@ -151,14 +151,15 @@ where
 		[addr(1046)]
 	}
 }
+
 impl<R> PrecompileSet for TestPrecompiles<R>
 where
 	R: pallet_evm::Config,
-	ERC20Assets<R>: fp_evm::Precompile,
+	ERC20Assets<R>: Precompile,
 {
 	fn execute(&self, handle: &mut impl PrecompileHandle) -> Option<EvmResult<PrecompileOutput>> {
 		match handle.code_address() {
-			a if a == addr(1046) => Some(ERC20Assets::<R>::execute(handle)),
+			a if a == addr(1046) => Some(<ERC20Assets<R>>::execute(handle)),
 			_ => None,
 		}
 	}
@@ -169,6 +170,13 @@ where
 }
 fn addr(a: u64) -> H160 {
 	H160::from_low_u64_be(a)
+}
+
+impl AccountToAssetId<AccountId, AssetId> for TestRuntime {
+	fn account_to_asset_id(account_id: AccountId) -> AssetId {
+		let addr: H160 = account_id.into();
+		addr.to_low_u64_be()
+	}
 }
 
 frame_support::parameter_types! {
