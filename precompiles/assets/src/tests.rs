@@ -312,3 +312,134 @@ fn transfer_not_enough_founds() {
 			});
 	});
 }
+
+#[test]
+fn transfer_from() {
+	ExtBuilder::default().with_balances(vec![(Alice.into(), 1000)]).build().execute_with(|| {
+		assert_ok!(Assets::force_create(RuntimeOrigin::root(), TEST_ID, Alice.into(), true, 1));
+		assert_ok!(Assets::mint(RuntimeOrigin::signed(Alice.into()), TEST_ID, Alice.into(), 1000));
+
+		precompiles()
+			.prepare_test(
+				Alice,
+				Precompile,
+				InternalCall::approve { spender: Address(Bob.into()), value: 500.into() },
+			)
+			.execute_some();
+
+		precompiles()
+			.prepare_test(
+				Bob, // Bob is the one sending transferFrom!
+				Precompile,
+				InternalCall::transfer_from {
+					from: Address(Alice.into()),
+					to: Address(Charlie.into()),
+					value: 400.into(),
+				},
+			)
+			.expect_log(log3(
+				Precompile,
+				SELECTOR_LOG_TRANSFER,
+				H256::from(Alice),
+				H256::from(Charlie),
+				EvmDataWriter::new().write(U256::from(400)).build(),
+			))
+			.execute_returns_encoded(true);
+
+		precompiles()
+			.prepare_test(
+				Alice,
+				Precompile,
+				InternalCall::balance_of { who: Address(Alice.into()) },
+			)
+			.expect_cost(0) // TODO: Test db read/write costs
+			.expect_no_logs()
+			.execute_returns_encoded(U256::from(600));
+
+		precompiles()
+			.prepare_test(Bob, Precompile, InternalCall::balance_of { who: Address(Bob.into()) })
+			.expect_no_logs()
+			.execute_returns_encoded(U256::from(0));
+
+		precompiles()
+			.prepare_test(
+				Charlie,
+				Precompile,
+				InternalCall::balance_of { who: Address(Charlie.into()) },
+			)
+			.expect_no_logs()
+			.execute_returns_encoded(U256::from(400));
+
+		precompiles()
+			.prepare_test(
+				Alice,
+				Precompile,
+				InternalCall::allowance {
+					owner: Address(Alice.into()),
+					spender: Address(Bob.into()),
+				},
+			)
+			.expect_cost(0)
+			.expect_no_logs()
+			.execute_returns_encoded(U256::from(100u64));
+	});
+}
+
+#[test]
+fn transfer_from_non_incremental_approval() {
+	ExtBuilder::default().with_balances(vec![(Alice.into(), 1000)]).build().execute_with(|| {
+		assert_ok!(Assets::force_create(RuntimeOrigin::root(), TEST_ID, Alice.into(), true, 1));
+		assert_ok!(Assets::mint(RuntimeOrigin::signed(Alice.into()), TEST_ID, Alice.into(), 1000));
+
+		// We first approve 500
+		precompiles()
+			.prepare_test(
+				Alice,
+				Precompile,
+				InternalCall::approve { spender: Address(Bob.into()), value: 500.into() },
+			)
+			.expect_log(log3(
+				Precompile,
+				SELECTOR_LOG_APPROVAL,
+				H256::from(Alice),
+				H256::from(Bob),
+				EvmDataWriter::new().write(U256::from(500)).build(),
+			))
+			.execute_returns_encoded(true);
+
+		// We then approve 300. Non-incremental, so this is
+		// the approved new value
+		// Additionally, the gas used in this approval is higher because we
+		// need to clear the previous one
+		precompiles()
+			.prepare_test(
+				Alice,
+				Precompile,
+				InternalCall::approve { spender: Address(Bob.into()), value: 300.into() },
+			)
+			.expect_log(log3(
+				Precompile,
+				SELECTOR_LOG_APPROVAL,
+				H256::from(Alice),
+				H256::from(Bob),
+				EvmDataWriter::new().write(U256::from(300)).build(),
+			))
+			.execute_returns_encoded(true);
+
+		// This should fail, as now the new approved quantity is 300
+		precompiles()
+			.prepare_test(
+				Bob, // Bob is the one sending transferFrom!
+				Precompile,
+				InternalCall::transfer_from {
+					from: Address(Alice.into()),
+					to: Address(Bob.into()),
+					value: 500.into(),
+				},
+			)
+			.execute_reverts(|output| {
+				output == b"Dispatched call failed with error: Module(ModuleError { index: 4, error: [10, 0, 0, 0], \
+					message: Some(\"Unapproved\") })"
+			});
+	});
+}

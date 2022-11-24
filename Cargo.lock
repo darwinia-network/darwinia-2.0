@@ -2194,6 +2194,7 @@ dependencies = [
  "parity-scale-codec",
  "precompile-utils",
  "scale-info",
+ "sha3 0.8.2",
  "sp-core",
  "sp-io",
  "sp-runtime",
