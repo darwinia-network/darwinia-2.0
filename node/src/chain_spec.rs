@@ -266,6 +266,7 @@ pub fn shell_config() -> ChainSpec {
 				evm: Default::default(),
 				base_fee: Default::default(),
 
+				// Others
 				assets: Default::default(),
 			}
 		},
@@ -391,6 +392,8 @@ fn testnet_genesis(
 			},
 		},
 		base_fee: Default::default(),
+
+		// Others
 		assets: Default::default(),
 	}
 }

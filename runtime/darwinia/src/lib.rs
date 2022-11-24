@@ -309,6 +309,7 @@ frame_support::construct_runtime! {
 		Evm: pallet_evm = 32,
 		BaseFee: pallet_base_fee = 33,
 
+		// Others
 		Assets: pallet_assets = 34,
 	}
 }

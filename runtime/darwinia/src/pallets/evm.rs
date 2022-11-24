@@ -18,7 +18,7 @@
 
 // darwinia
 use crate::*;
-use darwinia_precompile_assets_erc20::{AccountToAssetId, ERC20Assets};
+use darwinia_precompile_assets::{AccountToAssetId, ERC20Assets};
 use darwinia_precompile_bls12_381::BLS12381;
 use darwinia_precompile_state_storage::{EthereumStorageFilter, StateStorage};
 // frontier
@@ -127,7 +127,7 @@ where
 			a if a == addr(7) => Some(Bn128Mul::execute(handle)),
 			a if a == addr(8) => Some(Bn128Pairing::execute(handle)),
 			a if a == addr(9) => Some(Blake2F::execute(handle)),
-			// Darwinia precompiles: 1024+ for stable precompiles.
+			// Darwinia precompiles: [1024, 2048) for stable precompiles.
 			a if a == addr(1024) =>
 				Some(<StateStorage<Runtime, EthereumStorageFilter>>::execute(handle)),
 			a if a == addr(1025) => Some(<Dispatch<Runtime>>::execute(handle)),
@@ -169,8 +169,8 @@ fn addr(a: u64) -> H160 {
 	H160::from_low_u64_be(a)
 }
 
-impl AccountToAssetId<AccountId, u64> for Runtime {
-	fn account_to_asset_id(account_id: AccountId) -> u64 {
+impl AccountToAssetId<AccountId, AssetId> for Runtime {
+	fn account_to_asset_id(account_id: AccountId) -> AssetId {
 		let addr: H160 = account_id.into();
 		addr.to_low_u64_be()
 	}

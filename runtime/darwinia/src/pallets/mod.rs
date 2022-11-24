@@ -98,4 +98,6 @@ pub use evm::*;
 
 mod base_fee;
 
+// Others
 mod assets;
+pub use assets::*;
