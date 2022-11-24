@@ -232,6 +232,7 @@ pub fn shell_config() -> ChainSpec {
 					invulnerables: vec![array_bytes::hex_n_into_unchecked(ALITH)],
 					..Default::default()
 				},
+				staking: Default::default(),
 				session: darwinia_runtime::SessionConfig {
 					keys: vec![(
 						array_bytes::hex_n_into_unchecked(ALITH),
@@ -310,6 +311,7 @@ fn testnet_genesis(
 			candidacy_bond: UNIT,
 			..Default::default()
 		},
+		staking: Default::default(),
 		session: darwinia_runtime::SessionConfig {
 			keys: invulnerables
 				.into_iter()

@@ -2241,6 +2241,7 @@ dependencies = [
  "darwinia-common-runtime",
  "darwinia-precompile-bls12-381",
  "darwinia-precompile-state-storage",
+ "darwinia-staking",
  "dc-primitives",
  "fp-evm",
  "fp-rpc",
@@ -2317,12 +2318,16 @@ dependencies = [
 name = "darwinia-staking"
 version = "6.0.0"
 dependencies = [
+ "dc-primitives",
  "frame-support",
  "frame-system",
+ "pallet-authorship",
+ "pallet-session",
  "parity-scale-codec",
  "scale-info",
  "sp-core",
  "sp-runtime",
+ "sp-std",
 ]
 
 [[package]]

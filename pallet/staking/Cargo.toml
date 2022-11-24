@@ -14,11 +14,17 @@ version     = "6.0.0"
 codec      = { package = "parity-scale-codec", version = "3.2", default-features = false, features = ["derive"] }
 scale-info = { version = "2.3", default-features = false }
 
+# darwinia
+dc-primitives = { default-features = false, path = "../../core/primitives" }
+
 # subtrate
-frame-support = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
-frame-system  = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
-sp-core       = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
-sp-runtime    = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
+frame-support     = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
+frame-system      = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
+pallet-authorship = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
+pallet-session    = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
+sp-core           = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
+sp-runtime        = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
+sp-std            = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
 
 [features]
 default = ["std"]
@@ -27,11 +33,17 @@ std = [
 	"codec/std",
 	"scale-info/std",
 
+	# darwinia
+	"dc-primitives/std",
+
 	# subtrate
 	"frame-support/std",
 	"frame-system/std",
+	"pallet-authorship/std",
+	"pallet-session/std",
 	"sp-core/std",
 	"sp-runtime/std",
+	"sp-std/std",
 ]
 
 # TODO: runtime-benchmarks, try-runtime
