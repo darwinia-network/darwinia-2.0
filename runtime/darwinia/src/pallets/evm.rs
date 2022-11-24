@@ -18,7 +18,7 @@
 
 // darwinia
 use crate::*;
-use darwinia_precompile_assets_erc20::ERC20Assets;
+use darwinia_precompile_assets_erc20::{AccountToAssetId, ERC20Assets};
 use darwinia_precompile_bls12_381::BLS12381;
 use darwinia_precompile_state_storage::{EthereumStorageFilter, StateStorage};
 // frontier
@@ -93,7 +93,7 @@ where
 		Self(Default::default())
 	}
 
-	pub fn used_addresses() -> [H160; 12] {
+	pub fn used_addresses() -> [H160; 13] {
 		[
 			addr(1),
 			addr(2),
@@ -106,6 +106,7 @@ where
 			addr(9),
 			addr(1024),
 			addr(1025),
+			addr(1026), // For KTON asset
 			addr(2048),
 		]
 	}
@@ -130,8 +131,11 @@ where
 			a if a == addr(1024) =>
 				Some(<StateStorage<Runtime, EthereumStorageFilter>>::execute(handle)),
 			a if a == addr(1025) => Some(<Dispatch<Runtime>>::execute(handle)),
-			// a if a == addr(1026) => Some(ERC20Assets::<Runtime>::execute(&self, handle)),
-			// Darwinia precompiles: 2048+ for experimental precompiles.
+			// [1026, 1536) reserved for assets precompiles.
+			a if (1026..1536).contains(&Runtime::account_to_asset_id(a.into())) =>
+				Some(<ERC20Assets<Runtime>>::execute(handle)),
+			// [1536, 2048) reserved for other stable precompiles.
+			// [2048..] reserved for the experimental precompiles.
 			a if a == addr(2048) => Some(<BLS12381<Runtime>>::execute(handle)),
 			_ => None,
 		}
@@ -163,4 +167,11 @@ impl pallet_evm::Config for Runtime {
 
 fn addr(a: u64) -> H160 {
 	H160::from_low_u64_be(a)
+}
+
+impl AccountToAssetId<AccountId, u64> for Runtime {
+	fn account_to_asset_id(account_id: AccountId) -> u64 {
+		let addr: H160 = account_id.into();
+		addr.to_low_u64_be()
+	}
 }
