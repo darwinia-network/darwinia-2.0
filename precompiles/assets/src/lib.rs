@@ -64,13 +64,13 @@ pub trait AccountToAssetId<AccountId, AssetId> {
 	fn account_to_asset_id(account_id: AccountId) -> AssetId;
 }
 
-pub struct ERC20Assets<Runtime>(PhantomData<Runtime>);
+pub struct ERC20Assets<Runtime, AssetIdConverter>(PhantomData<(Runtime, AssetIdConverter)>);
 
 #[precompile_utils::precompile]
-impl<Runtime> ERC20Assets<Runtime>
+impl<Runtime, AssetIdConverter> ERC20Assets<Runtime, AssetIdConverter>
 where
 	Runtime: pallet_assets::Config + pallet_evm::Config + frame_system::Config,
-	Runtime: AccountToAssetId<Runtime::AccountId, AssetIdOf<Runtime>>,
+	AssetIdConverter: AccountToAssetId<Runtime::AccountId, AssetIdOf<Runtime>>,
 	Runtime::RuntimeCall: Dispatchable<PostInfo = PostDispatchInfo> + GetDispatchInfo,
 	Runtime::RuntimeCall: From<pallet_assets::Call<Runtime>>,
 	AccountIdOf<Runtime>: From<H160>,
@@ -426,7 +426,7 @@ where
 	}
 
 	fn asset_id(handle: &mut impl PrecompileHandle) -> EvmResult<AssetIdOf<Runtime>> {
-		let asset_id = Runtime::account_to_asset_id(handle.code_address().into());
+		let asset_id = AssetIdConverter::account_to_asset_id(handle.code_address().into());
 
 		if pallet_assets::Pallet::<Runtime>::maybe_total_supply(asset_id).is_some() {
 			return Ok(asset_id);

@@ -163,11 +163,11 @@ where
 impl<R> PrecompileSet for TestPrecompiles<R>
 where
 	R: pallet_evm::Config,
-	ERC20Assets<R>: Precompile,
+	ERC20Assets<R, AssetIdConverter>: Precompile,
 {
 	fn execute(&self, handle: &mut impl PrecompileHandle) -> Option<EvmResult<PrecompileOutput>> {
 		match handle.code_address() {
-			a if a == addr(TEST_ID) => Some(<ERC20Assets<R>>::execute(handle)),
+			a if a == addr(TEST_ID) => Some(<ERC20Assets<R, AssetIdConverter>>::execute(handle)),
 			_ => None,
 		}
 	}
@@ -180,7 +180,8 @@ fn addr(a: u64) -> H160 {
 	H160::from_low_u64_be(a)
 }
 
-impl AccountToAssetId<AccountId, AssetId> for TestRuntime {
+pub struct AssetIdConverter;
+impl AccountToAssetId<AccountId, AssetId> for AssetIdConverter {
 	fn account_to_asset_id(account_id: AccountId) -> AssetId {
 		let addr: H160 = account_id.into();
 		addr.to_low_u64_be()
@@ -195,7 +196,7 @@ frame_support::parameter_types! {
 	pub PrecompilesValue: TestPrecompiles<TestRuntime> = TestPrecompiles::<_>::new();
 }
 
-pub type InternalCall = ERC20AssetsCall<TestRuntime>;
+pub type InternalCall = ERC20AssetsCall<TestRuntime, AssetIdConverter>;
 
 impl pallet_evm::Config for TestRuntime {
 	type AddressMapping = IdentityAddressMapping;

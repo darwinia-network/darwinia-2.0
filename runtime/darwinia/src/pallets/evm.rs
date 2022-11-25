@@ -83,6 +83,14 @@ where
 	}
 }
 
+pub struct AssetIdConverter;
+impl AccountToAssetId<AccountId, AssetId> for AssetIdConverter {
+	fn account_to_asset_id(account_id: AccountId) -> AssetId {
+		let addr: H160 = account_id.into();
+		addr.to_low_u64_be()
+	}
+}
+
 pub struct DarwiniaPrecompiles<R>(PhantomData<R>);
 impl<R> DarwiniaPrecompiles<R>
 where
@@ -132,8 +140,8 @@ where
 				Some(<StateStorage<Runtime, EthereumStorageFilter>>::execute(handle)),
 			a if a == addr(1025) => Some(<Dispatch<Runtime>>::execute(handle)),
 			// [1026, 1536) reserved for assets precompiles.
-			a if (1026..1536).contains(&Runtime::account_to_asset_id(a.into())) =>
-				Some(<ERC20Assets<Runtime>>::execute(handle)),
+			a if (1026..1536).contains(&AssetIdConverter::account_to_asset_id(a.into())) =>
+				Some(<ERC20Assets<Runtime, AssetIdConverter>>::execute(handle)),
 			// [1536, 2048) reserved for other stable precompiles.
 			// [2048..) reserved for the experimental precompiles.
 			a if a == addr(2048) => Some(<BLS12381<Runtime>>::execute(handle)),
@@ -167,11 +175,4 @@ impl pallet_evm::Config for Runtime {
 
 fn addr(a: u64) -> H160 {
 	H160::from_low_u64_be(a)
-}
-
-impl AccountToAssetId<AccountId, AssetId> for Runtime {
-	fn account_to_asset_id(account_id: AccountId) -> AssetId {
-		let addr: H160 = account_id.into();
-		addr.to_low_u64_be()
-	}
 }
