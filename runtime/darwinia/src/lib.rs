@@ -269,6 +269,7 @@ frame_support::construct_runtime! {
 		// Monetary stuff.
 		// Leave 4 here.
 		// To keep balances consistent with the existing XCM configurations.
+		Assets: pallet_assets = 34,
 		Balances: pallet_balances = 5,
 		TransactionPayment: pallet_transaction_payment = 6,
 
@@ -308,9 +309,6 @@ frame_support::construct_runtime! {
 		Ethereum: pallet_ethereum = 31,
 		Evm: pallet_evm = 32,
 		BaseFee: pallet_base_fee = 33,
-
-		// Others
-		Assets: pallet_assets = 34,
 	}
 }
 
