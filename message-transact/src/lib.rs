@@ -18,6 +18,17 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
+// crates.io
+use ethereum::{
+	AccessListItem, BlockV2 as Block, LegacyTransactionMessage, Log, ReceiptV3 as Receipt,
+	TransactionAction, TransactionV2 as Transaction,
+};
+// frontier
+use fp_ethereum::{TransactionData, ValidatedTransaction};
+use fp_evm::{CheckEvmTransaction, CheckEvmTransactionConfig, InvalidEvmTransactionError};
+use pallet_ethereum::ensure_ethereum_transaction;
+use pallet_evm::FeeCalculator;
+
 pub use pallet::*;
 
 #[frame_support::pallet]
@@ -30,13 +41,39 @@ pub mod pallet {
 	pub struct Pallet<T>(PhantomData<T>);
 
 	#[pallet::config]
-	pub trait Config: frame_system::Config {}
+	pub trait Config: frame_system::Config + pallet_evm::Config + pallet_ethereum::Config {
+		/// Invalid transaction error
+		type InvalidEvmTransactionError: From<InvalidEvmTransactionError>;
+		/// Handler for applying an already validated transaction
+		type ValidatedTransaction: ValidatedTransaction;
+	}
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		#[pallet::weight(0)]
-		pub fn message_transact(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
-			todo!();
+
+		pub fn message_transact(
+			origin: OriginFor<T>,
+			transaction: Transaction,
+		) -> DispatchResultWithPostInfo {
+			let source = ensure_ethereum_transaction(origin)?;
+
+			let extracted_transaction = match transaction {
+				Transaction::Legacy(t) => Ok(Transaction::Legacy(ethereum::LegacyTransaction {
+					nonce: pallet_evm::Pallet::<T>::account_basic(&source).0.nonce, // auto set
+					gas_price: T::FeeCalculator::min_gas_price().0,                 // auto set
+					gas_limit: t.gas_limit,
+					action: t.action,
+					value: t.value,
+					input: t.input,
+					signature: t.signature, // not used.
+				})),
+				_ => todo!(),
+			}?;
+
+			// Validate the transaction before apply
+
+			T::ValidatedTransaction::apply(source, transaction)
 		}
 	}
 }
