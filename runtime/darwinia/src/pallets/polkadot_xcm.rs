@@ -28,7 +28,7 @@ use xcm::latest::prelude::*;
 use xcm_builder::*;
 use xcm_executor::XcmExecutor;
 // substrate
-use frame_support::traits::{Everything, Nothing};
+use frame_support::traits::{Everything, Nothing, PalletInfoAccess};
 
 /// Means for transacting assets on this chain.
 pub type LocalAssetTransactor = CurrencyAdapter<
