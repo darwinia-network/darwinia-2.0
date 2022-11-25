@@ -7,4 +7,5 @@ members = [
 	"node",
 	"precompiles/*",
 	"runtime/*",
+	"message-transact",
 ]
