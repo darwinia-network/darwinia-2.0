@@ -443,3 +443,229 @@ fn transfer_from_non_incremental_approval() {
 			});
 	});
 }
+
+#[test]
+fn transfer_from_above_allowance() {
+	ExtBuilder::default().with_balances(vec![(Alice.into(), 1000)]).build().execute_with(|| {
+		assert_ok!(Assets::force_create(RuntimeOrigin::root(), TEST_ID, Alice.into(), true, 1));
+		assert_ok!(Assets::mint(RuntimeOrigin::signed(Alice.into()), TEST_ID, Alice.into(), 1000));
+
+		precompiles()
+			.prepare_test(
+				Alice,
+				Precompile,
+				InternalCall::approve { spender: Address(Bob.into()), value: 300.into() },
+			)
+			.execute_some();
+
+		precompiles()
+			.prepare_test(
+				Bob, // Bob is the one sending transferFrom!
+				Precompile,
+				InternalCall::transfer_from {
+					from: Address(Alice.into()),
+					to: Address(Bob.into()),
+					value: 400.into(),
+				},
+			)
+			.execute_reverts(|output| {
+				output
+						== b"Dispatched call failed with error: Module(ModuleError { index: 4, error: [10, 0, 0, 0], \
+					message: Some(\"Unapproved\") })"
+			});
+	});
+}
+
+#[test]
+fn transfer_from_self() {
+	ExtBuilder::default().with_balances(vec![(Alice.into(), 1000)]).build().execute_with(|| {
+		assert_ok!(Assets::force_create(RuntimeOrigin::root(), TEST_ID, Alice.into(), true, 1));
+		assert_ok!(Assets::mint(RuntimeOrigin::signed(Alice.into()), TEST_ID, Alice.into(), 1000));
+
+		precompiles()
+			.prepare_test(
+				Alice, // Alice sending transferFrom herself, no need for allowance.
+				Precompile,
+				InternalCall::transfer_from {
+					from: Address(Alice.into()),
+					to: Address(Bob.into()),
+					value: 400.into(),
+				},
+			)
+			.expect_log(log3(
+				Precompile,
+				SELECTOR_LOG_TRANSFER,
+				H256::from(Alice),
+				H256::from(Bob),
+				EvmDataWriter::new().write(U256::from(400)).build(),
+			))
+			.execute_returns_encoded(true);
+
+		precompiles()
+			.prepare_test(
+				Alice,
+				Precompile,
+				InternalCall::balance_of { who: Address(Alice.into()) },
+			)
+			.expect_cost(0)
+			.expect_no_logs()
+			.execute_returns_encoded(U256::from(600));
+
+		precompiles()
+			.prepare_test(Alice, Precompile, InternalCall::balance_of { who: Address(Bob.into()) })
+			.expect_cost(0) // TODO: Test db read/write costs
+			.expect_no_logs()
+			.execute_returns_encoded(U256::from(400));
+	});
+}
+
+#[test]
+fn get_metadata() {
+	ExtBuilder::default()
+		.with_balances(vec![(Alice.into(), 1000), (Bob.into(), 2500)])
+		.build()
+		.execute_with(|| {
+			assert_ok!(Assets::force_create(RuntimeOrigin::root(), TEST_ID, Alice.into(), true, 1));
+			assert_ok!(Assets::force_set_metadata(
+				RuntimeOrigin::root(),
+				TEST_ID,
+				b"TestToken".to_vec(),
+				b"Test".to_vec(),
+				12,
+				false
+			));
+
+			precompiles()
+				.prepare_test(Alice, Precompile, InternalCall::name {})
+				.expect_cost(0)
+				.expect_no_logs()
+				.execute_returns(
+					EvmDataWriter::new().write::<UnboundedBytes>("TestToken".into()).build(),
+				);
+
+			precompiles()
+				.prepare_test(Alice, Precompile, InternalCall::symbol {})
+				.expect_cost(0)
+				.expect_no_logs()
+				.execute_returns(
+					EvmDataWriter::new().write::<UnboundedBytes>("Test".into()).build(),
+				);
+
+			precompiles()
+				.prepare_test(Alice, Precompile, InternalCall::decimals {})
+				.expect_cost(0)
+				.expect_no_logs()
+				.execute_returns_encoded(12u8);
+		});
+}
+
+#[test]
+fn mint() {
+	ExtBuilder::default()
+		.with_balances(vec![(Alice.into(), 1000), (Bob.into(), 2500)])
+		.build()
+		.execute_with(|| {
+			assert_ok!(Assets::force_create(RuntimeOrigin::root(), TEST_ID, Alice.into(), true, 1));
+
+			precompiles()
+				.prepare_test(
+					Alice,
+					Precompile,
+					InternalCall::mint { to: Address(Bob.into()), value: 400.into() },
+				)
+				.expect_log(log3(
+					Precompile,
+					SELECTOR_LOG_TRANSFER,
+					H256::default(),
+					H256::from(Bob),
+					EvmDataWriter::new().write(U256::from(400)).build(),
+				))
+				.execute_returns_encoded(true);
+
+			precompiles()
+				.prepare_test(
+					Bob,
+					Precompile,
+					InternalCall::balance_of { who: Address(Bob.into()) },
+				)
+				.expect_cost(0) // TODO: Test db read/write costs
+				.expect_no_logs()
+				.execute_returns_encoded(U256::from(400));
+		});
+}
+
+#[test]
+fn burn() {
+	ExtBuilder::default()
+		.with_balances(vec![(Alice.into(), 1000), (Bob.into(), 2500)])
+		.build()
+		.execute_with(|| {
+			assert_ok!(Assets::force_create(RuntimeOrigin::root(), TEST_ID, Alice.into(), true, 1));
+			assert_ok!(Assets::mint(
+				RuntimeOrigin::signed(Alice.into()),
+				TEST_ID,
+				Alice.into(),
+				1000
+			));
+
+			precompiles()
+				.prepare_test(
+					Alice,
+					Precompile,
+					InternalCall::burn { from: Address(Alice.into()), value: 400.into() },
+				)
+				.expect_log(log3(
+					Precompile,
+					SELECTOR_LOG_TRANSFER,
+					H256::from(Alice),
+					H256::default(),
+					EvmDataWriter::new().write(U256::from(400)).build(),
+				))
+				.execute_returns_encoded(true);
+
+			precompiles()
+				.prepare_test(
+					Alice,
+					Precompile,
+					InternalCall::balance_of { who: Address(Alice.into()) },
+				)
+				.expect_no_logs()
+				.execute_returns_encoded(U256::from(600));
+		});
+}
+
+#[test]
+fn freeze() {
+	ExtBuilder::default()
+		.with_balances(vec![(Alice.into(), 1000), (Bob.into(), 2500)])
+		.build()
+		.execute_with(|| {
+			assert_ok!(Assets::force_create(RuntimeOrigin::root(), TEST_ID, Alice.into(), true, 1));
+			assert_ok!(Assets::mint(
+				RuntimeOrigin::signed(Alice.into()),
+				TEST_ID,
+				Bob.into(),
+				1000
+			));
+
+			precompiles()
+				.prepare_test(
+					Alice,
+					Precompile,
+					InternalCall::freeze { account: Address(Bob.into()) },
+				)
+				.expect_no_logs()
+				.execute_returns_encoded(true);
+
+			precompiles()
+				.prepare_test(
+					Bob,
+					Precompile,
+					InternalCall::transfer { to: Address(Alice.into()), value: 400.into() },
+				)
+				.execute_reverts(|output| {
+					from_utf8(&output).unwrap().contains("Dispatched call failed with error: ")
+						&& from_utf8(&output).unwrap().contains("Frozen")
+				});
+		});
+}
