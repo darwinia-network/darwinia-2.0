@@ -27,7 +27,6 @@ use pallet_evm::IdentityAddressMapping;
 use frame_support::{
 	pallet_prelude::Weight,
 	traits::{ConstU32, Everything},
-	StorageHasher, Twox128,
 };
 use frame_system::EnsureRoot;
 use sp_core::{H160, H256, U256};

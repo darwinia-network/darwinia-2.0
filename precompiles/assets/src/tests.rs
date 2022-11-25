@@ -16,25 +16,26 @@
 // You should have received a copy of the GNU General Public License
 // along with Darwinia. If not, see <https://www.gnu.org/licenses/>.
 
+// crates.io
+use sha3::{Digest, Keccak256};
 // darwinia
 use crate::{
 	log3,
 	mock::{
 		Account::{Alice, Bob, Charlie, Precompile},
-		Assets, ExtBuilder, InternalCall, PrecompilesValue, RuntimeOrigin, System, TestPrecompiles,
+		Assets, ExtBuilder, InternalCall, PrecompilesValue, RuntimeOrigin, TestPrecompiles,
 		TestRuntime, TEST_ID,
 	},
 	SELECTOR_LOG_APPROVAL, SELECTOR_LOG_TRANSFER,
 };
 // moonbeam
 use precompile_utils::{
-	prelude::{Address, RuntimeHelper, UnboundedBytes},
+	prelude::{Address, UnboundedBytes},
 	testing::{PrecompileTesterExt, PrecompilesModifierTester},
 	EvmDataWriter,
 };
 // substrate
-use frame_support::{assert_ok, StorageHasher, Twox128};
-use sha3::{Digest, Keccak256};
+use frame_support::assert_ok;
 use sp_core::{H256, U256};
 use sp_std::str::from_utf8;
 
@@ -667,5 +668,217 @@ fn freeze() {
 					from_utf8(&output).unwrap().contains("Dispatched call failed with error: ")
 						&& from_utf8(&output).unwrap().contains("Frozen")
 				});
+		});
+}
+
+#[test]
+fn thaw() {
+	ExtBuilder::default()
+		.with_balances(vec![(Alice.into(), 1000), (Bob.into(), 2500)])
+		.build()
+		.execute_with(|| {
+			assert_ok!(Assets::force_create(RuntimeOrigin::root(), TEST_ID, Alice.into(), true, 1));
+			assert_ok!(Assets::mint(
+				RuntimeOrigin::signed(Alice.into()),
+				TEST_ID,
+				Bob.into(),
+				1000
+			));
+
+			precompiles()
+				.prepare_test(
+					Alice,
+					Precompile,
+					InternalCall::freeze { account: Address(Bob.into()) },
+				)
+				.expect_no_logs()
+				.execute_returns_encoded(true);
+
+			precompiles()
+				.prepare_test(
+					Alice,
+					Precompile,
+					InternalCall::thaw { account: Address(Bob.into()) },
+				)
+				.expect_no_logs()
+				.execute_returns_encoded(true);
+
+			precompiles()
+				.prepare_test(
+					Bob,
+					Precompile,
+					InternalCall::transfer { to: Address(Alice.into()), value: 400.into() },
+				)
+				.expect_log(log3(
+					Precompile,
+					SELECTOR_LOG_TRANSFER,
+					H256::from(Bob),
+					H256::from(Alice),
+					EvmDataWriter::new().write(U256::from(400)).build(),
+				))
+				.execute_returns_encoded(true);
+		});
+}
+
+#[test]
+fn transfer_ownership() {
+	ExtBuilder::default()
+		.with_balances(vec![(Alice.into(), 1000), (Bob.into(), 2500)])
+		.build()
+		.execute_with(|| {
+			assert_ok!(Assets::force_create(RuntimeOrigin::root(), TEST_ID, Alice.into(), true, 1));
+			assert_ok!(Assets::force_set_metadata(
+				RuntimeOrigin::root(),
+				TEST_ID,
+				b"TestToken".to_vec(),
+				b"Test".to_vec(),
+				12,
+				false
+			));
+
+			precompiles()
+				.prepare_test(
+					Alice,
+					Precompile,
+					InternalCall::transfer_ownership { owner: Address(Bob.into()) },
+				)
+				.expect_no_logs()
+				.execute_returns_encoded(true);
+
+			// Now Bob should be able to change ownership, and not Alice
+			precompiles()
+				.prepare_test(
+					Alice,
+					Precompile,
+					InternalCall::transfer_ownership { owner: Address(Bob.into()) },
+				)
+				.execute_reverts(|output| {
+					from_utf8(&output).unwrap().contains("Dispatched call failed with error: ")
+						&& from_utf8(&output).unwrap().contains("NoPermission")
+				});
+
+			precompiles()
+				.prepare_test(
+					Bob,
+					Precompile,
+					InternalCall::transfer_ownership { owner: Address(Alice.into()) },
+				)
+				.expect_no_logs()
+				.execute_returns_encoded(true);
+		});
+}
+
+#[test]
+fn transfer_amount_overflow() {
+	ExtBuilder::default().with_balances(vec![(Alice.into(), 1000)]).build().execute_with(|| {
+		assert_ok!(Assets::force_create(RuntimeOrigin::root(), TEST_ID, Alice.into(), true, 1));
+		assert_ok!(Assets::mint(RuntimeOrigin::signed(Alice.into()), TEST_ID, Alice.into(), 1000));
+
+		precompiles()
+			.prepare_test(
+				Alice,
+				Precompile,
+				InternalCall::transfer {
+					to: Address(Bob.into()),
+					value: U256::from(u128::MAX) + 1,
+				},
+			)
+			.expect_no_logs()
+			.execute_reverts(|e| e == b"value: Value is too large for balance type");
+
+		precompiles()
+			.prepare_test(Bob, Precompile, InternalCall::balance_of { who: Address(Bob.into()) })
+			.expect_cost(0)
+			.expect_no_logs()
+			.execute_returns_encoded(U256::from(0));
+
+		precompiles()
+			.prepare_test(
+				Alice,
+				Precompile,
+				InternalCall::balance_of { who: Address(Alice.into()) },
+			)
+			.expect_cost(0)
+			.expect_no_logs()
+			.execute_returns_encoded(U256::from(1000));
+	});
+}
+
+#[test]
+fn mint_overflow() {
+	ExtBuilder::default()
+		.with_balances(vec![(Alice.into(), 1000), (Bob.into(), 2500)])
+		.build()
+		.execute_with(|| {
+			assert_ok!(Assets::force_create(RuntimeOrigin::root(), TEST_ID, Alice.into(), true, 1));
+
+			precompiles()
+				.prepare_test(
+					Alice,
+					Precompile,
+					InternalCall::mint {
+						to: Address(Bob.into()),
+						value: U256::from(u128::MAX) + 1,
+					},
+				)
+				.expect_no_logs()
+				.execute_reverts(|e| e == b"value: Value is too large for balance type");
+		});
+}
+
+#[test]
+fn transfer_from_overflow() {
+	ExtBuilder::default().with_balances(vec![(Alice.into(), 1000)]).build().execute_with(|| {
+		assert_ok!(Assets::force_create(RuntimeOrigin::root(), TEST_ID, Alice.into(), true, 1));
+		assert_ok!(Assets::mint(RuntimeOrigin::signed(Alice.into()), TEST_ID, Alice.into(), 1000));
+
+		precompiles()
+			.prepare_test(
+				Alice,
+				Precompile,
+				InternalCall::approve { spender: Address(Bob.into()), value: 500.into() },
+			)
+			.execute_some();
+
+		precompiles()
+			.prepare_test(
+				Bob, // Bob is the one sending transferFrom!
+				Precompile,
+				InternalCall::transfer_from {
+					from: Address(Alice.into()),
+					to: Address(Charlie.into()),
+					value: U256::from(u128::MAX) + 1,
+				},
+			)
+			.expect_no_logs()
+			.execute_reverts(|e| e == b"value: Value is too large for balance type");
+	});
+}
+
+#[test]
+fn burn_overflow() {
+	ExtBuilder::default()
+		.with_balances(vec![(Alice.into(), 1000), (Bob.into(), 2500)])
+		.build()
+		.execute_with(|| {
+			assert_ok!(Assets::force_create(RuntimeOrigin::root(), TEST_ID, Alice.into(), true, 1));
+			assert_ok!(Assets::mint(
+				RuntimeOrigin::signed(Alice.into()),
+				TEST_ID,
+				Alice.into(),
+				1000
+			));
+
+			precompiles()
+				.prepare_test(
+					Alice,
+					Precompile,
+					InternalCall::burn {
+						from: Address(Alice.into()),
+						value: U256::from(u128::MAX) + 1,
+					},
+				)
+				.expect_no_logs()
+				.execute_reverts(|e| e == b"value: Value is too large for balance type");
 		});
 }
