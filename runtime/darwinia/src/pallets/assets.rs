@@ -23,8 +23,8 @@ pub type AssetId = u64;
 
 impl pallet_assets::Config for Runtime {
 	type ApprovalDeposit = ConstU128<0>;
-	type AssetAccountDeposit = ConstU128<2>;
-	type AssetDeposit = ConstU128<2>;
+	type AssetAccountDeposit = ConstU128<0>;
+	type AssetDeposit = ConstU128<0>;
 	type AssetId = AssetId;
 	type Balance = u128;
 	type Currency = Balances;
@@ -35,8 +35,7 @@ impl pallet_assets::Config for Runtime {
 	type Freezer = ();
 	type MetadataDepositBase = ConstU128<0>;
 	type MetadataDepositPerByte = ConstU128<0>;
-	// type RemoveItemsLimit = ConstU32<1000>;
 	type RuntimeEvent = RuntimeEvent;
-	type StringLimit = ConstU32<20>;
+	type StringLimit = ConstU32<50>;
 	type WeightInfo = ();
 }
