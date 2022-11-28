@@ -37,7 +37,7 @@ impl Config<WithCrabDispatch> for Runtime {
 	type AccountIdConverter = bp_darwinia::AccountIdConverter;
 	type BridgeMessageId = (LaneId, MessageNonce);
 	type CallValidator = Everything;
-	type EncodedCall = bm_crab::FromDarwiniaEncodedCall;
+	type EncodedCall = bm_crab::FromCrabEncodedCall;
 	type IntoDispatchOrigin = IntoDispatchOrigin;
 	type RuntimeCall = RuntimeCall;
 	type RuntimeEvent = RuntimeEvent;

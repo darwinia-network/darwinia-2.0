@@ -16,7 +16,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Darwinia. If not, see <https://www.gnu.org/licenses/>.
 
-use pallet_bridge_messages::Instance1 as WithDarwiniaMessages;
+use pallet_bridge_messages::Instance1 as WithCrabMessages;
 
 // darwinia
 use crate::{bm_crab::ToCrabMaximalOutboundPayloadSize, *};
@@ -44,26 +44,24 @@ frame_support::parameter_types! {
 		bp_darwinia::MAX_UNCONFIRMED_MESSAGES_IN_CONFIRMATION_TX;
 	pub const MaxUnrewardedRelayerEntriesAtInboundLane: MessageNonce =
 		bp_darwinia::MAX_UNREWARDED_RELAYERS_IN_CONFIRMATION_TX;
-	pub const GetDeliveryConfirmationTransactionFee: Balance =
-		bp_darwinia::MAX_SINGLE_MESSAGE_DELIVERY_CONFIRMATION_TX_WEIGHT as _;
 	pub RootAccountForPayments: Option<AccountId> = None;
 }
 
 impl Config<WithCrabMessages> for Runtime {
 	type AccountIdConverter = bp_darwinia::AccountIdConverter;
 	type BridgedChainId = BridgedChainId;
-	type InboundMessageFee = bp_darwinia::Balance;
-	type InboundPayload = bm_crab::FromDarwiniaMessagePayload;
-	type InboundRelayer = bp_darwinia::AccountId;
-	type LaneMessageVerifier = bm_crab::ToDarwiniaMessageVerifier<Self>;
+	type InboundMessageFee = bp_crab::Balance;
+	type InboundPayload = bm_crab::FromCrabMessagePayload;
+	type InboundRelayer = bp_crab::AccountId;
+	type LaneMessageVerifier = bm_crab::ToCrabMessageVerifier<Self>;
 	type MaxMessagesToPruneAtOnce = MaxMessagesToPruneAtOnce;
 	type MaxUnconfirmedMessagesAtInboundLane = MaxUnconfirmedMessagesAtInboundLane;
 	type MaxUnrewardedRelayerEntriesAtInboundLane = MaxUnrewardedRelayerEntriesAtInboundLane;
 	type MaximalOutboundPayloadSize = ToCrabMaximalOutboundPayloadSize;
-	type MessageDeliveryAndDispatchPayment = FeeMarketPayment<Self, WithDarwiniaFeeMarket, Ring>;
-	type MessageDispatch = bm_crab::FromDarwiniaMessageDispatch;
-	type OnDeliveryConfirmed = FeeMarketMessageConfirmedHandler<Self, WithDarwiniaFeeMarket>;
-	type OnMessageAccepted = FeeMarketMessageAcceptedHandler<Self, WithDarwiniaFeeMarket>;
+	type MessageDeliveryAndDispatchPayment = FeeMarketPayment<Self, WithCrabFeeMarket, Balances>;
+	type MessageDispatch = bm_crab::FromCrabMessageDispatch;
+	type OnDeliveryConfirmed = FeeMarketMessageConfirmedHandler<Self, WithCrabFeeMarket>;
+	type OnMessageAccepted = FeeMarketMessageAcceptedHandler<Self, WithCrabFeeMarket>;
 	type OutboundMessageFee = bp_darwinia::Balance;
 	type OutboundPayload = bm_crab::ToCrabMessagePayload;
 	type Parameter = bm_crab::DarwiniaToCrabParameter;

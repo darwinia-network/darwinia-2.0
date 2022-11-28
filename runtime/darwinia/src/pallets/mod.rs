@@ -106,3 +106,6 @@ pub use bridge_grandpa::*;
 
 mod bridge_messages;
 pub use bridge_messages::*;
+
+mod fee_market;
+pub use fee_market::*;

@@ -52,7 +52,7 @@ pub type FromCrabEncodedCall = FromBridgedChainEncodedMessageCall<RuntimeCall>;
 
 /// Call-dispatch based message dispatch for Crab -> Darwinia messages.
 pub type FromCrabMessageDispatch =
-	FromBridgedChainMessageDispatch<WithCrabMessageBridge, Runtime, Ring, WithCrabDispatch>;
+	FromBridgedChainMessageDispatch<WithCrabMessageBridge, Runtime, Balances, WithCrabDispatch>;
 
 pub const INITIAL_CRAB_TO_DARWINIA_CONVERSION_RATE: FixedU128 =
 	FixedU128::from_inner(FixedU128::DIV);
@@ -110,7 +110,7 @@ impl ThisChainWithMessages for Darwinia {
 	type RuntimeOrigin = RuntimeOrigin;
 
 	fn is_message_accepted(_send_origin: &Self::RuntimeOrigin, lane: &LaneId) -> bool {
-		*lane == CRAB_DARWINIA_LANE
+		*lane == DARWINIA_CRAB_LANE
 	}
 
 	fn maximal_pending_messages_at_outbound_lane() -> MessageNonce {
