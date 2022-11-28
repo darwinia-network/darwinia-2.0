@@ -25,6 +25,7 @@ pallet-ethereum = { default-features = false, git = "https://github.com/parityte
 frame-support = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
 frame-system  = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
 sp-std        = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
+sp-core        = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
 
 [features]
 default = ["std"]
@@ -44,4 +45,5 @@ std = [
 	"frame-support/std",
 	"frame-system/std",
 	"sp-std/std",
+	"sp-core/std",
 ]

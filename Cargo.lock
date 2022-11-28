@@ -2193,6 +2193,7 @@ dependencies = [
  "pallet-evm",
  "parity-scale-codec",
  "scale-info",
+ "sp-core",
  "sp-std",
 ]
 

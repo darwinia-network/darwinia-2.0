@@ -26,10 +26,26 @@ use ethereum::{
 // frontier
 use fp_ethereum::{TransactionData, ValidatedTransaction};
 use fp_evm::{CheckEvmTransaction, CheckEvmTransactionConfig, InvalidEvmTransactionError};
-use pallet_ethereum::ensure_ethereum_transaction;
 use pallet_evm::FeeCalculator;
+// substrate
+use sp_core::H160;
 
 pub use pallet::*;
+
+#[derive(Clone, Eq, PartialEq, RuntimeDebug, Encode, Decode, MaxEncodedLen, TypeInfo)]
+pub enum MessageTransactOrigin {
+	LcmpEthTransaction(H160),
+}
+
+pub fn ensure_ethereum_transaction<OuterOrigin>(o: OuterOrigin) -> Result<H160, &'static str>
+where
+	OuterOrigin: Into<Result<RawOrigin, OuterOrigin>>,
+{
+	match o.into() {
+		Ok(RawOrigin::EthereumTransaction(n)) => Ok(n),
+		_ => Err("bad origin: expected to be an Ethereum transaction"),
+	}
+}
 
 #[frame_support::pallet]
 pub mod pallet {
