@@ -19,13 +19,19 @@
 // darwinia
 use crate::*;
 
-impl cumulus_pallet_xcmp_queue::Config for Runtime {
-	type ChannelInfo = ParachainSystem;
-	type ControllerOrigin = EnsureRoot<AccountId>;
-	type ControllerOriginConverter = XcmOriginToTransactDispatchOrigin;
-	type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
+frame_support::parameter_types! {
+	pub const ReservedXcmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT.saturating_div(4);
+	pub const ReservedDmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT.saturating_div(4);
+}
+
+impl cumulus_pallet_parachain_system::Config for Runtime {
+	type CheckAssociatedRelayNumber = RelayNumberStrictlyIncreases;
+	type DmpMessageHandler = DmpQueue;
+	type OnSystemEvent = ();
+	type OutboundXcmpMessageSource = XcmpQueue;
+	type ReservedDmpWeight = ReservedDmpWeight;
+	type ReservedXcmpWeight = ReservedXcmpWeight;
 	type RuntimeEvent = RuntimeEvent;
-	type VersionWrapper = ();
-	type WeightInfo = weights::cumulus_pallet_xcmp_queue::WeightInfo<Self>;
-	type XcmExecutor = XcmExecutor<XcmExecutorConfig>;
+	type SelfParaId = parachain_info::Pallet<Self>;
+	type XcmpMessageHandler = XcmpQueue;
 }

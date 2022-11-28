@@ -19,13 +19,9 @@
 // darwinia
 use crate::*;
 
-impl cumulus_pallet_xcmp_queue::Config for Runtime {
-	type ChannelInfo = ParachainSystem;
-	type ControllerOrigin = EnsureRoot<AccountId>;
-	type ControllerOriginConverter = XcmOriginToTransactDispatchOrigin;
-	type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
-	type RuntimeEvent = RuntimeEvent;
-	type VersionWrapper = ();
-	type WeightInfo = weights::cumulus_pallet_xcmp_queue::WeightInfo<Self>;
-	type XcmExecutor = XcmExecutor<XcmExecutorConfig>;
+impl pallet_authorship::Config for Runtime {
+	type EventHandler = (CollatorSelection,);
+	type FilterUncle = ();
+	type FindAuthor = pallet_session::FindAccountFromAuthorIndex<Self, Aura>;
+	type UncleGenerations = ConstU32<0>;
 }

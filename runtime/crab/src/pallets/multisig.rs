@@ -19,13 +19,14 @@
 // darwinia
 use crate::*;
 
-impl cumulus_pallet_xcmp_queue::Config for Runtime {
-	type ChannelInfo = ParachainSystem;
-	type ControllerOrigin = EnsureRoot<AccountId>;
-	type ControllerOriginConverter = XcmOriginToTransactDispatchOrigin;
-	type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
+impl pallet_multisig::Config for Runtime {
+	type Currency = Balances;
+	// One storage item; key size is 32; value is size 4+4+16+32 bytes = 56 bytes.
+	type DepositBase = ConstU128<{ darwinia_deposit(1, 88) }>;
+	// Additional storage item size of 32 bytes.
+	type DepositFactor = ConstU128<{ darwinia_deposit(0, 32) }>;
+	type MaxSignatories = ConstU16<100>;
+	type RuntimeCall = RuntimeCall;
 	type RuntimeEvent = RuntimeEvent;
-	type VersionWrapper = ();
-	type WeightInfo = weights::cumulus_pallet_xcmp_queue::WeightInfo<Self>;
-	type XcmExecutor = XcmExecutor<XcmExecutorConfig>;
+	type WeightInfo = ();
 }

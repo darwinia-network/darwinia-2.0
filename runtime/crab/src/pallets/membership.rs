@@ -19,13 +19,15 @@
 // darwinia
 use crate::*;
 
-impl cumulus_pallet_xcmp_queue::Config for Runtime {
-	type ChannelInfo = ParachainSystem;
-	type ControllerOrigin = EnsureRoot<AccountId>;
-	type ControllerOriginConverter = XcmOriginToTransactDispatchOrigin;
-	type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
+impl pallet_membership::Config<pallet_membership::Instance1> for Runtime {
+	type AddOrigin = RootOrMoreThanHalf<CouncilCollective>;
+	type MaxMembers = ConstU32<COLLECTIVE_MAX_MEMBERS>;
+	type MembershipChanged = TechnicalCommittee;
+	type MembershipInitialized = TechnicalCommittee;
+	type PrimeOrigin = RootOrMoreThanHalf<CouncilCollective>;
+	type RemoveOrigin = RootOrMoreThanHalf<CouncilCollective>;
+	type ResetOrigin = RootOrMoreThanHalf<CouncilCollective>;
 	type RuntimeEvent = RuntimeEvent;
-	type VersionWrapper = ();
-	type WeightInfo = weights::cumulus_pallet_xcmp_queue::WeightInfo<Self>;
-	type XcmExecutor = XcmExecutor<XcmExecutorConfig>;
+	type SwapOrigin = RootOrMoreThanHalf<CouncilCollective>;
+	type WeightInfo = ();
 }

@@ -19,13 +19,17 @@
 // darwinia
 use crate::*;
 
-impl cumulus_pallet_xcmp_queue::Config for Runtime {
-	type ChannelInfo = ParachainSystem;
-	type ControllerOrigin = EnsureRoot<AccountId>;
-	type ControllerOriginConverter = XcmOriginToTransactDispatchOrigin;
-	type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
+frame_support::parameter_types! {
+	pub const TipFindersFee: sp_runtime::Percent = sp_runtime::Percent::from_percent(20);
+}
+
+impl pallet_tips::Config for Runtime {
+	type DataDepositPerByte = ConstU128<{ darwinia_deposit(0, 1) }>;
+	type MaximumReasonLength = ConstU32<16384>;
 	type RuntimeEvent = RuntimeEvent;
-	type VersionWrapper = ();
-	type WeightInfo = weights::cumulus_pallet_xcmp_queue::WeightInfo<Self>;
-	type XcmExecutor = XcmExecutor<XcmExecutorConfig>;
+	type TipCountdown = ConstU32<DAYS>;
+	type TipFindersFee = TipFindersFee;
+	type TipReportDepositBase = ConstU128<{ 100 * UNIT }>;
+	type Tippers = PhragmenElection;
+	type WeightInfo = ();
 }

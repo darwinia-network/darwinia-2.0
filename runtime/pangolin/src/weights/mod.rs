@@ -16,16 +16,25 @@
 // You should have received a copy of the GNU General Public License
 // along with Darwinia. If not, see <https://www.gnu.org/licenses/>.
 
-// darwinia
-use crate::*;
+//! Expose the auto generated weight files.
 
-impl cumulus_pallet_xcmp_queue::Config for Runtime {
-	type ChannelInfo = ParachainSystem;
-	type ControllerOrigin = EnsureRoot<AccountId>;
-	type ControllerOriginConverter = XcmOriginToTransactDispatchOrigin;
-	type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
-	type RuntimeEvent = RuntimeEvent;
-	type VersionWrapper = ();
-	type WeightInfo = weights::cumulus_pallet_xcmp_queue::WeightInfo<Self>;
-	type XcmExecutor = XcmExecutor<XcmExecutorConfig>;
-}
+#![allow(clippy::unnecessary_cast)]
+
+pub mod block_weights;
+pub use block_weights::constants::BlockExecutionWeight;
+
+pub mod extrinsic_weights;
+pub use extrinsic_weights::constants::ExtrinsicBaseWeight;
+
+pub mod paritydb_weights;
+pub use paritydb_weights::constants::ParityDbWeight;
+
+pub mod rocksdb_weights;
+pub use rocksdb_weights::constants::RocksDbWeight;
+
+pub mod cumulus_pallet_xcmp_queue;
+pub mod frame_system;
+pub mod pallet_balances;
+pub mod pallet_collator_selection;
+pub mod pallet_session;
+pub mod pallet_timestamp;
