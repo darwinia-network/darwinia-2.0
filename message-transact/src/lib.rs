@@ -31,8 +31,8 @@ use fp_ethereum::{TransactionData, ValidatedTransaction};
 use fp_evm::{CheckEvmTransaction, CheckEvmTransactionConfig, InvalidEvmTransactionError};
 use pallet_evm::{FeeCalculator, GasWeightMapping};
 // substrate
-use frame_support::RuntimeDebug;
-use sp_core::H160;
+use frame_support::{PalletError, RuntimeDebug};
+use sp_core::{H160, U256};
 
 pub use pallet::*;
 
@@ -41,7 +41,7 @@ pub enum LcmpEthOrigin {
 	MessageTransact(H160),
 }
 
-pub fn ensure_lcmp_ethereum<OuterOrigin>(o: OuterOrigin) -> Result<H160, &'static str>
+pub fn ensure_message_transact<OuterOrigin>(o: OuterOrigin) -> Result<H160, &'static str>
 where
 	OuterOrigin: Into<Result<LcmpEthOrigin, OuterOrigin>>,
 {
@@ -68,10 +68,11 @@ pub mod pallet {
 		type ValidatedTransaction: ValidatedTransaction;
 	}
 
-	#[pallet::error]
 	/// Ethereum pallet errors.
+	#[pallet::error]
 	pub enum Error<T> {
 		/// Message validate invalid
+		InvalidEvmTransactionError(InvalidTransactionWrapper),
 		MessageTransactionError,
 	}
 
@@ -80,7 +81,7 @@ pub mod pallet {
 	where
 		OriginFor<T>: Into<Result<LcmpEthOrigin, OriginFor<T>>>,
 	{
-		/// This is message transact only for substrate to substrate LCMP to call
+		/// This call only comes from LCMP message layer.
 		#[pallet::weight({
 			let without_base_extrinsic_weight = true;
 			<T as pallet_evm::Config>::GasWeightMapping::gas_to_weight({
@@ -92,13 +93,14 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			transaction: Transaction,
 		) -> DispatchResultWithPostInfo {
-			let source = ensure_lcmp_ethereum(origin)?;
+			let source = ensure_message_transact(origin)?;
+			let (who, _) = pallet_evm::Pallet::<T>::account_basic(&source);
 
 			let extracted_transaction = match transaction {
 				Transaction::Legacy(ref t) =>
 					Ok(Transaction::Legacy(ethereum::LegacyTransaction {
-						nonce: pallet_evm::Pallet::<T>::account_basic(&source).0.nonce, // auto set
-						gas_price: T::FeeCalculator::min_gas_price().0,                 // auto set
+						nonce: who.nonce,                               // auto set
+						gas_price: T::FeeCalculator::min_gas_price().0, // auto set
 						gas_limit: t.gas_limit,
 						action: t.action,
 						value: t.value,
@@ -108,9 +110,56 @@ pub mod pallet {
 				_ => Err(Error::<T>::MessageTransactionError),
 			}?;
 
-			// Validate the transaction before apply
+			let transaction_data: TransactionData = (&extracted_transaction).into();
+			let _ = CheckEvmTransaction::<InvalidTransactionWrapper>::new(
+				CheckEvmTransactionConfig {
+					evm_config: T::config(),
+					block_gas_limit: T::BlockGasLimit::get(),
+					base_fee: U256::default(), // TODO: FIX ME,
+					chain_id: T::ChainId::get(),
+					is_transactional: true,
+				},
+				transaction_data.clone().into(),
+			)
+			.validate_in_block_for(&who)
+			.and_then(|v| v.with_chain_id())
+			.and_then(|v| v.with_base_fee())
+			.and_then(|v| v.with_balance_for(&who))
+			.map_err(|e| Error::<T>::InvalidEvmTransactionError(e))?;
 
 			T::ValidatedTransaction::apply(source, extracted_transaction)
+		}
+	}
+}
+
+#[derive(Encode, Decode, TypeInfo, PalletError)]
+pub enum InvalidTransactionWrapper {
+	GasLimitTooLow,
+	GasLimitTooHigh,
+	GasPriceTooLow,
+	PriorityFeeTooHigh,
+	BalanceTooLow,
+	TxNonceTooLow,
+	TxNonceTooHigh,
+	InvalidPaymentInput,
+	InvalidChainId,
+}
+
+impl From<InvalidEvmTransactionError> for InvalidTransactionWrapper {
+	fn from(validation_error: InvalidEvmTransactionError) -> Self {
+		match validation_error {
+			InvalidEvmTransactionError::GasLimitTooLow => InvalidTransactionWrapper::GasLimitTooLow,
+			InvalidEvmTransactionError::GasLimitTooHigh =>
+				InvalidTransactionWrapper::GasLimitTooHigh,
+			InvalidEvmTransactionError::GasPriceTooLow => InvalidTransactionWrapper::GasPriceTooLow,
+			InvalidEvmTransactionError::PriorityFeeTooHigh =>
+				InvalidTransactionWrapper::PriorityFeeTooHigh,
+			InvalidEvmTransactionError::BalanceTooLow => InvalidTransactionWrapper::BalanceTooLow,
+			InvalidEvmTransactionError::TxNonceTooLow => InvalidTransactionWrapper::TxNonceTooLow,
+			InvalidEvmTransactionError::TxNonceTooHigh => InvalidTransactionWrapper::TxNonceTooHigh,
+			InvalidEvmTransactionError::InvalidPaymentInput =>
+				InvalidTransactionWrapper::InvalidPaymentInput,
+			InvalidEvmTransactionError::InvalidChainId => InvalidTransactionWrapper::InvalidChainId,
 		}
 	}
 }
