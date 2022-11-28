@@ -738,6 +738,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "bp-darwinia-core"
+version = "0.1.0"
+source = "git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=polkadot-v0.9.30#9f1f451245784a0d2f4c943610c838bb1b7c8ac0"
+dependencies = [
+ "bp-messages",
+ "bp-runtime",
+ "frame-support",
+ "frame-system",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-core",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "bp-header-chain"
 version = "0.1.0"
 source = "git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=polkadot-v0.9.30#9f1f451245784a0d2f4c943610c838bb1b7c8ac0"
@@ -2269,10 +2285,8 @@ dependencies = [
 name = "darwinia-common-runtime"
 version = "6.0.0"
 dependencies = [
- "dc-primitives",
+ "bp-darwinia-core",
  "frame-support",
- "frame-system",
- "pallet-collective",
  "xcm",
  "xcm-executor",
 ]
@@ -2357,9 +2371,6 @@ dependencies = [
  "pallet-bridge-grandpa",
  "pallet-bridge-messages",
  "pallet-collator-selection",
- "pallet-collective",
- "pallet-democracy",
- "pallet-elections-phragmen",
  "pallet-ethereum",
  "pallet-evm",
  "pallet-evm-precompile-blake2",
@@ -2368,21 +2379,11 @@ dependencies = [
  "pallet-evm-precompile-modexp",
  "pallet-evm-precompile-simple",
  "pallet-fee-market",
- "pallet-identity",
- "pallet-membership",
- "pallet-multisig",
- "pallet-preimage",
- "pallet-proxy",
- "pallet-scheduler",
  "pallet-session",
  "pallet-sudo",
  "pallet-timestamp",
- "pallet-tips",
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc-runtime-api",
- "pallet-treasury",
- "pallet-utility",
- "pallet-vesting",
  "pallet-xcm",
  "parachain-info",
  "parity-scale-codec",
@@ -2402,7 +2403,6 @@ dependencies = [
  "sp-std",
  "sp-transaction-pool",
  "sp-version",
- "static_assertions",
  "substrate-wasm-builder",
  "xcm",
  "xcm-builder",
@@ -12615,7 +12615,7 @@ version = "1.6.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "97fee6b57c6a41524a810daee9286c02d7752c4253064d0b05472833a438f675"
 dependencies = [
- "cfg-if 0.1.10",
+ "cfg-if 1.0.0",
  "digest 0.10.5",
  "rand 0.8.5",
  "static_assertions",

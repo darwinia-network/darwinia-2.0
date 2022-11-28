@@ -32,6 +32,7 @@ pub use bridges_message::*;
 
 mod weights;
 
+pub use darwinia_common_runtime::*;
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 
 // cumulus
