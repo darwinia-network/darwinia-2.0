@@ -308,6 +308,8 @@ frame_support::construct_runtime! {
 		Ethereum: pallet_ethereum = 31,
 		Evm: pallet_evm = 32,
 		BaseFee: pallet_base_fee = 33,
+		// MessageTransact: darwinia_message_transact::{Pallet, Call, Config, Event<T>, Origin} = 34,
+		MessageTransact: darwinia_message_transact = 34,
 	}
 }
 

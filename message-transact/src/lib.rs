@@ -20,10 +20,7 @@
 
 // crates.io
 use codec::{Decode, Encode, MaxEncodedLen};
-use ethereum::{
-	AccessListItem, BlockV2 as Block, LegacyTransactionMessage, Log, ReceiptV3 as Receipt,
-	TransactionAction, TransactionV2 as Transaction,
-};
+use ethereum::TransactionV2 as Transaction;
 use frame_support::sp_runtime::traits::UniqueSaturatedInto;
 use scale_info::TypeInfo;
 // frontier
@@ -31,7 +28,7 @@ use fp_ethereum::{TransactionData, ValidatedTransaction};
 use fp_evm::{CheckEvmTransaction, CheckEvmTransactionConfig, InvalidEvmTransactionError};
 use pallet_evm::{FeeCalculator, GasWeightMapping};
 // substrate
-use frame_support::{PalletError, RuntimeDebug};
+use frame_support::{traits::EnsureOrigin, PalletError, RuntimeDebug};
 use sp_core::{H160, U256};
 
 pub use pallet::*;
@@ -51,6 +48,24 @@ where
 	}
 }
 
+pub struct EnsureLcmpEthOrigin;
+impl<O: Into<Result<LcmpEthOrigin, O>> + From<LcmpEthOrigin>> EnsureOrigin<O>
+	for EnsureLcmpEthOrigin
+{
+	type Success = H160;
+
+	fn try_origin(o: O) -> Result<Self::Success, O> {
+		o.into().map(|o| match o {
+			LcmpEthOrigin::MessageTransact(id) => id,
+		})
+	}
+
+	#[cfg(feature = "runtime-benchmarks")]
+	fn successful_origin() -> O {
+		O::from(LcmpEthOrigin::MessageTransact(Default::default()))
+	}
+}
+
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
@@ -60,18 +75,21 @@ pub mod pallet {
 	#[pallet::pallet]
 	pub struct Pallet<T>(PhantomData<T>);
 
+	#[pallet::origin]
+	pub type Origin = LcmpEthOrigin;
+
 	#[pallet::config]
 	pub trait Config: frame_system::Config + pallet_evm::Config + pallet_ethereum::Config {
-		/// Invalid transaction error
-		type InvalidEvmTransactionError: From<InvalidEvmTransactionError>;
 		/// Handler for applying an already validated transaction
 		type ValidatedTransaction: ValidatedTransaction;
+		/// Origin for message transact
+		type LcmpEthOrigin: EnsureOrigin<Self::RuntimeOrigin, Success = H160>;
 	}
 
-	/// Ethereum pallet errors.
 	#[pallet::error]
 	pub enum Error<T> {
-		InvalidEvmTransactionError(InvalidTransactionWrapper),
+		/// Evm validation errors.
+		MessageTransactError(EvmTxErrorWrapper),
 	}
 
 	#[pallet::call]
@@ -79,7 +97,8 @@ pub mod pallet {
 	where
 		OriginFor<T>: Into<Result<LcmpEthOrigin, OriginFor<T>>>,
 	{
-		/// This call only comes from LCMP message layer.
+		/// This call can only be called by the lcmp message layer and is not available to normal
+		/// users.
 		#[pallet::weight({
 			let without_base_extrinsic_weight = true;
 			<T as pallet_evm::Config>::GasWeightMapping::gas_to_weight({
@@ -93,56 +112,31 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			let source = ensure_message_transact(origin)?;
 			let (who, _) = pallet_evm::Pallet::<T>::account_basic(&source);
+			let base_fee = T::FeeCalculator::min_gas_price().0;
 
-			let extracted_transaction = match transaction {
-				Transaction::Legacy(ref t) => Transaction::Legacy(ethereum::LegacyTransaction {
-					nonce: who.nonce,                               // auto set
-					gas_price: T::FeeCalculator::min_gas_price().0, // auto set
-					gas_limit: t.gas_limit,
-					action: t.action,
-					value: t.value,
-					input: t.input.clone(),
-					signature: t.signature.clone(), // not used.
-				}),
-				Transaction::EIP2930(ref t) => {
-					Transaction::EIP2930(ethereum::EIP2930Transaction {
-						chain_id: T::ChainId::get(),
-						nonce: who.nonce,                               // auto set
-						gas_price: T::FeeCalculator::min_gas_price().0, // auto set
-						gas_limit: t.gas_limit,
-						value: t.value,
-						action: t.action,
-						input: t.input.clone(),
-						access_list: t.access_list.clone(),
-						odd_y_parity: t.odd_y_parity,
-						r: t.r,
-						s: t.s,
-					})
+			let mut transaction_mut = transaction;
+			match transaction_mut {
+				Transaction::Legacy(ref mut tx) => {
+					tx.nonce = who.nonce;
+					tx.gas_price = base_fee;
 				},
-				Transaction::EIP1559(ref t) => {
-					Transaction::EIP1559(ethereum::EIP1559Transaction {
-						chain_id: T::ChainId::get(),
-						nonce: who.nonce, // auto set
-						max_priority_fee_per_gas: U256::zero(),
-						max_fee_per_gas: T::FeeCalculator::min_gas_price().0,
-						gas_limit: t.gas_limit,
-						value: t.value,
-						action: t.action,
-						input: t.input.clone(),
-						access_list: t.access_list.clone(),
-						odd_y_parity: t.odd_y_parity,
-						r: t.r,
-						s: t.s,
-					})
+				Transaction::EIP2930(ref mut tx) => {
+					tx.nonce = who.nonce;
+					tx.gas_price = base_fee;
+				},
+				Transaction::EIP1559(ref mut tx) => {
+					tx.nonce = who.nonce;
+					tx.max_priority_fee_per_gas = U256::zero();
+					tx.max_fee_per_gas = base_fee;
 				},
 			};
 
-			let transaction_data: TransactionData = (&extracted_transaction).into();
-			let _ = CheckEvmTransaction::<InvalidTransactionWrapper>::new(
+			let transaction_data: TransactionData = (&transaction_mut).into();
+			let _ = CheckEvmTransaction::<EvmTxErrorWrapper>::new(
 				CheckEvmTransactionConfig {
 					evm_config: T::config(),
 					block_gas_limit: T::BlockGasLimit::get(),
-					base_fee: U256::default(), // TODO: FIX ME,
+					base_fee,
 					chain_id: T::ChainId::get(),
 					is_transactional: true,
 				},
@@ -152,15 +146,15 @@ pub mod pallet {
 			.and_then(|v| v.with_chain_id())
 			.and_then(|v| v.with_base_fee())
 			.and_then(|v| v.with_balance_for(&who))
-			.map_err(|e| Error::<T>::InvalidEvmTransactionError(e))?;
+			.map_err(|e| <Error<T>>::MessageTransactError(e))?;
 
-			T::ValidatedTransaction::apply(source, extracted_transaction)
+			T::ValidatedTransaction::apply(source, transaction_mut)
 		}
 	}
 }
 
 #[derive(Encode, Decode, TypeInfo, PalletError)]
-pub enum InvalidTransactionWrapper {
+pub enum EvmTxErrorWrapper {
 	GasLimitTooLow,
 	GasLimitTooHigh,
 	GasPriceTooLow,
@@ -172,21 +166,19 @@ pub enum InvalidTransactionWrapper {
 	InvalidChainId,
 }
 
-impl From<InvalidEvmTransactionError> for InvalidTransactionWrapper {
+impl From<InvalidEvmTransactionError> for EvmTxErrorWrapper {
 	fn from(validation_error: InvalidEvmTransactionError) -> Self {
 		match validation_error {
-			InvalidEvmTransactionError::GasLimitTooLow => InvalidTransactionWrapper::GasLimitTooLow,
-			InvalidEvmTransactionError::GasLimitTooHigh =>
-				InvalidTransactionWrapper::GasLimitTooHigh,
-			InvalidEvmTransactionError::GasPriceTooLow => InvalidTransactionWrapper::GasPriceTooLow,
-			InvalidEvmTransactionError::PriorityFeeTooHigh =>
-				InvalidTransactionWrapper::PriorityFeeTooHigh,
-			InvalidEvmTransactionError::BalanceTooLow => InvalidTransactionWrapper::BalanceTooLow,
-			InvalidEvmTransactionError::TxNonceTooLow => InvalidTransactionWrapper::TxNonceTooLow,
-			InvalidEvmTransactionError::TxNonceTooHigh => InvalidTransactionWrapper::TxNonceTooHigh,
+			InvalidEvmTransactionError::GasLimitTooLow => EvmTxErrorWrapper::GasLimitTooLow,
+			InvalidEvmTransactionError::GasLimitTooHigh => EvmTxErrorWrapper::GasLimitTooHigh,
+			InvalidEvmTransactionError::GasPriceTooLow => EvmTxErrorWrapper::GasPriceTooLow,
+			InvalidEvmTransactionError::PriorityFeeTooHigh => EvmTxErrorWrapper::PriorityFeeTooHigh,
+			InvalidEvmTransactionError::BalanceTooLow => EvmTxErrorWrapper::BalanceTooLow,
+			InvalidEvmTransactionError::TxNonceTooLow => EvmTxErrorWrapper::TxNonceTooLow,
+			InvalidEvmTransactionError::TxNonceTooHigh => EvmTxErrorWrapper::TxNonceTooHigh,
 			InvalidEvmTransactionError::InvalidPaymentInput =>
-				InvalidTransactionWrapper::InvalidPaymentInput,
-			InvalidEvmTransactionError::InvalidChainId => InvalidTransactionWrapper::InvalidChainId,
+				EvmTxErrorWrapper::InvalidPaymentInput,
+			InvalidEvmTransactionError::InvalidChainId => EvmTxErrorWrapper::InvalidChainId,
 		}
 	}
 }
