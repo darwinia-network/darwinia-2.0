@@ -19,31 +19,35 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 // crates.io
+use codec::{Decode, Encode, MaxEncodedLen};
 use ethereum::{
 	AccessListItem, BlockV2 as Block, LegacyTransactionMessage, Log, ReceiptV3 as Receipt,
 	TransactionAction, TransactionV2 as Transaction,
 };
+use frame_support::sp_runtime::traits::UniqueSaturatedInto;
+use scale_info::TypeInfo;
 // frontier
 use fp_ethereum::{TransactionData, ValidatedTransaction};
 use fp_evm::{CheckEvmTransaction, CheckEvmTransactionConfig, InvalidEvmTransactionError};
-use pallet_evm::FeeCalculator;
+use pallet_evm::{FeeCalculator, GasWeightMapping};
 // substrate
+use frame_support::RuntimeDebug;
 use sp_core::H160;
 
 pub use pallet::*;
 
 #[derive(Clone, Eq, PartialEq, RuntimeDebug, Encode, Decode, MaxEncodedLen, TypeInfo)]
-pub enum MessageTransactOrigin {
-	LcmpEthTransaction(H160),
+pub enum LcmpEthOrigin {
+	MessageTransact(H160),
 }
 
-pub fn ensure_ethereum_transaction<OuterOrigin>(o: OuterOrigin) -> Result<H160, &'static str>
+pub fn ensure_lcmp_ethereum<OuterOrigin>(o: OuterOrigin) -> Result<H160, &'static str>
 where
-	OuterOrigin: Into<Result<RawOrigin, OuterOrigin>>,
+	OuterOrigin: Into<Result<LcmpEthOrigin, OuterOrigin>>,
 {
 	match o.into() {
-		Ok(RawOrigin::EthereumTransaction(n)) => Ok(n),
-		_ => Err("bad origin: expected to be an Ethereum transaction"),
+		Ok(LcmpEthOrigin::MessageTransact(n)) => Ok(n),
+		_ => Err("bad origin: expected to be an Lcmp Ethereum transaction"),
 	}
 }
 
@@ -64,32 +68,49 @@ pub mod pallet {
 		type ValidatedTransaction: ValidatedTransaction;
 	}
 
-	#[pallet::call]
-	impl<T: Config> Pallet<T> {
-		#[pallet::weight(0)]
+	#[pallet::error]
+	/// Ethereum pallet errors.
+	pub enum Error<T> {
+		/// Message validate invalid
+		MessageTransactionError,
+	}
 
+	#[pallet::call]
+	impl<T: Config> Pallet<T>
+	where
+		OriginFor<T>: Into<Result<LcmpEthOrigin, OriginFor<T>>>,
+	{
+		/// This is message transact only for substrate to substrate LCMP to call
+		#[pallet::weight({
+			let without_base_extrinsic_weight = true;
+			<T as pallet_evm::Config>::GasWeightMapping::gas_to_weight({
+				let transaction_data: TransactionData = transaction.into();
+				transaction_data.gas_limit.unique_saturated_into()
+			}, without_base_extrinsic_weight)
+		})]
 		pub fn message_transact(
 			origin: OriginFor<T>,
 			transaction: Transaction,
 		) -> DispatchResultWithPostInfo {
-			let source = ensure_ethereum_transaction(origin)?;
+			let source = ensure_lcmp_ethereum(origin)?;
 
 			let extracted_transaction = match transaction {
-				Transaction::Legacy(t) => Ok(Transaction::Legacy(ethereum::LegacyTransaction {
-					nonce: pallet_evm::Pallet::<T>::account_basic(&source).0.nonce, // auto set
-					gas_price: T::FeeCalculator::min_gas_price().0,                 // auto set
-					gas_limit: t.gas_limit,
-					action: t.action,
-					value: t.value,
-					input: t.input,
-					signature: t.signature, // not used.
-				})),
-				_ => todo!(),
+				Transaction::Legacy(ref t) =>
+					Ok(Transaction::Legacy(ethereum::LegacyTransaction {
+						nonce: pallet_evm::Pallet::<T>::account_basic(&source).0.nonce, // auto set
+						gas_price: T::FeeCalculator::min_gas_price().0,                 // auto set
+						gas_limit: t.gas_limit,
+						action: t.action,
+						value: t.value,
+						input: t.input.clone(),
+						signature: t.signature.clone(), // not used.
+					})),
+				_ => Err(Error::<T>::MessageTransactionError),
 			}?;
 
 			// Validate the transaction before apply
 
-			T::ValidatedTransaction::apply(source, transaction)
+			T::ValidatedTransaction::apply(source, extracted_transaction)
 		}
 	}
 }
