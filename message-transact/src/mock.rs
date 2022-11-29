@@ -110,6 +110,13 @@ frame_support::parameter_types! {
 	pub const WeightPerGas: Weight = Weight::from_ref_time(20_000);
 }
 
+pub struct FixedGasPrice;
+impl FeeCalculator for FixedGasPrice {
+	fn min_gas_price() -> (U256, Weight) {
+		(U256::from(5), Weight::zero())
+	}
+}
+
 impl pallet_evm::Config for TestRuntime {
 	type AddressMapping = IdentityAddressMapping;
 	type BlockGasLimit = BlockGasLimit;
@@ -117,7 +124,7 @@ impl pallet_evm::Config for TestRuntime {
 	type CallOrigin = pallet_evm::EnsureAddressRoot<AccountId>;
 	type ChainId = ChainId;
 	type Currency = Balances;
-	type FeeCalculator = ();
+	type FeeCalculator = FixedGasPrice;
 	type FindAuthor = ();
 	type GasWeightMapping = pallet_evm::FixedGasWeightMapping<Self>;
 	type OnChargeTransaction = ();
