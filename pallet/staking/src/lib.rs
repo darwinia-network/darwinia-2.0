@@ -46,7 +46,7 @@ use dc_primitives::Balance;
 use frame_support::{log, pallet_prelude::*};
 use frame_system::pallet_prelude::*;
 use sp_runtime::{Percent, Perquintill};
-use sp_std::collections::btree_map::BTreeMap;
+use sp_std::{collections::btree_map::BTreeMap, prelude::*};
 
 type DepositId = u64;
 type RewardPoint = u32;
@@ -504,7 +504,7 @@ pub mod pallet {
 					let mut p = Self::power_of(&c);
 
 					<Nominators<T>>::iter()
-						.filter_map(|(n, c_)| if c_ == c { Some(c_) } else { None })
+						.filter_map(|(_, c_)| if c_ == c { Some(c_) } else { None })
 						.for_each(|c| p += Self::power_of(&c));
 
 					(c, p)
@@ -520,7 +520,7 @@ pub mod pallet {
 pub use pallet::*;
 
 // Add reward points to block authors:
-// - 20 points to the block producer for producing a (non-uncle) block in the relay chain,
+// - 20 points to the block producer for producing a (non-uncle) block in the parachain chain,
 // - 2 points to the block producer for each reference to a previously unreferenced uncle, and
 // - 1 point to the producer of each referenced uncle block.
 impl<T> pallet_authorship::EventHandler<T::AccountId, T::BlockNumber> for Pallet<T>

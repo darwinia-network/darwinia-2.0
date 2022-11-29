@@ -2181,6 +2181,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "darwinia-deposit"
+version = "6.0.0"
+dependencies = [
+ "darwinia-staking",
+ "dc-primitives",
+ "dp-deposit",
+ "frame-support",
+ "frame-system",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-core",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "darwinia-precompile-bls12-381"
 version = "6.0.0"
 dependencies = [
@@ -2483,6 +2499,10 @@ name = "downcast-rs"
 version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9ea835d29036a4087793836fa931b08837ad5e957da9e23886b29586fb9b6650"
+
+[[package]]
+name = "dp-deposit"
+version = "6.0.0"
 
 [[package]]
 name = "dtoa"
