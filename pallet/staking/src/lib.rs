@@ -44,9 +44,14 @@ use core::fmt::Debug;
 // crates.io
 use codec::FullCodec;
 // darwinia
-use dc_types::Balance;
+use dc_inflation::TOTAL_SUPPLY;
+use dc_types::{Balance, Timestamp};
 // substrate
-use frame_support::{log, pallet_prelude::*};
+use frame_support::{
+	log,
+	pallet_prelude::*,
+	traits::{Currency, UnixTime},
+};
 use frame_system::pallet_prelude::*;
 use sp_runtime::{Percent, Perquintill};
 use sp_std::{collections::btree_map::BTreeMap, prelude::*};
@@ -114,6 +119,14 @@ pub mod pallet {
 	pub trait Config: frame_system::Config {
 		/// Override the [`frame_system::Config::RuntimeEvent`].
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
+
+		/// Unix timestamp.
+		type UnixTime: UnixTime;
+
+		/// Currency interface.
+		///
+		/// Only use for inflation.
+		type Currency: Currency<Self::AccountId, Balance = Balance>;
 
 		/// RING interface.
 		type Ring: Stake<AccountId = Self::AccountId, Item = Balance>;
@@ -188,10 +201,15 @@ pub mod pallet {
 	pub type RewardPoints<T: Config> =
 		StorageValue<_, (RewardPoint, BTreeMap<T::AccountId, RewardPoint>), ValueQuery>;
 
+	/// Active session's started timestamp.
+	#[pallet::storage]
+	#[pallet::getter(fn session_started_time)]
+	pub type SessionStartedTime<T: Config> = StorageValue<_, Timestamp, ValueQuery>;
+
 	/// Elapsed time.
 	#[pallet::storage]
 	#[pallet::getter(fn elapsed_time)]
-	pub type ElapsedTime<T: Config> = StorageValue<_, u128, ValueQuery>;
+	pub type ElapsedTime<T: Config> = StorageValue<_, Timestamp, ValueQuery>;
 
 	#[derive(Default)]
 	#[pallet::genesis_config]
@@ -503,7 +521,24 @@ pub mod pallet {
 
 		/// Pay the reward to the collators.
 		pub fn payout() {
-			// TODO
+			let now = T::UnixTime::now().as_millis();
+			let elapsed = <ElapsedTime<T>>::get();
+			let period = now - <SessionStartedTime<T>>::get();
+			let inflation = dc_inflation::in_period(
+				TOTAL_SUPPLY - T::Currency::total_issuance(),
+				period,
+				elapsed,
+			);
+
+			// let rest = max_payout.saturating_sub(validator_payout);
+			// Self::deposit_event(Event::EraPaid(active_era.index, validator_payout, rest));
+
+			<ElapsedTime<T>>::mutate(|t| *t += period);
+
+			// // Set ending era reward.
+			// <ErasValidatorReward<T>>::insert(&active_era.index, validator_payout);
+			// T::RingCurrency::deposit_creating(&Self::account_id(), validator_payout);
+			// T::RingRewardRemainder::on_unbalanced(T::RingCurrency::issue(rest));
 		}
 
 		/// Elect the new collators.
@@ -564,6 +599,8 @@ where
 		);
 
 		let collators = Self::elect();
+
+		// TODO: clean old session data
 
 		Some(collators)
 	}

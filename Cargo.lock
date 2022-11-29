@@ -2333,6 +2333,7 @@ dependencies = [
 name = "darwinia-staking"
 version = "6.0.0"
 dependencies = [
+ "dc-inflation",
  "dc-types",
  "frame-support",
  "frame-system",

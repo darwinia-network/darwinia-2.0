@@ -27,12 +27,15 @@ mod test;
 // crates.io
 use primitive_types::U256;
 // darwinia
-use dc_types::{Balance, Timestamp};
+use dc_types::{Balance, Timestamp, UNIT};
 // github
 use substrate_fixed::{
 	transcendental,
 	types::{I95F33, U94F34},
 };
+
+/// Inflation's upper limit.
+pub const TOTAL_SUPPLY: Balance = 10_000_000_000 * UNIT;
 
 /// Milliseconds per year for the Julian year (365.25 days).
 pub const MILLISECS_PER_YEAR: Balance = (366 * 24 * 60 * 60) * 1000;

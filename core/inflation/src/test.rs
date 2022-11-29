@@ -19,8 +19,6 @@
 // darwinia
 use crate::*;
 
-const UNIT: u128 = 1_000_000_000_000_000_000;
-
 #[test]
 fn inflate_should_work() {
 	let max = 10_000_000_000_u128 * UNIT;
