@@ -22,7 +22,6 @@ use scale_info::TypeInfo;
 // paritytech
 use frame_support::{weights::Weight, RuntimeDebug};
 use sp_runtime::{FixedPointNumber, FixedU128};
-use sp_std::ops::RangeInclusive;
 // darwinia
 use crate::*;
 use bp_messages::{source_chain::*, target_chain::*, *};

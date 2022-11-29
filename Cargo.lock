@@ -743,8 +743,8 @@ version = "0.1.0"
 source = "git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=guantong/support-H160#eb246d54e063b36971e1bb1442312a5a9564bb41"
 dependencies = [
  "account",
- "bp-messages",
- "bp-runtime",
+ "bp-messages 0.1.0 (git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=guantong/support-H160)",
+ "bp-runtime 0.1.0 (git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=guantong/support-H160)",
  "frame-support",
  "frame-system",
  "parity-scale-codec",
@@ -759,7 +759,24 @@ name = "bp-header-chain"
 version = "0.1.0"
 source = "git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=guantong/support-H160#eb246d54e063b36971e1bb1442312a5a9564bb41"
 dependencies = [
- "bp-runtime",
+ "bp-runtime 0.1.0 (git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=guantong/support-H160)",
+ "finality-grandpa",
+ "frame-support",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-core",
+ "sp-finality-grandpa",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "bp-header-chain"
+version = "0.1.0"
+source = "git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=polkadot-v0.9.30#9f1f451245784a0d2f4c943610c838bb1b7c8ac0"
+dependencies = [
+ "bp-runtime 0.1.0 (git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=polkadot-v0.9.30)",
  "finality-grandpa",
  "frame-support",
  "parity-scale-codec",
@@ -776,7 +793,20 @@ name = "bp-message-dispatch"
 version = "0.1.0"
 source = "git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=guantong/support-H160#eb246d54e063b36971e1bb1442312a5a9564bb41"
 dependencies = [
- "bp-runtime",
+ "bp-runtime 0.1.0 (git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=guantong/support-H160)",
+ "frame-support",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "bp-message-dispatch"
+version = "0.1.0"
+source = "git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=polkadot-v0.9.30#9f1f451245784a0d2f4c943610c838bb1b7c8ac0"
+dependencies = [
+ "bp-runtime 0.1.0 (git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=polkadot-v0.9.30)",
  "frame-support",
  "parity-scale-codec",
  "scale-info",
@@ -790,7 +820,24 @@ version = "0.1.0"
 source = "git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=guantong/support-H160#eb246d54e063b36971e1bb1442312a5a9564bb41"
 dependencies = [
  "bitvec",
- "bp-runtime",
+ "bp-runtime 0.1.0 (git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=guantong/support-H160)",
+ "frame-support",
+ "frame-system",
+ "impl-trait-for-tuples",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-core",
+ "sp-std",
+]
+
+[[package]]
+name = "bp-messages"
+version = "0.1.0"
+source = "git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=polkadot-v0.9.30#9f1f451245784a0d2f4c943610c838bb1b7c8ac0"
+dependencies = [
+ "bitvec",
+ "bp-runtime 0.1.0 (git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=polkadot-v0.9.30)",
  "frame-support",
  "frame-system",
  "impl-trait-for-tuples",
@@ -806,8 +853,21 @@ name = "bp-parachains"
 version = "0.1.0"
 source = "git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=guantong/support-H160#eb246d54e063b36971e1bb1442312a5a9564bb41"
 dependencies = [
- "bp-polkadot-core",
- "bp-runtime",
+ "bp-polkadot-core 0.1.0 (git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=guantong/support-H160)",
+ "bp-runtime 0.1.0 (git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=guantong/support-H160)",
+ "frame-support",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-core",
+]
+
+[[package]]
+name = "bp-parachains"
+version = "0.1.0"
+source = "git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=polkadot-v0.9.30#9f1f451245784a0d2f4c943610c838bb1b7c8ac0"
+dependencies = [
+ "bp-polkadot-core 0.1.0 (git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=polkadot-v0.9.30)",
+ "bp-runtime 0.1.0 (git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=polkadot-v0.9.30)",
  "frame-support",
  "parity-scale-codec",
  "scale-info",
@@ -819,8 +879,28 @@ name = "bp-polkadot-core"
 version = "0.1.0"
 source = "git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=guantong/support-H160#eb246d54e063b36971e1bb1442312a5a9564bb41"
 dependencies = [
- "bp-messages",
- "bp-runtime",
+ "bp-messages 0.1.0 (git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=guantong/support-H160)",
+ "bp-runtime 0.1.0 (git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=guantong/support-H160)",
+ "frame-support",
+ "frame-system",
+ "parity-scale-codec",
+ "parity-util-mem",
+ "scale-info",
+ "serde",
+ "sp-api",
+ "sp-core",
+ "sp-runtime",
+ "sp-std",
+ "sp-version",
+]
+
+[[package]]
+name = "bp-polkadot-core"
+version = "0.1.0"
+source = "git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=polkadot-v0.9.30#9f1f451245784a0d2f4c943610c838bb1b7c8ac0"
+dependencies = [
+ "bp-messages 0.1.0 (git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=polkadot-v0.9.30)",
+ "bp-runtime 0.1.0 (git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=polkadot-v0.9.30)",
  "frame-support",
  "frame-system",
  "parity-scale-codec",
@@ -856,11 +936,47 @@ dependencies = [
 ]
 
 [[package]]
+name = "bp-runtime"
+version = "0.1.0"
+source = "git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=polkadot-v0.9.30#9f1f451245784a0d2f4c943610c838bb1b7c8ac0"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "hash-db",
+ "num-traits",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-state-machine",
+ "sp-std",
+ "sp-trie",
+ "trie-db",
+]
+
+[[package]]
 name = "bp-test-utils"
 version = "0.1.0"
 source = "git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=guantong/support-H160#eb246d54e063b36971e1bb1442312a5a9564bb41"
 dependencies = [
- "bp-header-chain",
+ "bp-header-chain 0.1.0 (git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=guantong/support-H160)",
+ "ed25519-dalek",
+ "finality-grandpa",
+ "parity-scale-codec",
+ "sp-application-crypto",
+ "sp-finality-grandpa",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "bp-test-utils"
+version = "0.1.0"
+source = "git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=polkadot-v0.9.30#9f1f451245784a0d2f4c943610c838bb1b7c8ac0"
+dependencies = [
+ "bp-header-chain 0.1.0 (git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=polkadot-v0.9.30)",
  "ed25519-dalek",
  "finality-grandpa",
  "parity-scale-codec",
@@ -875,21 +991,54 @@ name = "bridge-runtime-common"
 version = "0.1.0"
 source = "git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=guantong/support-H160#eb246d54e063b36971e1bb1442312a5a9564bb41"
 dependencies = [
- "bp-message-dispatch",
- "bp-messages",
- "bp-parachains",
- "bp-polkadot-core",
- "bp-runtime",
+ "bp-message-dispatch 0.1.0 (git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=guantong/support-H160)",
+ "bp-messages 0.1.0 (git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=guantong/support-H160)",
+ "bp-parachains 0.1.0 (git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=guantong/support-H160)",
+ "bp-polkadot-core 0.1.0 (git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=guantong/support-H160)",
+ "bp-runtime 0.1.0 (git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=guantong/support-H160)",
  "frame-support",
  "frame-system",
  "hash-db",
  "num-traits",
  "pallet-balances",
- "pallet-bridge-dispatch",
- "pallet-bridge-grandpa",
- "pallet-bridge-messages",
- "pallet-bridge-parachains",
- "pallet-fee-market",
+ "pallet-bridge-dispatch 0.1.0 (git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=guantong/support-H160)",
+ "pallet-bridge-grandpa 0.1.0 (git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=guantong/support-H160)",
+ "pallet-bridge-messages 0.1.0 (git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=guantong/support-H160)",
+ "pallet-bridge-parachains 0.1.0 (git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=guantong/support-H160)",
+ "pallet-fee-market 0.1.0 (git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=guantong/support-H160)",
+ "pallet-transaction-payment",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-api",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-state-machine",
+ "sp-std",
+ "sp-trie",
+ "sp-version",
+]
+
+[[package]]
+name = "bridge-runtime-common"
+version = "0.1.0"
+source = "git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=polkadot-v0.9.30#9f1f451245784a0d2f4c943610c838bb1b7c8ac0"
+dependencies = [
+ "bp-message-dispatch 0.1.0 (git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=polkadot-v0.9.30)",
+ "bp-messages 0.1.0 (git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=polkadot-v0.9.30)",
+ "bp-parachains 0.1.0 (git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=polkadot-v0.9.30)",
+ "bp-polkadot-core 0.1.0 (git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=polkadot-v0.9.30)",
+ "bp-runtime 0.1.0 (git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=polkadot-v0.9.30)",
+ "frame-support",
+ "frame-system",
+ "hash-db",
+ "num-traits",
+ "pallet-balances",
+ "pallet-bridge-dispatch 0.1.0 (git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=polkadot-v0.9.30)",
+ "pallet-bridge-grandpa 0.1.0 (git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=polkadot-v0.9.30)",
+ "pallet-bridge-messages 0.1.0 (git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=polkadot-v0.9.30)",
+ "pallet-bridge-parachains 0.1.0 (git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=polkadot-v0.9.30)",
+ "pallet-fee-market 0.1.0 (git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=polkadot-v0.9.30)",
  "pallet-transaction-payment",
  "parity-scale-codec",
  "scale-info",
@@ -1334,11 +1483,11 @@ name = "crab-runtime"
 version = "6.0.0"
 dependencies = [
  "array-bytes",
- "bp-message-dispatch",
- "bp-messages",
- "bp-polkadot-core",
- "bp-runtime",
- "bridge-runtime-common",
+ "bp-message-dispatch 0.1.0 (git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=polkadot-v0.9.30)",
+ "bp-messages 0.1.0 (git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=polkadot-v0.9.30)",
+ "bp-polkadot-core 0.1.0 (git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=polkadot-v0.9.30)",
+ "bp-runtime 0.1.0 (git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=polkadot-v0.9.30)",
+ "bridge-runtime-common 0.1.0 (git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=polkadot-v0.9.30)",
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
@@ -1366,9 +1515,9 @@ dependencies = [
  "pallet-authorship",
  "pallet-balances",
  "pallet-base-fee",
- "pallet-bridge-dispatch",
- "pallet-bridge-grandpa",
- "pallet-bridge-messages",
+ "pallet-bridge-dispatch 0.1.0 (git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=polkadot-v0.9.30)",
+ "pallet-bridge-grandpa 0.1.0 (git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=polkadot-v0.9.30)",
+ "pallet-bridge-messages 0.1.0 (git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=polkadot-v0.9.30)",
  "pallet-collator-selection",
  "pallet-collective",
  "pallet-democracy",
@@ -1380,7 +1529,7 @@ dependencies = [
  "pallet-evm-precompile-dispatch",
  "pallet-evm-precompile-modexp",
  "pallet-evm-precompile-simple",
- "pallet-fee-market",
+ "pallet-fee-market 0.1.0 (git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=polkadot-v0.9.30)",
  "pallet-identity",
  "pallet-membership",
  "pallet-multisig",
@@ -2287,7 +2436,10 @@ name = "darwinia-common-runtime"
 version = "6.0.0"
 dependencies = [
  "bp-darwinia-core",
+ "dc-primitives",
  "frame-support",
+ "frame-system",
+ "pallet-collective",
  "xcm",
  "xcm-executor",
 ]
@@ -2336,11 +2488,11 @@ name = "darwinia-runtime"
 version = "6.0.0"
 dependencies = [
  "array-bytes",
- "bp-message-dispatch",
- "bp-messages",
- "bp-polkadot-core",
- "bp-runtime",
- "bridge-runtime-common",
+ "bp-message-dispatch 0.1.0 (git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=guantong/support-H160)",
+ "bp-messages 0.1.0 (git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=guantong/support-H160)",
+ "bp-polkadot-core 0.1.0 (git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=guantong/support-H160)",
+ "bp-runtime 0.1.0 (git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=guantong/support-H160)",
+ "bridge-runtime-common 0.1.0 (git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=guantong/support-H160)",
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
@@ -2368,10 +2520,13 @@ dependencies = [
  "pallet-authorship",
  "pallet-balances",
  "pallet-base-fee",
- "pallet-bridge-dispatch",
- "pallet-bridge-grandpa",
- "pallet-bridge-messages",
+ "pallet-bridge-dispatch 0.1.0 (git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=guantong/support-H160)",
+ "pallet-bridge-grandpa 0.1.0 (git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=guantong/support-H160)",
+ "pallet-bridge-messages 0.1.0 (git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=guantong/support-H160)",
  "pallet-collator-selection",
+ "pallet-collective",
+ "pallet-democracy",
+ "pallet-elections-phragmen",
  "pallet-ethereum",
  "pallet-evm",
  "pallet-evm-precompile-blake2",
@@ -2379,12 +2534,22 @@ dependencies = [
  "pallet-evm-precompile-dispatch",
  "pallet-evm-precompile-modexp",
  "pallet-evm-precompile-simple",
- "pallet-fee-market",
+ "pallet-fee-market 0.1.0 (git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=guantong/support-H160)",
+ "pallet-identity",
+ "pallet-membership",
+ "pallet-multisig",
+ "pallet-preimage",
+ "pallet-proxy",
+ "pallet-scheduler",
  "pallet-session",
  "pallet-sudo",
  "pallet-timestamp",
+ "pallet-tips",
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc-runtime-api",
+ "pallet-treasury",
+ "pallet-utility",
+ "pallet-vesting",
  "pallet-xcm",
  "parachain-info",
  "parity-scale-codec",
@@ -2404,6 +2569,7 @@ dependencies = [
  "sp-std",
  "sp-transaction-pool",
  "sp-version",
+ "static_assertions",
  "substrate-wasm-builder",
  "xcm",
  "xcm-builder",
@@ -6192,8 +6358,24 @@ name = "pallet-bridge-dispatch"
 version = "0.1.0"
 source = "git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=guantong/support-H160#eb246d54e063b36971e1bb1442312a5a9564bb41"
 dependencies = [
- "bp-message-dispatch",
- "bp-runtime",
+ "bp-message-dispatch 0.1.0 (git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=guantong/support-H160)",
+ "bp-runtime 0.1.0 (git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=guantong/support-H160)",
+ "frame-support",
+ "frame-system",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-core",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-bridge-dispatch"
+version = "0.1.0"
+source = "git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=polkadot-v0.9.30#9f1f451245784a0d2f4c943610c838bb1b7c8ac0"
+dependencies = [
+ "bp-message-dispatch 0.1.0 (git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=polkadot-v0.9.30)",
+ "bp-runtime 0.1.0 (git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=polkadot-v0.9.30)",
  "frame-support",
  "frame-system",
  "parity-scale-codec",
@@ -6208,9 +6390,31 @@ name = "pallet-bridge-grandpa"
 version = "0.1.0"
 source = "git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=guantong/support-H160#eb246d54e063b36971e1bb1442312a5a9564bb41"
 dependencies = [
- "bp-header-chain",
- "bp-runtime",
- "bp-test-utils",
+ "bp-header-chain 0.1.0 (git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=guantong/support-H160)",
+ "bp-runtime 0.1.0 (git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=guantong/support-H160)",
+ "bp-test-utils 0.1.0 (git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=guantong/support-H160)",
+ "finality-grandpa",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "num-traits",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-finality-grandpa",
+ "sp-runtime",
+ "sp-std",
+ "sp-trie",
+]
+
+[[package]]
+name = "pallet-bridge-grandpa"
+version = "0.1.0"
+source = "git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=polkadot-v0.9.30#9f1f451245784a0d2f4c943610c838bb1b7c8ac0"
+dependencies = [
+ "bp-header-chain 0.1.0 (git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=polkadot-v0.9.30)",
+ "bp-runtime 0.1.0 (git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=polkadot-v0.9.30)",
+ "bp-test-utils 0.1.0 (git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=polkadot-v0.9.30)",
  "finality-grandpa",
  "frame-benchmarking",
  "frame-support",
@@ -6231,9 +6435,30 @@ version = "0.1.0"
 source = "git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=guantong/support-H160#eb246d54e063b36971e1bb1442312a5a9564bb41"
 dependencies = [
  "bitvec",
- "bp-message-dispatch",
- "bp-messages",
- "bp-runtime",
+ "bp-message-dispatch 0.1.0 (git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=guantong/support-H160)",
+ "bp-messages 0.1.0 (git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=guantong/support-H160)",
+ "bp-runtime 0.1.0 (git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=guantong/support-H160)",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "num-traits",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-core",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-bridge-messages"
+version = "0.1.0"
+source = "git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=polkadot-v0.9.30#9f1f451245784a0d2f4c943610c838bb1b7c8ac0"
+dependencies = [
+ "bitvec",
+ "bp-message-dispatch 0.1.0 (git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=polkadot-v0.9.30)",
+ "bp-messages 0.1.0 (git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=polkadot-v0.9.30)",
+ "bp-runtime 0.1.0 (git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=polkadot-v0.9.30)",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
@@ -6251,12 +6476,32 @@ name = "pallet-bridge-parachains"
 version = "0.1.0"
 source = "git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=guantong/support-H160#eb246d54e063b36971e1bb1442312a5a9564bb41"
 dependencies = [
- "bp-parachains",
- "bp-polkadot-core",
- "bp-runtime",
+ "bp-parachains 0.1.0 (git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=guantong/support-H160)",
+ "bp-polkadot-core 0.1.0 (git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=guantong/support-H160)",
+ "bp-runtime 0.1.0 (git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=guantong/support-H160)",
  "frame-support",
  "frame-system",
- "pallet-bridge-grandpa",
+ "pallet-bridge-grandpa 0.1.0 (git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=guantong/support-H160)",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-core",
+ "sp-runtime",
+ "sp-std",
+ "sp-trie",
+]
+
+[[package]]
+name = "pallet-bridge-parachains"
+version = "0.1.0"
+source = "git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=polkadot-v0.9.30#9f1f451245784a0d2f4c943610c838bb1b7c8ac0"
+dependencies = [
+ "bp-parachains 0.1.0 (git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=polkadot-v0.9.30)",
+ "bp-polkadot-core 0.1.0 (git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=polkadot-v0.9.30)",
+ "bp-runtime 0.1.0 (git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=polkadot-v0.9.30)",
+ "frame-support",
+ "frame-system",
+ "pallet-bridge-grandpa 0.1.0 (git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=polkadot-v0.9.30)",
  "parity-scale-codec",
  "scale-info",
  "serde",
@@ -6518,8 +6763,27 @@ name = "pallet-fee-market"
 version = "0.1.0"
 source = "git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=guantong/support-H160#eb246d54e063b36971e1bb1442312a5a9564bb41"
 dependencies = [
- "bp-messages",
- "bp-runtime",
+ "bp-messages 0.1.0 (git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=guantong/support-H160)",
+ "bp-runtime 0.1.0 (git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=guantong/support-H160)",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "pallet-timestamp",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-fee-market"
+version = "0.1.0"
+source = "git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=polkadot-v0.9.30#9f1f451245784a0d2f4c943610c838bb1b7c8ac0"
+dependencies = [
+ "bp-messages 0.1.0 (git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=polkadot-v0.9.30)",
+ "bp-runtime 0.1.0 (git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=polkadot-v0.9.30)",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
@@ -7112,11 +7376,11 @@ name = "pangolin-runtime"
 version = "6.0.0"
 dependencies = [
  "array-bytes",
- "bp-message-dispatch",
- "bp-messages",
- "bp-polkadot-core",
- "bp-runtime",
- "bridge-runtime-common",
+ "bp-message-dispatch 0.1.0 (git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=polkadot-v0.9.30)",
+ "bp-messages 0.1.0 (git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=polkadot-v0.9.30)",
+ "bp-polkadot-core 0.1.0 (git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=polkadot-v0.9.30)",
+ "bp-runtime 0.1.0 (git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=polkadot-v0.9.30)",
+ "bridge-runtime-common 0.1.0 (git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=polkadot-v0.9.30)",
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
@@ -7144,9 +7408,9 @@ dependencies = [
  "pallet-authorship",
  "pallet-balances",
  "pallet-base-fee",
- "pallet-bridge-dispatch",
- "pallet-bridge-grandpa",
- "pallet-bridge-messages",
+ "pallet-bridge-dispatch 0.1.0 (git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=polkadot-v0.9.30)",
+ "pallet-bridge-grandpa 0.1.0 (git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=polkadot-v0.9.30)",
+ "pallet-bridge-messages 0.1.0 (git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=polkadot-v0.9.30)",
  "pallet-collator-selection",
  "pallet-collective",
  "pallet-democracy",
@@ -7158,7 +7422,7 @@ dependencies = [
  "pallet-evm-precompile-dispatch",
  "pallet-evm-precompile-modexp",
  "pallet-evm-precompile-simple",
- "pallet-fee-market",
+ "pallet-fee-market 0.1.0 (git+https://github.com/darwinia-network/darwinia-messages-substrate?branch=polkadot-v0.9.30)",
  "pallet-identity",
  "pallet-membership",
  "pallet-multisig",

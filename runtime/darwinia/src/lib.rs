@@ -312,6 +312,12 @@ frame_support::construct_runtime! {
 		Ethereum: pallet_ethereum = 31,
 		Evm: pallet_evm = 32,
 		BaseFee: pallet_base_fee = 33,
+
+		// Darwinia <> Crab
+		BridgeCrabGrandpa: pallet_bridge_grandpa::<Instance1> = 34,
+		BridgeCrabMessages: pallet_bridge_messages::<Instance1> = 35,
+		BridgeCrabDispatch: pallet_bridge_dispatch::<Instance1> = 36,
+		CrabFeeMarket: pallet_fee_market::<Instance1> = 37
 	}
 }
 
