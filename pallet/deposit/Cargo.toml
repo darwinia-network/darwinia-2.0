@@ -17,7 +17,6 @@ scale-info = { version = "2.3", default-features = false }
 # darwinia
 darwinia-staking = { default-features = false, path = "../staking" }
 dc-types         = { path = "../../core/types" }
-dp-deposit       = { path = "../../primitive/deposit" }
 
 # subtrate
 frame-support = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }

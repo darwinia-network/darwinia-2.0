@@ -7,6 +7,5 @@ members = [
 	"node",
 	"pallet/*",
 	"precompile/*",
-	"primitive/*",
 	"runtime/*",
 ]

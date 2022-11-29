@@ -39,25 +39,31 @@ mod tests;
 mod weights;
 pub use weights::WeightInfo;
 
+// core
+use core::fmt::Debug;
+// crates.io
+use codec::FullCodec;
 // darwinia
 use dc_types::Balance;
-
 // substrate
 use frame_support::{log, pallet_prelude::*};
 use frame_system::pallet_prelude::*;
 use sp_runtime::{Percent, Perquintill};
 use sp_std::{collections::btree_map::BTreeMap, prelude::*};
 
-type DepositId = u64;
 type RewardPoint = u32;
 type Power = u32;
+
+type DepositId<T> = <<T as Config>::Deposit as Stake>::Item;
 
 /// Stake trait that stake items must be implemented.
 pub trait Stake {
 	/// Account type.
 	type AccountId;
 	/// Stake item type.
-	type Item;
+	///
+	/// Basically, it's just a num type.
+	type Item: Clone + Copy + Debug + PartialEq + FullCodec + MaxEncodedLen + TypeInfo;
 
 	/// Add stakes to the staking pool.
 	fn stake(who: &Self::AccountId, item: Self::Item) -> DispatchResult;
@@ -90,13 +96,13 @@ where
 	/// Staked KTON.
 	pub staked_kton: Balance,
 	/// Staked deposits.
-	pub staked_deposits: BoundedVec<DepositId, T::MaxDeposits>,
+	pub staked_deposits: BoundedVec<DepositId<T>, T::MaxDeposits>,
 	/// The RING in unstaking process.
 	pub unstaking_ring: BoundedVec<(Balance, T::BlockNumber), T::MaxUnstakings>,
 	/// The KTON in unstaking process.
 	pub unstaking_kton: BoundedVec<(Balance, T::BlockNumber), T::MaxUnstakings>,
 	/// The deposits in unstaking process.
-	pub unstaking_deposits: BoundedVec<(DepositId, T::BlockNumber), T::MaxUnstakings>,
+	pub unstaking_deposits: BoundedVec<(DepositId<T>, T::BlockNumber), T::MaxUnstakings>,
 }
 
 #[frame_support::pallet]
@@ -116,7 +122,7 @@ pub mod pallet {
 		type Kton: Stake<AccountId = Self::AccountId, Item = Balance>;
 
 		/// Deposit interface.
-		type Deposit: StakeExt<AccountId = Self::AccountId, Item = DepositId, Amount = Balance>;
+		type Deposit: StakeExt<AccountId = Self::AccountId, Amount = Balance>;
 		/// Maximum deposit count.
 		#[pallet::constant]
 		type MaxDeposits: Get<u32>;
@@ -214,7 +220,7 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			ring_amount: Balance,
 			kton_amount: Balance,
-			deposits: Vec<DepositId>,
+			deposits: Vec<DepositId<T>>,
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
@@ -234,7 +240,7 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			ring_amount: Balance,
 			kton_amount: Balance,
-			deposits: Vec<DepositId>,
+			deposits: Vec<DepositId<T>>,
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
@@ -367,7 +373,7 @@ pub mod pallet {
 			Ok(())
 		}
 
-		fn stake_deposit(who: &T::AccountId, deposit: DepositId) -> DispatchResult {
+		fn stake_deposit(who: &T::AccountId, deposit: DepositId<T>) -> DispatchResult {
 			T::Deposit::stake(who, deposit)?;
 			<Ledgers<T>>::try_mutate(who, |l| {
 				if let Some(l) = l {
@@ -439,7 +445,7 @@ pub mod pallet {
 			Ok(())
 		}
 
-		fn unstake_deposit(who: &T::AccountId, deposit: DepositId) -> DispatchResult {
+		fn unstake_deposit(who: &T::AccountId, deposit: DepositId<T>) -> DispatchResult {
 			// TODO: check in validating/nominating
 
 			T::Deposit::unstake(who, deposit)?;

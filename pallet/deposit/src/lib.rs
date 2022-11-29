@@ -37,11 +37,12 @@ use core::time::Duration;
 
 // darwinia
 use dc_types::{Balance, Timestamp};
-use dp_deposit::DepositId;
 
 // substrate
 use frame_support::{log, pallet_prelude::*, traits::UnixTime};
 use frame_system::pallet_prelude::*;
+
+type DepositId = u8;
 
 /// Deposit.
 #[derive(Encode, Decode, MaxEncodedLen, TypeInfo, RuntimeDebug)]
