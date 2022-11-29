@@ -38,72 +38,78 @@ pub fn eip1559_erc20_creation_unsigned_transaction() -> EIP1559UnsignedTransacti
 
 #[test]
 fn test_dispatch_legacy_ethereum_transaction_works() {
-	let (pairs, mut ext) = new_test_ext(2);
-	let alice = &pairs[0];
-	let relayer_account = &pairs[1];
+	let alice = address_build(1);
+	let relayer_account = address_build(2);
 
-	ext.execute_with(|| {
-		let mock_message_id = [0; 4];
-		let unsigned_tx = eip1559_erc20_creation_unsigned_transaction();
-		let t = unsigned_tx.sign(&alice.private_key, None);
-		let call = RuntimeCall::MessageTransact(crate::Call::message_transact { transaction: t });
-		let message = prepare_message(call);
+	ExtBuilder::default()
+		.with_balances(vec![(alice.address, 1000), (relayer_account.address, 1000)])
+		.build()
+		.execute_with(|| {
+			let mock_message_id = [0; 4];
+			let unsigned_tx = eip1559_erc20_creation_unsigned_transaction();
+			let t = unsigned_tx.sign(&alice.private_key, None);
+			let call =
+				RuntimeCall::MessageTransact(crate::Call::message_transact { transaction: t });
+			let message = prepare_message(call);
 
-		System::set_block_number(1);
-		let result = Dispatch::dispatch(
-			SOURCE_CHAIN_ID,
-			TARGET_CHAIN_ID,
-			&relayer_account.address,
-			mock_message_id,
-			Ok(message),
-			|_, _| Ok(()),
-		);
-
-		assert!(result.dispatch_result);
-		System::assert_has_event(RuntimeEvent::Dispatch(
-			pallet_bridge_dispatch::Event::MessageDispatched(
+			System::set_block_number(1);
+			let result = Dispatch::dispatch(
 				SOURCE_CHAIN_ID,
+				TARGET_CHAIN_ID,
+				&relayer_account.address,
 				mock_message_id,
-				Ok(()),
-			),
-		));
-	});
+				Ok(message),
+				|_, _| Ok(()),
+			);
+
+			assert!(result.dispatch_result);
+			System::assert_has_event(RuntimeEvent::Dispatch(
+				pallet_bridge_dispatch::Event::MessageDispatched(
+					SOURCE_CHAIN_ID,
+					mock_message_id,
+					Ok(()),
+				),
+			));
+		});
 }
 
 #[test]
 fn test_dispatch_legacy_ethereum_transaction_weight_mismatch() {
-	let (pairs, mut ext) = new_test_ext(2);
-	let alice = &pairs[0];
-	let relayer_account = &pairs[1];
+	let alice = address_build(1);
+	let relayer_account = address_build(2);
 
-	ext.execute_with(|| {
-		let mock_message_id = [0; 4];
-		let mut unsigned_tx = eip1559_erc20_creation_unsigned_transaction();
-		// 62500001 * 16000 > 1_000_000_000_000
-		unsigned_tx.gas_limit = U256::from(62500001);
-		let t = unsigned_tx.sign(&alice.private_key, None);
-		let call = RuntimeCall::MessageTransact(crate::Call::message_transact { transaction: t });
-		let message = prepare_message(call);
+	ExtBuilder::default()
+		.with_balances(vec![(alice.address, 1000), (relayer_account.address, 1000)])
+		.build()
+		.execute_with(|| {
+			let mock_message_id = [0; 4];
+			let mut unsigned_tx = eip1559_erc20_creation_unsigned_transaction();
+			// 62500001 * 16000 > 1_000_000_000_000
+			unsigned_tx.gas_limit = U256::from(62500001);
+			let t = unsigned_tx.sign(&alice.private_key, None);
+			let call =
+				RuntimeCall::MessageTransact(crate::Call::message_transact { transaction: t });
+			let message = prepare_message(call);
 
-		System::set_block_number(1);
-		let result = Dispatch::dispatch(
-			SOURCE_CHAIN_ID,
-			TARGET_CHAIN_ID,
-			&relayer_account.address,
-			mock_message_id,
-			Ok(message),
-			|_, _| Ok(()),
-		);
-
-		assert!(!result.dispatch_result);
-		println!("{:?}", System::events());
-		System::assert_has_event(RuntimeEvent::Dispatch(
-			pallet_bridge_dispatch::Event::MessageWeightMismatch(
+			System::set_block_number(1);
+			let result = Dispatch::dispatch(
 				SOURCE_CHAIN_ID,
+				TARGET_CHAIN_ID,
+				&relayer_account.address,
 				mock_message_id,
-				Weight::from_ref_time(1249913722000),
-				Weight::from_ref_time(1000000000000),
-			),
-		));
-	});
+				Ok(message),
+				|_, _| Ok(()),
+			);
+
+			assert!(!result.dispatch_result);
+			println!("{:?}", System::events());
+			System::assert_has_event(RuntimeEvent::Dispatch(
+				pallet_bridge_dispatch::Event::MessageWeightMismatch(
+					SOURCE_CHAIN_ID,
+					mock_message_id,
+					Weight::from_ref_time(1249913722000),
+					Weight::from_ref_time(1000000000000),
+				),
+			));
+		});
 }

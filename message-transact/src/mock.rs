@@ -259,41 +259,6 @@ frame_support::construct_runtime! {
 	}
 }
 
-pub struct AccountInfo {
-	pub address: H160,
-	pub private_key: H256,
-}
-
-fn address_build(seed: u8) -> AccountInfo {
-	let raw_private_key = [seed + 1; 32];
-	let secret_key = libsecp256k1::SecretKey::parse_slice(&raw_private_key).unwrap();
-	let raw_public_key = &libsecp256k1::PublicKey::from_secret_key(&secret_key).serialize()[1..65];
-	let raw_address = {
-		let mut s = [0; 20];
-		s.copy_from_slice(&Keccak256::digest(raw_public_key)[12..]);
-		s
-	};
-
-	AccountInfo { private_key: raw_private_key.into(), address: raw_address.into() }
-}
-
-// This function basically just builds a genesis storage key/value store according to
-// our desired mockup.
-pub fn new_test_ext(accounts_len: usize) -> (Vec<AccountInfo>, sp_io::TestExternalities) {
-	let mut t = frame_system::GenesisConfig::default().build_storage::<TestRuntime>().unwrap();
-
-	let pairs = (0..accounts_len).map(|i| address_build(i as u8)).collect::<Vec<_>>();
-
-	let balances: Vec<_> =
-		(0..accounts_len).map(|i| (pairs[i].address.clone(), 100_000_000_000)).collect();
-
-	pallet_balances::GenesisConfig::<TestRuntime> { balances }.assimilate_storage(&mut t).unwrap();
-	let mut ext = sp_io::TestExternalities::new(t);
-	ext.execute_with(|| System::set_block_number(1));
-
-	(pairs, ext.into())
-}
-
 impl fp_self_contained::SelfContainedCall for RuntimeCall {
 	type SignedInfo = H160;
 
@@ -348,5 +313,50 @@ impl fp_self_contained::SelfContainedCall for RuntimeCall {
 				))),
 			_ => None,
 		}
+	}
+}
+
+pub(crate) struct AccountInfo {
+	pub address: H160,
+	pub private_key: H256,
+}
+
+pub(crate) fn address_build(seed: u8) -> AccountInfo {
+	let raw_private_key = [seed + 1; 32];
+	let secret_key = libsecp256k1::SecretKey::parse_slice(&raw_private_key).unwrap();
+	let raw_public_key = &libsecp256k1::PublicKey::from_secret_key(&secret_key).serialize()[1..65];
+	let raw_address = {
+		let mut s = [0; 20];
+		s.copy_from_slice(&Keccak256::digest(raw_public_key)[12..]);
+		s
+	};
+
+	AccountInfo { private_key: raw_private_key.into(), address: raw_address.into() }
+}
+
+#[derive(Default)]
+pub(crate) struct ExtBuilder {
+	// endowed accounts with balances
+	balances: Vec<(AccountId, Balance)>,
+}
+
+impl ExtBuilder {
+	pub(crate) fn with_balances(mut self, balances: Vec<(AccountId, Balance)>) -> Self {
+		self.balances = balances;
+		self
+	}
+
+	pub(crate) fn build(self) -> sp_io::TestExternalities {
+		let mut t = frame_system::GenesisConfig::default()
+			.build_storage::<TestRuntime>()
+			.expect("Frame system builds valid default genesis config");
+
+		pallet_balances::GenesisConfig::<TestRuntime> { balances: self.balances }
+			.assimilate_storage(&mut t)
+			.expect("Pallet balances storage can be assimilated");
+
+		let mut ext = sp_io::TestExternalities::new(t);
+		ext.execute_with(|| System::set_block_number(1));
+		ext
 	}
 }

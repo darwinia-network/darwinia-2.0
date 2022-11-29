@@ -225,32 +225,33 @@ impl EIP1559UnsignedTransaction {
 
 #[test]
 fn test_dispatch_basic_system_call_works() {
-	let (pairs, mut ext) = new_test_ext(1);
-	let relayer_account = &pairs[0];
+	let relayer_account = address_build(1);
 
-	ext.execute_with(|| {
-		let mock_message_id = [0; 4];
-		let call = RuntimeCall::System(frame_system::Call::remark { remark: vec![] });
-		let message = prepare_message(call);
-
-		System::set_block_number(1);
-		let result = Dispatch::dispatch(
-			SOURCE_CHAIN_ID,
-			TARGET_CHAIN_ID,
-			&relayer_account.address,
-			mock_message_id,
-			Ok(message),
-			|_, _| Ok(()),
-		);
-		assert!(!result.dispatch_fee_paid_during_dispatch);
-		assert!(result.dispatch_result);
-
-		System::assert_has_event(RuntimeEvent::Dispatch(
-			pallet_bridge_dispatch::Event::MessageDispatched(
+	ExtBuilder::default()
+		.with_balances(vec![(relayer_account.address, 1000)])
+		.build()
+		.execute_with(|| {
+			let mock_message_id = [0; 4];
+			let call = RuntimeCall::System(frame_system::Call::remark { remark: vec![] });
+			let message = prepare_message(call);
+			System::set_block_number(1);
+			let result = Dispatch::dispatch(
 				SOURCE_CHAIN_ID,
+				TARGET_CHAIN_ID,
+				&relayer_account.address,
 				mock_message_id,
-				Ok(()),
-			),
-		));
-	});
+				Ok(message),
+				|_, _| Ok(()),
+			);
+			assert!(!result.dispatch_fee_paid_during_dispatch);
+			assert!(result.dispatch_result);
+
+			System::assert_has_event(RuntimeEvent::Dispatch(
+				pallet_bridge_dispatch::Event::MessageDispatched(
+					SOURCE_CHAIN_ID,
+					mock_message_id,
+					Ok(()),
+				),
+			));
+		});
 }
