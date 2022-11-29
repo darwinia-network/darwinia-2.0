@@ -42,15 +42,15 @@ darwinia-precompile-state-storage = { default-features = false, path = "../../pr
 dc-primitives                     = { default-features = false, path = "../../core/primitives" }
 
 # darwinia-messages-substrate
-bp-message-dispatch    = { default-features = false, git = "https://github.com/darwinia-network/darwinia-messages-substrate", branch = "polkadot-v0.9.30" }
-bp-messages            = { default-features = false, git = "https://github.com/darwinia-network/darwinia-messages-substrate", branch = "polkadot-v0.9.30" }
-bp-polkadot-core       = { default-features = false, git = "https://github.com/darwinia-network/darwinia-messages-substrate", branch = "polkadot-v0.9.30" }
-bp-runtime             = { default-features = false, git = "https://github.com/darwinia-network/darwinia-messages-substrate", branch = "polkadot-v0.9.30" }
-bridge-runtime-common  = { default-features = false, git = "https://github.com/darwinia-network/darwinia-messages-substrate", branch = "polkadot-v0.9.30" }
-pallet-bridge-dispatch = { default-features = false, git = "https://github.com/darwinia-network/darwinia-messages-substrate", branch = "polkadot-v0.9.30" }
-pallet-bridge-grandpa  = { default-features = false, git = "https://github.com/darwinia-network/darwinia-messages-substrate", branch = "polkadot-v0.9.30" }
-pallet-bridge-messages = { default-features = false, git = "https://github.com/darwinia-network/darwinia-messages-substrate", branch = "polkadot-v0.9.30" }
-pallet-fee-market      = { default-features = false, git = "https://github.com/darwinia-network/darwinia-messages-substrate", branch = "polkadot-v0.9.30" }
+bp-message-dispatch    = { default-features = false, git = "https://github.com/darwinia-network/darwinia-messages-substrate", branch = "guantong/support-H160" }
+bp-messages            = { default-features = false, git = "https://github.com/darwinia-network/darwinia-messages-substrate", branch = "guantong/support-H160" }
+bp-polkadot-core       = { default-features = false, git = "https://github.com/darwinia-network/darwinia-messages-substrate", branch = "guantong/support-H160" }
+bp-runtime             = { default-features = false, git = "https://github.com/darwinia-network/darwinia-messages-substrate", branch = "guantong/support-H160" }
+bridge-runtime-common  = { default-features = false, git = "https://github.com/darwinia-network/darwinia-messages-substrate", branch = "guantong/support-H160" }
+pallet-bridge-dispatch = { default-features = false, git = "https://github.com/darwinia-network/darwinia-messages-substrate", branch = "guantong/support-H160" }
+pallet-bridge-grandpa  = { default-features = false, git = "https://github.com/darwinia-network/darwinia-messages-substrate", branch = "guantong/support-H160" }
+pallet-bridge-messages = { default-features = false, git = "https://github.com/darwinia-network/darwinia-messages-substrate", branch = "guantong/support-H160" }
+pallet-fee-market      = { default-features = false, git = "https://github.com/darwinia-network/darwinia-messages-substrate", branch = "guantong/support-H160" }
 
 # frontier
 fp-evm                         = { default-features = false, git = "https://github.com/paritytech/frontier", branch = "polkadot-v0.9.30" }

@@ -16,12 +16,12 @@
 // You should have received a copy of the GNU General Public License
 // along with Darwinia. If not, see <https://www.gnu.org/licenses/>.
 
-use pallet_bridge_messages::Instance1 as WithCrabMessages;
+use pallet_bridge_messages::Instance1 as WithDarwiniaMessages;
 
 // darwinia
-use crate::{bm_crab::ToCrabMaximalOutboundPayloadSize, *};
+use crate::{bm_darwinia::ToDarwiniaMaximalOutboundPayloadSize, *};
 use bp_messages::{source_chain::SenderOrigin, MessageNonce};
-use bp_runtime::{ChainId, CRAB_CHAIN_ID};
+use bp_runtime::{ChainId, DARWINIA_CHAIN_ID};
 use pallet_bridge_messages::Config;
 use pallet_fee_market::s2s::{
 	FeeMarketMessageAcceptedHandler, FeeMarketMessageConfirmedHandler, FeeMarketPayment,
@@ -39,7 +39,7 @@ impl SenderOrigin<AccountId> for RuntimeOrigin {
 
 frame_support::parameter_types! {
 	pub const MaxMessagesToPruneAtOnce: MessageNonce = 8;
-	pub const BridgedChainId: ChainId = CRAB_CHAIN_ID;
+	pub const BridgedChainId: ChainId = DARWINIA_CHAIN_ID;
 	pub const MaxUnconfirmedMessagesAtInboundLane: MessageNonce =
 		bp_darwinia::MAX_UNCONFIRMED_MESSAGES_IN_CONFIRMATION_TX;
 	pub const MaxUnrewardedRelayerEntriesAtInboundLane: MessageNonce =
@@ -47,26 +47,27 @@ frame_support::parameter_types! {
 	pub RootAccountForPayments: Option<AccountId> = None;
 }
 
-impl Config<WithCrabMessages> for Runtime {
-	type AccountIdConverter = bp_darwinia::AccountIdConverter;
+impl Config<WithDarwiniaMessages> for Runtime {
+	type AccountIdConverter = bp_crab::AccountIdConverter;
 	type BridgedChainId = BridgedChainId;
-	type InboundMessageFee = bp_crab::Balance;
-	type InboundPayload = bm_crab::FromCrabMessagePayload;
-	type InboundRelayer = bp_crab::AccountId;
-	type LaneMessageVerifier = bm_crab::ToCrabMessageVerifier<Self>;
+	type InboundMessageFee = bp_darwinia::Balance;
+	type InboundPayload = bm_darwinia::FromDarwiniaMessagePayload;
+	type InboundRelayer = bp_darwinia::AccountId;
+	type LaneMessageVerifier = bm_darwinia::ToDarwiniaMessageVerifier<Self>;
 	type MaxMessagesToPruneAtOnce = MaxMessagesToPruneAtOnce;
 	type MaxUnconfirmedMessagesAtInboundLane = MaxUnconfirmedMessagesAtInboundLane;
 	type MaxUnrewardedRelayerEntriesAtInboundLane = MaxUnrewardedRelayerEntriesAtInboundLane;
-	type MaximalOutboundPayloadSize = ToCrabMaximalOutboundPayloadSize;
-	type MessageDeliveryAndDispatchPayment = FeeMarketPayment<Self, WithCrabFeeMarket, Balances>;
-	type MessageDispatch = bm_crab::FromCrabMessageDispatch;
-	type OnDeliveryConfirmed = FeeMarketMessageConfirmedHandler<Self, WithCrabFeeMarket>;
-	type OnMessageAccepted = FeeMarketMessageAcceptedHandler<Self, WithCrabFeeMarket>;
-	type OutboundMessageFee = bp_darwinia::Balance;
-	type OutboundPayload = bm_crab::ToCrabMessagePayload;
-	type Parameter = bm_crab::DarwiniaToCrabParameter;
+	type MaximalOutboundPayloadSize = ToDarwiniaMaximalOutboundPayloadSize;
+	type MessageDeliveryAndDispatchPayment =
+		FeeMarketPayment<Self, WithDarwiniaFeeMarket, Balances>;
+	type MessageDispatch = bm_darwinia::FromDarwiniaMessageDispatch;
+	type OnDeliveryConfirmed = FeeMarketMessageConfirmedHandler<Self, WithDarwiniaFeeMarket>;
+	type OnMessageAccepted = FeeMarketMessageAcceptedHandler<Self, WithDarwiniaFeeMarket>;
+	type OutboundMessageFee = bp_crab::Balance;
+	type OutboundPayload = bm_darwinia::ToDarwiniaMessagePayload;
+	type Parameter = bm_darwinia::CrabToDarwiniaParameter;
 	type RuntimeEvent = RuntimeEvent;
-	type SourceHeaderChain = bm_crab::Crab;
-	type TargetHeaderChain = bm_crab::Crab;
+	type SourceHeaderChain = bm_darwinia::Darwinia;
+	type TargetHeaderChain = bm_darwinia::Darwinia;
 	type WeightInfo = ();
 }
