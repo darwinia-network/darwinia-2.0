@@ -24,8 +24,8 @@ use crate::{mock::*, tests::*};
 use frame_support::pallet_prelude::Weight;
 use sp_core::U256;
 
-pub fn legacy_erc20_creation_unsigned_transaction() -> LegacyUnsignedTransaction {
-	LegacyUnsignedTransaction {
+fn eip2930_erc20_creation_unsigned_transaction() -> EIP2930UnsignedTransaction {
+	EIP2930UnsignedTransaction {
 		nonce: U256::zero(),
 		gas_price: U256::from(1),
 		gas_limit: U256::from(0x100000),
@@ -43,8 +43,8 @@ fn test_dispatch_legacy_ethereum_transaction_works() {
 
 	ext.execute_with(|| {
 		let mock_message_id = [0; 4];
-		let unsigned_tx = legacy_erc20_creation_unsigned_transaction();
-		let t = unsigned_tx.sign(&alice.private_key);
+		let unsigned_tx = eip2930_erc20_creation_unsigned_transaction();
+		let t = unsigned_tx.sign(&alice.private_key, None);
 		let call = RuntimeCall::MessageTransact(crate::Call::message_transact { transaction: t });
 		let message = prepare_message(call);
 
@@ -77,10 +77,10 @@ fn test_dispatch_legacy_ethereum_transaction_weight_mismatch() {
 
 	ext.execute_with(|| {
 		let mock_message_id = [0; 4];
-		let mut unsigned_tx = legacy_erc20_creation_unsigned_transaction();
+		let mut unsigned_tx = eip2930_erc20_creation_unsigned_transaction();
 		// 62500001 * 16000 > 1_000_000_000_000
 		unsigned_tx.gas_limit = U256::from(62500001);
-		let t = unsigned_tx.sign(&alice.private_key);
+		let t = unsigned_tx.sign(&alice.private_key, None);
 		let call = RuntimeCall::MessageTransact(crate::Call::message_transact { transaction: t });
 		let message = prepare_message(call);
 

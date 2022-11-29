@@ -19,13 +19,9 @@
 //! Test utilities
 
 // crates.io
-use array_bytes::hex2bytes;
-use codec::{Decode, Encode, MaxEncodedLen};
-use ethereum::{TransactionAction, TransactionSignature};
-use rlp::RlpStream;
+use codec::{Decode, Encode};
 use sha3::{Digest, Keccak256};
 // frontier
-use fp_evm::{Precompile, PrecompileSet};
 use pallet_ethereum::IntermediateStateRoot;
 use pallet_evm::IdentityAddressMapping;
 // substrate
@@ -34,15 +30,14 @@ use frame_support::{
 	ensure,
 	pallet_prelude::Weight,
 	traits::{ConstU32, Everything},
-	StorageHasher, Twox128,
 };
-use sp_core::{H160, H256, U256};
+use sp_core::{H256, U256};
 use sp_runtime::{
 	testing::Header,
 	traits::{BlakeTwo256, DispatchInfoOf, IdentifyAccount, IdentityLookup, Verify},
 	transaction_validity::{InvalidTransaction, TransactionValidity, TransactionValidityError},
 };
-use sp_std::{marker::PhantomData, prelude::*};
+use sp_std::prelude::*;
 // darwinia
 use crate::*;
 use bp_message_dispatch::{CallValidate, IntoDispatchOrigin as IntoDispatchOriginT};
@@ -51,44 +46,6 @@ pub type Block = frame_system::mocking::MockBlock<TestRuntime>;
 pub type Balance = u64;
 pub type AccountId = H160;
 pub type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<TestRuntime>;
-
-#[derive(
-	Eq,
-	PartialEq,
-	Ord,
-	PartialOrd,
-	Clone,
-	Encode,
-	Decode,
-	Debug,
-	MaxEncodedLen,
-	scale_info::TypeInfo,
-)]
-pub enum Account {
-	Alice,
-	Bob,
-	Charlie,
-	Bogus,
-	Precompile,
-}
-
-impl Default for Account {
-	fn default() -> Self {
-		Self::Bogus
-	}
-}
-
-impl Into<H160> for Account {
-	fn into(self) -> H160 {
-		match self {
-			Account::Alice => H160::repeat_byte(0xAA),
-			Account::Bob => H160::repeat_byte(0xBB),
-			Account::Charlie => H160::repeat_byte(0xCC),
-			Account::Bogus => H160::repeat_byte(0xDD),
-			Account::Precompile => H160::from_low_u64_be(1),
-		}
-	}
-}
 
 frame_support::parameter_types! {
 	pub const BlockHashCount: u64 = 250;
@@ -391,164 +348,5 @@ impl fp_self_contained::SelfContainedCall for RuntimeCall {
 				))),
 			_ => None,
 		}
-	}
-}
-
-pub struct LegacyUnsignedTransaction {
-	pub nonce: U256,
-	pub gas_price: U256,
-	pub gas_limit: U256,
-	pub action: TransactionAction,
-	pub value: U256,
-	pub input: Vec<u8>,
-}
-impl LegacyUnsignedTransaction {
-	fn signing_rlp_append(&self, s: &mut RlpStream) {
-		s.begin_list(9);
-		s.append(&self.nonce);
-		s.append(&self.gas_price);
-		s.append(&self.gas_limit);
-		s.append(&self.action);
-		s.append(&self.value);
-		s.append(&self.input);
-		s.append(&ChainId::get());
-		s.append(&0u8);
-		s.append(&0u8);
-	}
-
-	fn signing_hash(&self) -> H256 {
-		let mut stream = RlpStream::new();
-		self.signing_rlp_append(&mut stream);
-		H256::from_slice(&Keccak256::digest(&stream.out()).as_slice())
-	}
-
-	pub fn sign(&self, key: &H256) -> Transaction {
-		self.sign_with_chain_id(key, ChainId::get())
-	}
-
-	pub fn sign_with_chain_id(&self, key: &H256, chain_id: u64) -> Transaction {
-		let hash = self.signing_hash();
-		let msg = libsecp256k1::Message::parse(hash.as_fixed_bytes());
-		let s = libsecp256k1::sign(&msg, &libsecp256k1::SecretKey::parse_slice(&key[..]).unwrap());
-		let sig = s.0.serialize();
-
-		let sig = TransactionSignature::new(
-			s.1.serialize() as u64 % 2 + chain_id * 2 + 35,
-			H256::from_slice(&sig[0..32]),
-			H256::from_slice(&sig[32..64]),
-		)
-		.unwrap();
-
-		Transaction::Legacy(ethereum::LegacyTransaction {
-			nonce: self.nonce,
-			gas_price: self.gas_price,
-			gas_limit: self.gas_limit,
-			action: self.action,
-			value: self.value,
-			input: self.input.clone(),
-			signature: sig,
-		})
-	}
-}
-
-pub struct EIP2930UnsignedTransaction {
-	pub nonce: U256,
-	pub gas_price: U256,
-	pub gas_limit: U256,
-	pub action: TransactionAction,
-	pub value: U256,
-	pub input: Vec<u8>,
-}
-
-impl EIP2930UnsignedTransaction {
-	pub fn sign(&self, secret: &H256, chain_id: Option<u64>) -> Transaction {
-		let secret = {
-			let mut sk: [u8; 32] = [0u8; 32];
-			sk.copy_from_slice(&secret[0..]);
-			libsecp256k1::SecretKey::parse(&sk).unwrap()
-		};
-		let chain_id = chain_id.unwrap_or(ChainId::get());
-		let msg = ethereum::EIP2930TransactionMessage {
-			chain_id,
-			nonce: self.nonce,
-			gas_price: self.gas_price,
-			gas_limit: self.gas_limit,
-			action: self.action,
-			value: self.value,
-			input: self.input.clone(),
-			access_list: vec![],
-		};
-		let signing_message = libsecp256k1::Message::parse_slice(&msg.hash()[..]).unwrap();
-
-		let (signature, recid) = libsecp256k1::sign(&signing_message, &secret);
-		let rs = signature.serialize();
-		let r = H256::from_slice(&rs[0..32]);
-		let s = H256::from_slice(&rs[32..64]);
-		Transaction::EIP2930(ethereum::EIP2930Transaction {
-			chain_id: msg.chain_id,
-			nonce: msg.nonce,
-			gas_price: msg.gas_price,
-			gas_limit: msg.gas_limit,
-			action: msg.action,
-			value: msg.value,
-			input: msg.input.clone(),
-			access_list: msg.access_list,
-			odd_y_parity: recid.serialize() != 0,
-			r,
-
-			s,
-		})
-	}
-}
-
-pub struct EIP1559UnsignedTransaction {
-	pub nonce: U256,
-	pub max_priority_fee_per_gas: U256,
-	pub max_fee_per_gas: U256,
-	pub gas_limit: U256,
-	pub action: TransactionAction,
-	pub value: U256,
-	pub input: Vec<u8>,
-}
-
-impl EIP1559UnsignedTransaction {
-	pub fn sign(&self, secret: &H256, chain_id: Option<u64>) -> Transaction {
-		let secret = {
-			let mut sk: [u8; 32] = [0u8; 32];
-			sk.copy_from_slice(&secret[0..]);
-			libsecp256k1::SecretKey::parse(&sk).unwrap()
-		};
-		let chain_id = chain_id.unwrap_or(ChainId::get());
-		let msg = ethereum::EIP1559TransactionMessage {
-			chain_id,
-			nonce: self.nonce,
-			max_priority_fee_per_gas: self.max_priority_fee_per_gas,
-			max_fee_per_gas: self.max_fee_per_gas,
-			gas_limit: self.gas_limit,
-			action: self.action,
-			value: self.value,
-			input: self.input.clone(),
-			access_list: vec![],
-		};
-		let signing_message = libsecp256k1::Message::parse_slice(&msg.hash()[..]).unwrap();
-
-		let (signature, recid) = libsecp256k1::sign(&signing_message, &secret);
-		let rs = signature.serialize();
-		let r = H256::from_slice(&rs[0..32]);
-		let s = H256::from_slice(&rs[32..64]);
-		Transaction::EIP1559(ethereum::EIP1559Transaction {
-			chain_id: msg.chain_id,
-			nonce: msg.nonce,
-			max_priority_fee_per_gas: msg.max_priority_fee_per_gas,
-			max_fee_per_gas: msg.max_fee_per_gas,
-			gas_limit: msg.gas_limit,
-			action: msg.action,
-			value: msg.value,
-			input: msg.input.clone(),
-			access_list: msg.access_list,
-			odd_y_parity: recid.serialize() != 0,
-			r,
-			s,
-		})
 	}
 }
