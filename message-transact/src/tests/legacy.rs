@@ -45,13 +45,11 @@ fn test_dispatch_legacy_ethereum_transaction_works() {
 		.build()
 		.execute_with(|| {
 			let mock_message_id = [0; 4];
-			let unsigned_tx = legacy_erc20_creation_unsigned_transaction();
-			let t = unsigned_tx.sign(&alice.private_key);
+			let t = legacy_erc20_creation_unsigned_transaction().sign(&alice.private_key);
 			let call =
 				RuntimeCall::MessageTransact(crate::Call::message_transact { transaction: t });
 			let message = prepare_message(call);
 
-			System::set_block_number(1);
 			let result = Dispatch::dispatch(
 				SOURCE_CHAIN_ID,
 				TARGET_CHAIN_ID,
@@ -83,14 +81,12 @@ fn test_dispatch_legacy_ethereum_transaction_weight_mismatch() {
 		.execute_with(|| {
 			let mock_message_id = [0; 4];
 			let mut unsigned_tx = legacy_erc20_creation_unsigned_transaction();
-			// 62500001 * 16000 > 1_000_000_000_000
 			unsigned_tx.gas_limit = U256::from(62500001);
 			let t = unsigned_tx.sign(&alice.private_key);
 			let call =
 				RuntimeCall::MessageTransact(crate::Call::message_transact { transaction: t });
 			let message = prepare_message(call);
 
-			System::set_block_number(1);
 			let result = Dispatch::dispatch(
 				SOURCE_CHAIN_ID,
 				TARGET_CHAIN_ID,

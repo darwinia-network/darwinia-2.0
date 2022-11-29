@@ -52,7 +52,6 @@ fn test_dispatch_legacy_ethereum_transaction_works() {
 				RuntimeCall::MessageTransact(crate::Call::message_transact { transaction: t });
 			let message = prepare_message(call);
 
-			System::set_block_number(1);
 			let result = Dispatch::dispatch(
 				SOURCE_CHAIN_ID,
 				TARGET_CHAIN_ID,
@@ -91,7 +90,6 @@ fn test_dispatch_legacy_ethereum_transaction_weight_mismatch() {
 				RuntimeCall::MessageTransact(crate::Call::message_transact { transaction: t });
 			let message = prepare_message(call);
 
-			System::set_block_number(1);
 			let result = Dispatch::dispatch(
 				SOURCE_CHAIN_ID,
 				TARGET_CHAIN_ID,
