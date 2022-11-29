@@ -2185,7 +2185,7 @@ name = "darwinia-deposit"
 version = "6.0.0"
 dependencies = [
  "darwinia-staking",
- "dc-primitives",
+ "dc-types",
  "dp-deposit",
  "frame-support",
  "frame-system",
@@ -2334,7 +2334,7 @@ dependencies = [
 name = "darwinia-staking"
 version = "6.0.0"
 dependencies = [
- "dc-primitives",
+ "dc-types",
  "frame-support",
  "frame-system",
  "pallet-authorship",
@@ -2376,6 +2376,7 @@ dependencies = [
 name = "dc-inflation"
 version = "6.0.0"
 dependencies = [
+ "dc-types",
  "primitive-types 0.12.1",
  "sp-arithmetic",
  "substrate-fixed",
@@ -2386,9 +2387,14 @@ name = "dc-primitives"
 version = "6.0.0"
 dependencies = [
  "account",
+ "dc-types",
  "sp-core",
  "sp-runtime",
 ]
+
+[[package]]
+name = "dc-types"
+version = "6.0.0"
 
 [[package]]
 name = "der"

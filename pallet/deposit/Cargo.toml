@@ -16,7 +16,7 @@ scale-info = { version = "2.3", default-features = false }
 
 # darwinia
 darwinia-staking = { default-features = false, path = "../staking" }
-dc-primitives    = { default-features = false, path = "../../core/primitives" }
+dc-types         = { path = "../../core/types" }
 dp-deposit       = { path = "../../primitive/deposit" }
 
 # subtrate
@@ -35,7 +35,6 @@ std = [
 
 	# darwinia
 	"darwinia-staking/std",
-	"dc-primitives/std",
 
 	# subtrate
 	"frame-support/std",

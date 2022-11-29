@@ -15,7 +15,7 @@ codec      = { package = "parity-scale-codec", version = "3.2", default-features
 scale-info = { version = "2.3", default-features = false }
 
 # darwinia
-dc-primitives = { default-features = false, path = "../../core/primitives" }
+dc-types = { path = "../../core/types" }
 
 # subtrate
 frame-support     = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
@@ -32,9 +32,6 @@ std = [
 	# crates.io
 	"codec/std",
 	"scale-info/std",
-
-	# darwinia
-	"dc-primitives/std",
 
 	# subtrate
 	"frame-support/std",

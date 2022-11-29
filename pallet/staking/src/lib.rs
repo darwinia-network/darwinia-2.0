@@ -40,7 +40,7 @@ mod weights;
 pub use weights::WeightInfo;
 
 // darwinia
-use dc_primitives::Balance;
+use dc_types::Balance;
 
 // substrate
 use frame_support::{log, pallet_prelude::*};
@@ -181,6 +181,11 @@ pub mod pallet {
 	#[pallet::getter(fn reward_points)]
 	pub type RewardPoints<T: Config> =
 		StorageValue<_, (RewardPoint, BTreeMap<T::AccountId, RewardPoint>), ValueQuery>;
+
+	/// Elapsed time.
+	#[pallet::storage]
+	#[pallet::getter(fn elapsed_time)]
+	pub type ElapsedTime<T: Config> = StorageValue<_, u128, ValueQuery>;
 
 	#[derive(Default)]
 	#[pallet::genesis_config]

@@ -36,14 +36,12 @@ pub use weights::WeightInfo;
 use core::time::Duration;
 
 // darwinia
-use dc_primitives::Balance;
+use dc_types::{Balance, Timestamp};
 use dp_deposit::DepositId;
 
 // substrate
 use frame_support::{log, pallet_prelude::*, traits::UnixTime};
 use frame_system::pallet_prelude::*;
-
-type Timestamp = u128;
 
 /// Deposit.
 #[derive(Encode, Decode, MaxEncodedLen, TypeInfo, RuntimeDebug)]
@@ -54,7 +52,7 @@ pub struct Deposit {
 	/// Deposited RING.
 	pub value: Balance,
 	/// Expired timestamp.
-	pub expired_time: u128,
+	pub expired_time: Timestamp,
 	/// Deposit state.
 	pub in_used: bool,
 }
@@ -150,7 +148,7 @@ pub mod pallet {
 	}
 	impl<T> Pallet<T> where T: Config {}
 
-	fn time(duration: Duration) -> u128 {
+	fn time(duration: Duration) -> Timestamp {
 		duration.as_millis()
 	}
 }
