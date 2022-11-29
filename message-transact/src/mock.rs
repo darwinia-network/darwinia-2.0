@@ -26,6 +26,8 @@ use pallet_ethereum::IntermediateStateRoot;
 use pallet_evm::IdentityAddressMapping;
 // substrate
 use frame_support::{
+	dispatch::RawOrigin,
+	ensure,
 	pallet_prelude::Weight,
 	traits::{ConstU32, Everything},
 	StorageHasher, Twox128,
@@ -33,12 +35,13 @@ use frame_support::{
 use sp_core::{H160, H256, U256};
 use sp_runtime::{
 	testing::Header,
-	traits::{BlakeTwo256, DispatchInfoOf, IdentityLookup},
-	transaction_validity::{TransactionValidity, TransactionValidityError},
+	traits::{BlakeTwo256, DispatchInfoOf, IdentifyAccount, IdentityLookup, Verify},
+	transaction_validity::{InvalidTransaction, TransactionValidity, TransactionValidityError},
 };
 use sp_std::{marker::PhantomData, prelude::*};
 // darwinia
 use crate::*;
+use bp_message_dispatch::{CallValidate, IntoDispatchOrigin as IntoDispatchOriginT};
 
 pub type Block = frame_system::mocking::MockBlock<TestRuntime>;
 pub type Balance = u64;
@@ -170,6 +173,110 @@ impl pallet_ethereum::Config for TestRuntime {
 	type StateRoot = IntermediateStateRoot<Self>;
 }
 
+pub struct MockAccountIdConverter;
+impl sp_runtime::traits::Convert<H256, AccountId> for MockAccountIdConverter {
+	fn convert(hash: H256) -> AccountId {
+		hash.into()
+	}
+}
+
+#[derive(Decode, Encode, Clone)]
+pub struct MockEncodedCall(pub Vec<u8>);
+impl From<MockEncodedCall> for Result<RuntimeCall, ()> {
+	fn from(call: MockEncodedCall) -> Result<RuntimeCall, ()> {
+		RuntimeCall::decode(&mut &call.0[..]).map_err(drop)
+	}
+}
+
+pub struct MockCallValidator;
+impl CallValidate<AccountId, RuntimeOrigin, RuntimeCall> for MockCallValidator {
+	fn check_receiving_before_dispatch(
+		relayer_account: &AccountId,
+		call: &RuntimeCall,
+	) -> Result<(), &'static str> {
+		match call {
+			RuntimeCall::MessageTransact(crate::Call::message_transact { transaction: tx }) => {
+				let total_payment = crate::total_payment::<TestRuntime>(tx.into());
+				let relayer = pallet_evm::Pallet::<TestRuntime>::account_basic(&relayer_account).0;
+
+				ensure!(relayer.balance >= total_payment, "Insufficient balance");
+				Ok(())
+			},
+			_ => Ok(()),
+		}
+	}
+
+	fn call_validate(
+		relayer_account: &AccountId,
+		origin: &RuntimeOrigin,
+		call: &RuntimeCall,
+	) -> Result<(), TransactionValidityError> {
+		match call {
+			RuntimeCall::MessageTransact(crate::Call::message_transact { transaction: tx }) =>
+				match origin.caller {
+					OriginCaller::MessageTransact(LcmpEthOrigin::MessageTransact(id)) => {
+						let total_payment = crate::total_payment::<TestRuntime>(tx.into());
+						pallet_balances::Pallet::<TestRuntime>::transfer(
+							RawOrigin::Signed(*relayer_account).into(),
+							id,
+							total_payment.as_u64(),
+						)
+						.map_err(|_| {
+							TransactionValidityError::Invalid(InvalidTransaction::Payment)
+						})?;
+
+						Ok(())
+					},
+					_ => Err(TransactionValidityError::Invalid(InvalidTransaction::BadSigner)),
+				},
+			_ => Ok(()),
+		}
+	}
+}
+pub struct MockIntoDispatchOrigin;
+impl IntoDispatchOriginT<AccountId, RuntimeCall, RuntimeOrigin> for MockIntoDispatchOrigin {
+	fn into_dispatch_origin(id: &AccountId, call: &RuntimeCall) -> RuntimeOrigin {
+		match call {
+			RuntimeCall::MessageTransact(crate::Call::message_transact { .. }) =>
+				crate::LcmpEthOrigin::MessageTransact(*id).into(),
+			_ => frame_system::RawOrigin::Signed(*id).into(),
+		}
+	}
+}
+#[derive(Debug, Encode, Decode, Clone, PartialEq, Eq, TypeInfo)]
+pub struct MockAccountPublic(AccountId);
+impl IdentifyAccount for MockAccountPublic {
+	type AccountId = AccountId;
+
+	fn into_account(self) -> AccountId {
+		self.0
+	}
+}
+#[derive(Debug, Encode, Decode, Clone, PartialEq, Eq, TypeInfo)]
+pub struct MockSignature(AccountId);
+impl Verify for MockSignature {
+	type Signer = MockAccountPublic;
+
+	fn verify<L: sp_runtime::traits::Lazy<[u8]>>(&self, _msg: L, signer: &AccountId) -> bool {
+		self.0 == *signer
+	}
+}
+
+pub(crate) type MockBridgeMessageId = [u8; 4];
+
+impl pallet_bridge_dispatch::Config for TestRuntime {
+	type AccountIdConverter = MockAccountIdConverter;
+	type BridgeMessageId = MockBridgeMessageId;
+	type CallValidator = MockCallValidator;
+	type EncodedCall = MockEncodedCall;
+	type IntoDispatchOrigin = MockIntoDispatchOrigin;
+	type RuntimeCall = RuntimeCall;
+	type RuntimeEvent = RuntimeEvent;
+	type SourceChainAccountId = AccountId;
+	type TargetChainAccountPublic = MockAccountPublic;
+	type TargetChainSignature = MockSignature;
+}
+
 impl crate::Config for TestRuntime {
 	type LcmpEthOrigin = crate::EnsureLcmpEthOrigin;
 	type ValidatedTransaction = pallet_ethereum::ValidatedTransaction<Self>;
@@ -187,6 +294,7 @@ frame_support::construct_runtime! {
 		EVM: pallet_evm::{Pallet, Call, Storage, Config, Event<T>},
 		Ethereum: pallet_ethereum::{Pallet, Call, Storage, Event, Origin},
 		MessageTransact: crate::{Pallet, Call, Origin},
+		Dispatch: pallet_bridge_dispatch::{Pallet, Call, Event<T>},
 	}
 }
 

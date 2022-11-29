@@ -131,8 +131,8 @@ pub mod pallet {
 				},
 				Transaction::EIP1559(ref mut tx) => {
 					tx.nonce = who.nonce;
-					tx.max_priority_fee_per_gas = U256::zero();
 					tx.max_fee_per_gas = base_fee;
+					tx.max_priority_fee_per_gas = U256::zero();
 				},
 			};
 
@@ -186,4 +186,16 @@ impl From<InvalidEvmTransactionError> for EvmTxErrorWrapper {
 			InvalidEvmTransactionError::InvalidChainId => EvmTxErrorWrapper::InvalidChainId,
 		}
 	}
+}
+
+/// Calculates the fee for a relayer to submit an LCMP Evm transaction.
+///
+/// The gas_price of an LCMP Evm transaction is always the min_gas_price(), which is a fixed value.
+/// Therefore, only the gas_limit and value of the transaction should be considered in the
+/// calculation of the fee, and the gas_price of the transaction itself can be ignored.
+pub fn total_payment<T: pallet_evm::Config>(tx_data: TransactionData) -> U256 {
+	let base_fee = <T as pallet_evm::Config>::FeeCalculator::min_gas_price().0;
+	let fee = base_fee.saturating_mul(tx_data.gas_limit);
+
+	tx_data.value.saturating_add(fee)
 }
