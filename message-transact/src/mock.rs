@@ -22,6 +22,7 @@
 use codec::{Decode, Encode, MaxEncodedLen};
 // frontier
 use fp_evm::{Precompile, PrecompileSet};
+use pallet_ethereum::IntermediateStateRoot;
 use pallet_evm::IdentityAddressMapping;
 // substrate
 use frame_support::{
@@ -32,7 +33,8 @@ use frame_support::{
 use sp_core::{H160, H256, U256};
 use sp_runtime::{
 	testing::Header,
-	traits::{BlakeTwo256, IdentityLookup},
+	traits::{BlakeTwo256, DispatchInfoOf, IdentityLookup},
+	transaction_validity::{TransactionValidity, TransactionValidityError},
 };
 use sp_std::{marker::PhantomData, prelude::*};
 // darwinia
@@ -137,55 +139,12 @@ impl pallet_timestamp::Config for TestRuntime {
 	type WeightInfo = ();
 }
 
-pub struct StorageFilter;
-impl StorageFilterT for StorageFilter {
-	fn allow(prefix: &[u8]) -> bool {
-		prefix != Twox128::hash(b"EVM")
-	}
-}
-
-pub struct TestPrecompiles<R>(PhantomData<R>);
-impl<R> TestPrecompiles<R>
-where
-	R: pallet_evm::Config,
-{
-	pub fn new() -> Self {
-		Self(Default::default())
-	}
-
-	pub fn used_addresses() -> [H160; 1] {
-		[addr(1)]
-	}
-}
-impl<R> PrecompileSet for TestPrecompiles<R>
-where
-	StateStorage<R, StorageFilter>: Precompile,
-	R: pallet_evm::Config,
-{
-	fn execute(&self, handle: &mut impl PrecompileHandle) -> Option<EvmResult<PrecompileOutput>> {
-		match handle.code_address() {
-			a if a == addr(1) => Some(StateStorage::<R, StorageFilter>::execute(handle)),
-			_ => None,
-		}
-	}
-
-	fn is_precompile(&self, address: H160) -> bool {
-		Self::used_addresses().contains(&address)
-	}
-}
-fn addr(a: u64) -> H160 {
-	H160::from_low_u64_be(a)
-}
-
 frame_support::parameter_types! {
 	pub const TransactionByteFee: u64 = 1;
 	pub const ChainId: u64 = 42;
 	pub const BlockGasLimit: U256 = U256::MAX;
 	pub const WeightPerGas: Weight = Weight::from_ref_time(20_000);
-	pub PrecompilesValue: TestPrecompiles<TestRuntime> = TestPrecompiles::<_>::new();
 }
-
-pub type PCall = StateStorageCall<TestRuntime, StorageFilter>;
 
 impl pallet_evm::Config for TestRuntime {
 	type AddressMapping = IdentityAddressMapping;
@@ -198,12 +157,22 @@ impl pallet_evm::Config for TestRuntime {
 	type FindAuthor = ();
 	type GasWeightMapping = pallet_evm::FixedGasWeightMapping<Self>;
 	type OnChargeTransaction = ();
-	type PrecompilesType = TestPrecompiles<Self>;
-	type PrecompilesValue = PrecompilesValue;
+	type PrecompilesType = ();
+	type PrecompilesValue = ();
 	type Runner = pallet_evm::runner::stack::Runner<Self>;
 	type RuntimeEvent = RuntimeEvent;
 	type WeightPerGas = WeightPerGas;
 	type WithdrawOrigin = pallet_evm::EnsureAddressNever<AccountId>;
+}
+
+impl pallet_ethereum::Config for TestRuntime {
+	type RuntimeEvent = RuntimeEvent;
+	type StateRoot = IntermediateStateRoot<Self>;
+}
+
+impl crate::Config for TestRuntime {
+	type LcmpEthOrigin = crate::EnsureLcmpEthOrigin;
+	type ValidatedTransaction = pallet_ethereum::ValidatedTransaction<Self>;
 }
 
 frame_support::construct_runtime! {
@@ -216,6 +185,8 @@ frame_support::construct_runtime! {
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage},
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
 		EVM: pallet_evm::{Pallet, Call, Storage, Config, Event<T>},
+		Ethereum: pallet_ethereum::{Pallet, Call, Storage, Event, Origin},
+		MessageTransact: crate::{Pallet, Call, Origin},
 	}
 }
 
@@ -243,5 +214,62 @@ impl ExtBuilder {
 		let mut ext = sp_io::TestExternalities::new(t);
 		ext.execute_with(|| System::set_block_number(1));
 		ext
+	}
+}
+
+impl fp_self_contained::SelfContainedCall for RuntimeCall {
+	type SignedInfo = H160;
+
+	fn is_self_contained(&self) -> bool {
+		match self {
+			RuntimeCall::Ethereum(call) => call.is_self_contained(),
+			_ => false,
+		}
+	}
+
+	fn check_self_contained(&self) -> Option<Result<Self::SignedInfo, TransactionValidityError>> {
+		match self {
+			RuntimeCall::Ethereum(call) => call.check_self_contained(),
+			_ => None,
+		}
+	}
+
+	fn validate_self_contained(
+		&self,
+		info: &Self::SignedInfo,
+		dispatch_info: &DispatchInfoOf<RuntimeCall>,
+		len: usize,
+	) -> Option<TransactionValidity> {
+		match self {
+			RuntimeCall::Ethereum(call) => call.validate_self_contained(info, dispatch_info, len),
+			_ => None,
+		}
+	}
+
+	fn pre_dispatch_self_contained(
+		&self,
+		info: &Self::SignedInfo,
+		dispatch_info: &DispatchInfoOf<RuntimeCall>,
+		len: usize,
+	) -> Option<Result<(), TransactionValidityError>> {
+		match self {
+			RuntimeCall::Ethereum(call) =>
+				call.pre_dispatch_self_contained(info, dispatch_info, len),
+			_ => None,
+		}
+	}
+
+	fn apply_self_contained(
+		self,
+		info: Self::SignedInfo,
+	) -> Option<sp_runtime::DispatchResultWithInfo<sp_runtime::traits::PostDispatchInfoOf<Self>>> {
+		use sp_runtime::traits::Dispatchable as _;
+		match self {
+			call @ RuntimeCall::Ethereum(pallet_ethereum::Call::transact { .. }) =>
+				Some(call.dispatch(RuntimeOrigin::from(
+					pallet_ethereum::RawOrigin::EthereumTransaction(info),
+				))),
+			_ => None,
+		}
 	}
 }

@@ -18,6 +18,11 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
+#[cfg(test)]
+mod mock;
+#[cfg(test)]
+mod tests;
+
 // crates.io
 use codec::{Decode, Encode, MaxEncodedLen};
 use ethereum::TransactionV2 as Transaction;
@@ -79,7 +84,7 @@ pub mod pallet {
 	pub type Origin = LcmpEthOrigin;
 
 	#[pallet::config]
-	pub trait Config: frame_system::Config + pallet_evm::Config + pallet_ethereum::Config {
+	pub trait Config: frame_system::Config + pallet_evm::Config {
 		/// Handler for applying an already validated transaction
 		type ValidatedTransaction: ValidatedTransaction;
 		/// Origin for message transact
