@@ -57,9 +57,9 @@ pub fn in_period(unminted: u128, period: u128, living_time: u128) -> Option<u128
 // Use `I95F33` here, because `2^94 > MAX_RING * 10^9`.
 fn inflate(x: u128, years: u8) -> Option<u128> {
 	let sqrt = transcendental::sqrt::<I95F33, I95F33>(years.into()).ok()?;
-	let ninety_nine = I95F33::from_num(99) / 100;
+	let ninety_nine = I95F33::from_num(99_u8) / 100_i128;
 	let pow = transcendental::pow::<I95F33, I95F33>(ninety_nine, sqrt).ok()?;
-	let ratio = I95F33::from_num(1) - pow;
+	let ratio = I95F33::from_num(1_u8) - pow;
 	let inflation = I95F33::from_num(x) * ratio;
 
 	Some(inflation.floor().to_num())
