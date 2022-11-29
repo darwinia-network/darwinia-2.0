@@ -36,12 +36,18 @@ fp-self-contained = { git = "https://github.com/paritytech/frontier", branch = "
 
 pallet-bridge-dispatch = { git = "https://github.com/darwinia-network/darwinia-messages-substrate", branch = "polkadot-v0.9.30" }
 bp-message-dispatch = { git = "https://github.com/darwinia-network/darwinia-messages-substrate", branch = "polkadot-v0.9.30" }
+bp-runtime = { git = "https://github.com/darwinia-network/darwinia-messages-substrate", branch = "polkadot-v0.9.30" }
 
 # paritytech
 pallet-balances  = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
 pallet-timestamp = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
 sp-io            = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
 pallet-ethereum = {  git = "https://github.com/paritytech/frontier", branch = "polkadot-v0.9.30" }
+
+rlp            = { version = "0.5" }
+array-bytes  = { version = "4.1" }
+sha3           = { version = "0.9"  }
+libsecp256k1 = { version = "0.5", features = ["static-context", "hmac"] }
 
 [features]
 default = ["std"]

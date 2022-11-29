@@ -15,7 +15,7 @@ dependencies = [
 [[package]]
 name = "account"
 version = "0.1.1"
-source = "git+https://github.com/darwinia-network/moonbeam?branch=polkadot-v0.9.30#38c37cc41b9a97482292717aec58b305d5f627f4"
+source = "git+https://github.com/darwinia-network/moonbeam.git?branch=polkadot-v0.9.30#38c37cc41b9a97482292717aec58b305d5f627f4"
 dependencies = [
  "blake2-rfc",
  "hex",
@@ -2184,13 +2184,16 @@ dependencies = [
 name = "darwinia-message-transact"
 version = "6.0.0"
 dependencies = [
+ "array-bytes",
  "bp-message-dispatch",
+ "bp-runtime",
  "ethereum",
  "fp-ethereum",
  "fp-evm",
  "fp-self-contained",
  "frame-support",
  "frame-system",
+ "libsecp256k1 0.5.0",
  "pallet-balances",
  "pallet-bridge-dispatch",
  "pallet-ethereum",
@@ -2198,7 +2201,9 @@ dependencies = [
  "pallet-timestamp",
  "parity-scale-codec",
  "precompile-utils",
+ "rlp",
  "scale-info",
+ "sha3 0.9.1",
  "sp-core",
  "sp-io",
  "sp-runtime",
@@ -5073,6 +5078,25 @@ dependencies = [
  "libc",
  "libz-sys",
  "tikv-jemalloc-sys",
+]
+
+[[package]]
+name = "libsecp256k1"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bd1137239ab33b41aa9637a88a28249e5e70c40a42ccc92db7f12cc356c1fcd7"
+dependencies = [
+ "arrayref",
+ "base64 0.12.3",
+ "digest 0.9.0",
+ "hmac-drbg",
+ "libsecp256k1-core 0.2.2",
+ "libsecp256k1-gen-ecmult 0.2.1",
+ "libsecp256k1-gen-genmult 0.2.1",
+ "rand 0.7.3",
+ "serde",
+ "sha2 0.9.9",
+ "typenum",
 ]
 
 [[package]]
@@ -8525,7 +8549,7 @@ checksum = "5b40af805b3121feab8a3c29f04d8ad262fa8e0561883e7653e024ae4479e6de"
 [[package]]
 name = "precompile-utils"
 version = "0.1.0"
-source = "git+https://github.com/darwinia-network/moonbeam?branch=polkadot-v0.9.30#38c37cc41b9a97482292717aec58b305d5f627f4"
+source = "git+https://github.com/darwinia-network/moonbeam.git?branch=polkadot-v0.9.30#38c37cc41b9a97482292717aec58b305d5f627f4"
 dependencies = [
  "affix",
  "evm",
@@ -8551,7 +8575,7 @@ dependencies = [
 [[package]]
 name = "precompile-utils-macro"
 version = "0.1.0"
-source = "git+https://github.com/darwinia-network/moonbeam?branch=polkadot-v0.9.30#38c37cc41b9a97482292717aec58b305d5f627f4"
+source = "git+https://github.com/darwinia-network/moonbeam.git?branch=polkadot-v0.9.30#38c37cc41b9a97482292717aec58b305d5f627f4"
 dependencies = [
  "case",
  "num_enum",
@@ -12450,7 +12474,7 @@ version = "1.6.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "97fee6b57c6a41524a810daee9286c02d7752c4253064d0b05472833a438f675"
 dependencies = [
- "cfg-if 0.1.10",
+ "cfg-if 1.0.0",
  "digest 0.10.5",
  "rand 0.8.5",
  "static_assertions",
@@ -13374,7 +13398,7 @@ dependencies = [
 [[package]]
 name = "xcm-primitives"
 version = "0.1.0"
-source = "git+https://github.com/darwinia-network/moonbeam?branch=polkadot-v0.9.30#38c37cc41b9a97482292717aec58b305d5f627f4"
+source = "git+https://github.com/darwinia-network/moonbeam.git?branch=polkadot-v0.9.30#38c37cc41b9a97482292717aec58b305d5f627f4"
 dependencies = [
  "ethereum",
  "ethereum-types",
