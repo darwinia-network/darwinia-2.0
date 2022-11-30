@@ -77,10 +77,19 @@ pub trait Stake {
 	type Item: Clone + Copy + Debug + PartialEq + FullCodec + MaxEncodedLen + TypeInfo;
 
 	/// Add stakes to the staking pool.
+	///
+	/// This will transfer the stakes to a pallet/contact account.
 	fn stake(who: &Self::AccountId, item: Self::Item) -> DispatchResult;
 
 	/// Withdraw stakes from the staking pool.
 	fn unstake(who: &Self::AccountId, item: Self::Item) -> DispatchResult;
+
+	/// Claim the stakes from the pallet/contract account.
+	///
+	/// Ignore this if there isn't a bonding duration restriction for the target item.
+	fn claim(_who: &Self::AccountId, _item: Self::Item) -> DispatchResult {
+		Ok(())
+	}
 }
 /// Extended stake trait.
 ///
@@ -112,8 +121,6 @@ where
 	pub unstaking_ring: BoundedVec<(Balance, T::BlockNumber), T::MaxUnstakings>,
 	/// The KTON in unstaking process.
 	pub unstaking_kton: BoundedVec<(Balance, T::BlockNumber), T::MaxUnstakings>,
-	/// The deposits in unstaking process.
-	pub unstaking_deposits: BoundedVec<(DepositId<T>, T::BlockNumber), T::MaxUnstakings>,
 }
 
 /// A snapshot of the stake backing a single collator in the system.
@@ -168,6 +175,10 @@ pub mod pallet {
 		/// Deposit interface.
 		type Deposit: StakeExt<AccountId = Self::AccountId, Amount = Balance>;
 
+		/// Number of blocks that stakes at least stake for.
+		#[pallet::constant]
+		type StakeAtLeast: Get<Self::BlockNumber>;
+
 		/// The percentage of the total payout that is distributed to stakers.
 		///
 		/// Usually, the rest goes to the treasury.
@@ -184,11 +195,9 @@ pub mod pallet {
 	}
 
 	#[pallet::event]
-	#[pallet::generate_deposit(pub(super) fn deposit_event)]
-	pub enum Event<T: Config> {
-		/// Dummy.
-		Dummy,
-	}
+	// TODO: event?
+	// #[pallet::generate_deposit(pub(super) fn deposit_event)]
+	pub enum Event<T: Config> {}
 
 	#[pallet::error]
 	pub enum Error<T> {
@@ -270,15 +279,11 @@ pub mod pallet {
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
 	pub struct Pallet<T>(PhantomData<T>);
-	#[pallet::hooks]
-	impl<T: Config> Hooks<T::BlockNumber> for Pallet<T> {
-		fn on_initialize(now: T::BlockNumber) -> Weight {
-			Default::default()
-		}
-	}
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-		/// Stake the "assets" ready to participate in staking.
+		/// Add stakes to the staking pool.
+		///
+		/// This will transfer the stakes to a pallet/contact account.
 		#[pallet::weight(0)]
 		pub fn stake(
 			origin: OriginFor<T>,
@@ -300,7 +305,7 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Unstake the "assets".
+		/// Withdraw stakes from the staking pool.
 		#[pallet::weight(0)]
 		pub fn unstake(
 			origin: OriginFor<T>,
@@ -316,6 +321,19 @@ pub mod pallet {
 			for d in deposits {
 				Self::unstake_deposit(&who, d)?;
 			}
+
+			// TODO: event?
+
+			Ok(())
+		}
+
+		/// Claim the stakes from the pallet/contract account.
+		#[pallet::weight(0)]
+		pub fn claim(origin: OriginFor<T>) -> DispatchResult {
+			let who = ensure_signed(origin)?;
+
+			// Deposit doesn't need to be claimed.
+			Self::claim_unstakings(&who)?;
 
 			// TODO: event?
 
@@ -432,7 +450,6 @@ pub mod pallet {
 						staked_deposits: Default::default(),
 						unstaking_ring: Default::default(),
 						unstaking_kton: Default::default(),
-						unstaking_deposits: Default::default(),
 					});
 
 					Ok(())
@@ -462,7 +479,6 @@ pub mod pallet {
 						staked_deposits: Default::default(),
 						unstaking_ring: Default::default(),
 						unstaking_kton: Default::default(),
-						unstaking_deposits: Default::default(),
 					});
 
 					Ok(())
@@ -490,7 +506,6 @@ pub mod pallet {
 						staked_deposits: BoundedVec::truncate_from(vec![deposit]),
 						unstaking_ring: Default::default(),
 						unstaking_kton: Default::default(),
-						unstaking_deposits: Default::default(),
 					});
 
 					Ok(())
@@ -512,7 +527,12 @@ pub mod pallet {
 				};
 
 				l.staked_ring = nr;
-				// TODO: unstake time lock
+				l.unstaking_ring
+					.try_push((
+						amount,
+						<frame_system::Pallet<T>>::block_number() + T::StakeAtLeast::get(),
+					))
+					.map_err(|_| <Error<T>>::ExceedMaxUnstakings)?;
 
 				Ok(())
 			})?;
@@ -532,13 +552,49 @@ pub mod pallet {
 				};
 
 				l.staked_kton = nk;
-				// TODO: unstake time lock
+				l.unstaking_kton
+					.try_push((
+						amount,
+						<frame_system::Pallet<T>>::block_number() + T::StakeAtLeast::get(),
+					))
+					.map_err(|_| <Error<T>>::ExceedMaxUnstakings)?;
 
 				Ok(())
 			})?;
 			Self::update_pool::<KtonPool<T>>(false, amount)?;
 
 			Ok(())
+		}
+
+		fn claim_unstakings(who: &T::AccountId) -> DispatchResult {
+			<Ledgers<T>>::mutate(who, |l| {
+				let Some(l) = l else {
+					return DispatchResult::Err(<Error<T>>::NotStaker.into());
+				};
+				let now = <frame_system::Pallet<T>>::block_number();
+				let claim = |u: &mut BoundedVec<_, _>, c: &mut Balance| {
+					u.retain(|(a, t)| {
+						if t >= &now {
+							*c += a;
+
+							false
+						} else {
+							true
+						}
+					});
+				};
+				let mut r_claimed = 0;
+
+				claim(&mut l.unstaking_ring, &mut r_claimed);
+				T::Ring::claim(who, r_claimed)?;
+
+				let mut k_claimed = 0;
+
+				claim(&mut l.unstaking_kton, &mut k_claimed);
+				T::Kton::claim(who, k_claimed)?;
+
+				Ok(())
+			})
 		}
 
 		fn unstake_deposit(who: &T::AccountId, deposit: DepositId<T>) -> DispatchResult {
@@ -552,7 +608,6 @@ pub mod pallet {
 				};
 
 				l.staked_deposits.remove(i);
-				// TODO: no need unstake time lock
 
 				Ok(())
 			})?;
