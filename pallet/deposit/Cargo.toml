@@ -16,6 +16,7 @@ scale-info = { version = "2.3", default-features = false }
 
 # darwinia
 darwinia-staking = { default-features = false, path = "../staking" }
+dc-inflation     = { default-features = false, path = "../../core/inflation" }
 dc-types         = { path = "../../core/types" }
 
 # subtrate
@@ -34,6 +35,7 @@ std = [
 
 	# darwinia
 	"darwinia-staking/std",
+	"dc-inflation/std",
 
 	# subtrate
 	"frame-support/std",

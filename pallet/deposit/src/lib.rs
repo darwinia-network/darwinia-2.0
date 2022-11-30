@@ -8,7 +8,7 @@
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// Darwinia is distributed in the hope that it will be useful,
+// Darwinia is distributed in_use the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU General Public License for more details.
@@ -32,21 +32,18 @@ mod tests;
 mod weights;
 pub use weights::WeightInfo;
 
-// core
-use core::time::Duration;
-
 // darwinia
+use dc_inflation::MILLISECS_PER_YEAR;
 use dc_types::{Balance, Timestamp};
 
 // substrate
-use frame_support::{log, pallet_prelude::*, traits::UnixTime};
+use frame_support::{pallet_prelude::*, traits::UnixTime};
 use frame_system::pallet_prelude::*;
 
 type DepositId = u8;
 
 /// Deposit.
 #[derive(Encode, Decode, MaxEncodedLen, TypeInfo, RuntimeDebug)]
-#[scale_info(skip_type_params(T))]
 pub struct Deposit {
 	/// Deposit ID.
 	pub id: DepositId,
@@ -55,7 +52,7 @@ pub struct Deposit {
 	/// Expired timestamp.
 	pub expired_time: Timestamp,
 	/// Deposit state.
-	pub in_used: bool,
+	pub in_use: bool,
 }
 
 #[frame_support::pallet]
@@ -68,7 +65,7 @@ pub mod pallet {
 		/// Override the [`frame_system::Config::RuntimeEvent`].
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
-		/// Unix timestamp.
+		/// Unix time getter.
 		type UnixTime: UnixTime;
 
 		/// Maximum deposit count.
@@ -77,16 +74,22 @@ pub mod pallet {
 	}
 
 	#[pallet::event]
-	#[pallet::generate_deposit(pub(super) fn deposit_event)]
-	pub enum Event<T: Config> {
-		/// Dummy.
-		Dummy,
-	}
+	// TODO: event?
+	// #[pallet::generate_deposit(pub(super) fn deposit_event)]
+	pub enum Event<T: Config> {}
 
 	#[pallet::error]
 	pub enum Error<T> {
+		/// Lock at least for one month.
+		LockAtLeastOneMonth,
 		/// Exceed maximum deposit count.
 		ExceedMaxDeposits,
+		/// Deposit not found.
+		DepositNotFound,
+		/// Deposit is in use.
+		DepositInUse,
+		/// Deposit is not in use.
+		DepositNotInUse,
 	}
 
 	/// All deposits.
@@ -113,44 +116,65 @@ pub mod pallet {
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
 	pub struct Pallet<T>(PhantomData<T>);
-	#[pallet::hooks]
-	impl<T: Config> Hooks<T::BlockNumber> for Pallet<T> {
-		fn on_initialize(now: T::BlockNumber) -> Weight {
-			Default::default()
-		}
-	}
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-		/// TODO
+		/// Lock the RING for some KTON profit/interest.
 		#[pallet::weight(0)]
-		pub fn lock(origin: OriginFor<T>, amount: Balance, month: u8) -> DispatchResult {
+		pub fn lock(origin: OriginFor<T>, amount: Balance, months: u8) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
-			// TODO: transfer to pallet account
-
-			Ok(())
-		}
-
-		/// TODO
-		#[pallet::weight(0)]
-		pub fn claim(origin: OriginFor<T>, deposit_id: DepositId) -> DispatchResult {
-			let who = ensure_signed(origin)?;
-			let d =
-				<Deposits<T>>::get(&who).into_iter().find(|d| d.id == deposit_id).ok_or("TODO")?;
-
-			if d.expired_time < time(T::UnixTime::now()) {
-				Err("")?;
+			if month == 0 {
+				Err(<Error<T>>::LockAtLeastOneMonth)?;
 			}
 
-			// TODO: withdraw from pallet account
+			<Deposits<T>>::try_mutate(&who, |ds| {
+				ds.try_push(Deposit {
+					// TODO: unique identifier
+					id: 0,
+					value: amount,
+					expired_time: MILLISECS_PER_YEAR / months as Timestamp,
+					in_use: false,
+				})
+				.map_err(|_| <Error<T>>::ExceedMaxDeposits)
+			})?;
+
+			// TODO: transfer
+
+			// TODO: mint
+			let interest = dc_inflation::deposit_interest(amount, months);
+
+			// TODO: event?
 
 			Ok(())
 		}
-	}
-	impl<T> Pallet<T> where T: Config {}
 
-	fn time(duration: Duration) -> Timestamp {
-		duration.as_millis()
+		/// Claim the expired-locked RING.
+		#[pallet::weight(0)]
+		pub fn claim(origin: OriginFor<T>) -> DispatchResult {
+			let who = ensure_signed(origin)?;
+			let now = T::UnixTime::now().as_millis();
+			let mut claimed = 0;
+
+			<Deposits<T>>::mutate(&who, |ds| {
+				ds.retain(|d| {
+					if d.expired_time >= now && !d.in_use {
+						claimed += d.value;
+
+						false
+					} else {
+						true
+					}
+				});
+			});
+
+			// TODO: withdraw
+
+			// TODO: event?
+
+			Ok(())
+		}
+
+		// TODO: claim_with_penalty
 	}
 }
 pub use pallet::*;
@@ -165,13 +189,13 @@ where
 	fn stake(who: &Self::AccountId, item: Self::Item) -> DispatchResult {
 		<Deposits<T>>::try_mutate(who, |ds| {
 			let Some(d) = ds.iter_mut().find(|d| d.id == item) else {
-			    return DispatchResult::Err("TODO".into());
+			    return DispatchResult::Err(<Error<T>>::DepositNotFound.into());
 			};
 
-			if d.in_used {
-				Err("TODO".into())
+			if d.in_use {
+				Err(<Error<T>>::DepositInUse.into())
 			} else {
-				d.in_used = true;
+				d.in_use = true;
 
 				Ok(())
 			}
@@ -181,15 +205,15 @@ where
 	fn unstake(who: &Self::AccountId, item: Self::Item) -> DispatchResult {
 		<Deposits<T>>::try_mutate(who, |ds| {
 			let Some(d) = ds.iter_mut().find(|d| d.id == item) else {
-			    return DispatchResult::Err("TODO".into());
+			    return DispatchResult::Err(<Error<T>>::DepositNotFound.into());
 			};
 
-			if d.in_used {
-				d.in_used = false;
+			if d.in_use {
+				d.in_use = false;
 
 				Ok(())
 			} else {
-				Err("TODO".into())
+				Err(<Error<T>>::DepositNotInUse.into())
 			}
 		})
 	}

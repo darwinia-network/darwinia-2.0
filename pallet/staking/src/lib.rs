@@ -155,7 +155,7 @@ pub mod pallet {
 		/// Override the [`frame_system::Config::RuntimeEvent`].
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
-		/// Unix timestamp.
+		/// Unix time getter.
 		type UnixTime: UnixTime;
 
 		/// Currency interface.
@@ -349,7 +349,7 @@ pub mod pallet {
 		pub fn collect(origin: OriginFor<T>, commission: Perbill) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
-			<Collators<T>>::mutate(&who, |c| {
+			<Collators<T>>::try_mutate(&who, |c| {
 				if c.is_none() {
 					<frame_system::Pallet<T>>::inc_consumers(&who)?;
 				}
@@ -371,7 +371,7 @@ pub mod pallet {
 		pub fn nominate(origin: OriginFor<T>, target: T::AccountId) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
-			<Nominators<T>>::mutate(&who, |n| {
+			<Nominators<T>>::try_mutate(&who, |n| {
 				if n.is_none() {
 					<frame_system::Pallet<T>>::inc_consumers(&who)?;
 				}
@@ -569,7 +569,7 @@ pub mod pallet {
 		}
 
 		fn claim_unstakings(who: &T::AccountId) -> DispatchResult {
-			<Ledgers<T>>::mutate(who, |l| {
+			<Ledgers<T>>::try_mutate(who, |l| {
 				let Some(l) = l else {
 					return DispatchResult::Err(<Error<T>>::NotStaker.into());
 				};

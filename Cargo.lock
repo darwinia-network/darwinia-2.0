@@ -2185,6 +2185,7 @@ name = "darwinia-deposit"
 version = "6.0.0"
 dependencies = [
  "darwinia-staking",
+ "dc-inflation",
  "dc-types",
  "frame-support",
  "frame-system",
