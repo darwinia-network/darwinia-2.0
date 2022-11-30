@@ -28,6 +28,8 @@
 //! - KTON: Darwinia's commitment token
 //! - Deposit: Locking RINGs' ticket
 
+// TODO: nomination upper limit
+
 #![cfg_attr(not(feature = "std"), no_std)]
 #![deny(missing_docs)]
 
@@ -50,16 +52,19 @@ use dc_types::{Balance, Timestamp};
 use frame_support::{
 	log,
 	pallet_prelude::*,
-	traits::{Currency, UnixTime},
+	traits::{Currency, OnUnbalanced, UnixTime},
 };
 use frame_system::pallet_prelude::*;
-use sp_runtime::{Percent, Perquintill};
+use sp_runtime::{Perbill, Perquintill};
 use sp_std::{collections::btree_map::BTreeMap, prelude::*};
 
 type RewardPoint = u32;
 type Power = u32;
 
 type DepositId<T> = <<T as Config>::Deposit as Stake>::Item;
+type NegativeImbalance<T> = <<T as Config>::Currency as Currency<
+	<T as frame_system::Config>::AccountId,
+>>::NegativeImbalance;
 
 /// Stake trait that stake items must be implemented.
 pub trait Stake {
@@ -110,6 +115,26 @@ where
 	pub unstaking_deposits: BoundedVec<(DepositId<T>, T::BlockNumber), T::MaxUnstakings>,
 }
 
+/// A snapshot of the stake backing a single collator in the system.
+#[derive(Encode, Decode, MaxEncodedLen, TypeInfo, RuntimeDebug)]
+pub struct Exposure<AccountId> {
+	/// The total power backing this collator.
+	pub total: Power,
+	/// Collator's self stake power.
+	pub own: Power,
+	/// Nominators' stake power.
+	pub others: Vec<IndividualExposure<AccountId>>,
+}
+
+/// A snapshot of the staker's state.
+#[derive(Encode, Decode, MaxEncodedLen, TypeInfo, RuntimeDebug)]
+pub struct IndividualExposure<AccountId> {
+	/// Nominator.
+	pub who: AccountId,
+	/// Nominator's stake power.
+	pub value: Power,
+}
+
 #[frame_support::pallet]
 pub mod pallet {
 	// darwinia
@@ -128,6 +153,11 @@ pub mod pallet {
 		/// Only use for inflation.
 		type Currency: Currency<Self::AccountId, Balance = Balance>;
 
+		/// Tokens have been minted and are unused for stakers reward.
+		///
+		/// Usually, it's treasury.
+		type RewardRemainder: OnUnbalanced<NegativeImbalance<Self>>;
+
 		/// RING interface.
 		type Ring: Stake<AccountId = Self::AccountId, Item = Balance>;
 
@@ -136,9 +166,17 @@ pub mod pallet {
 
 		/// Deposit interface.
 		type Deposit: StakeExt<AccountId = Self::AccountId, Amount = Balance>;
+
+		/// The percentage of the total payout that is distributed to stakers.
+		///
+		/// Usually, the rest goes to the treasury.
+		#[pallet::constant]
+		type PayoutFraction: Get<Perbill>;
+
 		/// Maximum deposit count.
 		#[pallet::constant]
 		type MaxDeposits: Get<u32>;
+
 		/// Maximum unstaking/unbonding count.
 		#[pallet::constant]
 		type MaxUnstakings: Get<u32>;
@@ -181,7 +219,14 @@ pub mod pallet {
 	/// The map from (wannabe) collator to the preferences of that collator.
 	#[pallet::storage]
 	#[pallet::getter(fn validator_of)]
-	pub type Collators<T: Config> = StorageMap<_, Twox64Concat, T::AccountId, Percent, ValueQuery>;
+	pub type Collators<T: Config> = StorageMap<_, Twox64Concat, T::AccountId, Perbill>;
+
+	/// Stakers' exposure.
+	#[pallet::storage]
+	#[pallet::unbounded]
+	#[pallet::getter(fn exposure)]
+	pub type Exposures<T: Config> =
+		StorageMap<_, Twox64Concat, T::AccountId, Exposure<T::AccountId>>;
 
 	/// The ideal number of active collators.
 	#[pallet::storage]
@@ -274,7 +319,7 @@ pub mod pallet {
 
 		/// TODO
 		#[pallet::weight(0)]
-		pub fn collect(origin: OriginFor<T>, commission: Percent) -> DispatchResult {
+		pub fn collect(origin: OriginFor<T>, commission: Perbill) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
 			<Collators<T>>::insert(who, commission);
@@ -497,8 +542,8 @@ pub mod pallet {
 		}
 
 		// Power is a mixture of RING and KTON.
-		// - `total_ring_power = (amount / total_staked_ring) * 500_000_000`
-		// - `total_kton_power = (amount / total_staked_kton) * 500_000_000`
+		// - `total_ring_power = (amount / total_staked_ring) * HALF_POWER`
+		// - `total_kton_power = (amount / total_staked_kton) * HALF_POWER`
 		fn balance2power<P>(amount: Balance) -> Power
 		where
 			P: frame_support::StorageValue<Balance, Query = Balance>,
@@ -519,26 +564,73 @@ pub mod pallet {
 				.unwrap_or_default()
 		}
 
-		/// Pay the reward to the collators.
-		pub fn payout() {
-			let now = T::UnixTime::now().as_millis();
+		// TODO: weight
+		/// Pay the session reward to the stakers.
+		pub fn payout(period: Timestamp) {
+			let unminted = TOTAL_SUPPLY - T::Currency::total_issuance();
 			let elapsed = <ElapsedTime<T>>::get();
-			let period = now - <SessionStartedTime<T>>::get();
-			let inflation = dc_inflation::in_period(
-				TOTAL_SUPPLY - T::Currency::total_issuance(),
+			let Some(inflation) = dc_inflation::in_period(
+				unminted,
 				period,
 				elapsed,
-			);
+			) else {
+				log::error!("\
+					[pallet::staking] failed to make the payout for: \
+					`unminted = {unminted}`, \
+					`period = {period}`, \
+					`elapsed = {elapsed}`\
+				");
 
-			// let rest = max_payout.saturating_sub(validator_payout);
-			// Self::deposit_event(Event::EraPaid(active_era.index, validator_payout, rest));
+				return;
+			};
+			let payout = T::PayoutFraction::get() * inflation;
+			let (total_points, reward_map) = <RewardPoints<T>>::get();
+			// Due to the `payout * percent` there might be some losses.
+			let mut actual_payout = 0;
 
-			<ElapsedTime<T>>::mutate(|t| *t += period);
+			for (c, p) in reward_map {
+				let Some(commission) = <Collators<T>>::get(&c) else {
+					log::error!("[pallet::staking] collator({c:?}) must be found; qed");
 
-			// // Set ending era reward.
-			// <ErasValidatorReward<T>>::insert(&active_era.index, validator_payout);
-			// T::RingCurrency::deposit_creating(&Self::account_id(), validator_payout);
-			// T::RingRewardRemainder::on_unbalanced(T::RingCurrency::issue(rest));
+					continue;
+				};
+				let c_total_payout = Perbill::from_rational(p, total_points) * payout;
+				let c_commission_payout = commission * c_total_payout;
+				let n_payout = c_total_payout - c_commission_payout;
+				let Some(c_exposure) = <Exposures<T>>::get(&c) else {
+					log::error!("[pallet::staking] exposure({c:?}) must be found; qed");
+
+					continue;
+				};
+				let c_payout = c_commission_payout
+					+ Perbill::from_rational(c_exposure.own, c_exposure.total) * n_payout;
+
+				if let Ok(_i) = T::Currency::deposit_into_existing(&c, c_payout) {
+					actual_payout += c_payout;
+
+					// TODO: payout events?
+				}
+
+				for n_exposure in c_exposure.others {
+					let n_payout =
+						Perbill::from_rational(n_exposure.value, c_exposure.total) * n_payout;
+
+					if let Ok(_i) = T::Currency::deposit_into_existing(&n_exposure.who, n_payout) {
+						actual_payout += n_payout;
+
+						// TODO: payout events?
+					}
+				}
+			}
+
+			T::RewardRemainder::on_unbalanced(T::Currency::issue(inflation - actual_payout));
+		}
+
+		/// Clean the old session data.
+		pub fn clean_old_session() {
+			<RewardPoints<T>>::kill();
+			#[allow(deprecated)]
+			<Exposures<T>>::remove_all(None);
 		}
 
 		/// Elect the new collators.
@@ -547,13 +639,28 @@ pub mod pallet {
 		pub fn elect() -> Vec<T::AccountId> {
 			let mut collators = <Collators<T>>::iter_keys()
 				.map(|c| {
-					let mut p = Self::power_of(&c);
+					let c_power = Self::power_of(&c);
+					let mut t_power = c_power;
+					let i_exposures = <Nominators<T>>::iter()
+						.filter_map(|(n, c_)| {
+							if c_ == c {
+								let n_power = Self::power_of(&n);
 
-					<Nominators<T>>::iter()
-						.filter_map(|(_, c_)| if c_ == c { Some(c_) } else { None })
-						.for_each(|c| p += Self::power_of(&c));
+								t_power += n_power;
 
-					(c, p)
+								Some(IndividualExposure { who: n, value: n_power })
+							} else {
+								None
+							}
+						})
+						.collect();
+
+					<Exposures<T>>::insert(
+						&c,
+						Exposure { total: t_power, own: c_power, others: i_exposures },
+					);
+
+					(c, t_power)
 				})
 				.collect::<Vec<_>>();
 
@@ -593,7 +700,7 @@ where
 {
 	fn new_session(index: u32) -> Option<Vec<T::AccountId>> {
 		log::info!(
-			"assembling new collators for new session {} at #{:?}",
+			"[pallet::staking] assembling new collators for new session {} at #{:?}",
 			index,
 			<frame_system::Pallet<T>>::block_number(),
 		);
@@ -606,10 +713,14 @@ where
 	}
 
 	fn start_session(_: u32) {
-		// we don't care.
+		let now = T::UnixTime::now().as_millis();
+		let session_duration = now - <SessionStartedTime<T>>::get();
+
+		<ElapsedTime<T>>::mutate(|t| *t += session_duration);
+
+		Self::payout(session_duration);
+		Self::clean_old_session();
 	}
 
-	fn end_session(_: u32) {
-		// we don't care.
-	}
+	fn end_session(_: u32) {}
 }
