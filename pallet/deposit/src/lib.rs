@@ -123,7 +123,7 @@ pub mod pallet {
 		pub fn lock(origin: OriginFor<T>, amount: Balance, months: u8) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
-			if month == 0 {
+			if months == 0 {
 				Err(<Error<T>>::LockAtLeastOneMonth)?;
 			}
 
