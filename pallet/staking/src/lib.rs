@@ -333,8 +333,15 @@ pub mod pallet {
 		pub fn nominate(origin: OriginFor<T>, target: T::AccountId) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
-			<frame_system::Pallet<T>>::inc_consumers(&who)?;
-			<Nominators<T>>::insert(who, target);
+			<Nominators<T>>::mutate(&who, |n| {
+				if n.is_none() {
+					<frame_system::Pallet<T>>::inc_consumers(&who)?;
+				}
+
+				*n = Some(target);
+
+				DispatchResult::Ok(())
+			})?;
 
 			Ok(())
 		}
