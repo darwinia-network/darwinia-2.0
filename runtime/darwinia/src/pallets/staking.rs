@@ -19,9 +19,44 @@
 // darwinia
 use crate::*;
 
+pub struct TODO;
+impl darwinia_staking::Stake for TODO {
+	type AccountId = AccountId;
+	type Item = Balance;
+
+	fn stake(_: &Self::AccountId, _: Self::Item) -> frame_support::pallet_prelude::DispatchResult {
+		Ok(())
+	}
+
+	fn unstake(
+		_: &Self::AccountId,
+		_: Self::Item,
+	) -> frame_support::pallet_prelude::DispatchResult {
+		Ok(())
+	}
+}
+impl darwinia_staking::StakeExt for TODO {
+	type Amount = Balance;
+
+	fn amount(_: &Self::AccountId, _: Self::Item) -> Self::Amount {
+		0
+	}
+}
+
+frame_support::parameter_types! {
+	pub const PayoutFraction: sp_runtime::Perbill = sp_runtime::Perbill::from_percent(20);
+}
+
 impl darwinia_staking::Config for Runtime {
-	type Deposit = ();
-	type Kton = ();
-	type Ring = Balances;
+	type Currency = Balances;
+	type Deposit = TODO;
+	type Kton = TODO;
+	type MaxDeposits = ConstU32<16>;
+	type MaxUnstakings = ConstU32<16>;
+	type PayoutFraction = PayoutFraction;
+	type RewardRemainder = Treasury;
+	type Ring = TODO;
 	type RuntimeEvent = RuntimeEvent;
+	type StakeAtLeast = ConstU32<{ 14 * DAYS }>;
+	type UnixTime = pallet_timestamp::Pallet<Self>;
 }
