@@ -1349,6 +1349,7 @@ dependencies = [
  "cumulus-primitives-timestamp",
  "cumulus-primitives-utility",
  "darwinia-common-runtime",
+ "darwinia-precompile-assets",
  "darwinia-precompile-bls12-381",
  "darwinia-precompile-state-storage",
  "dc-primitives",
@@ -1362,6 +1363,7 @@ dependencies = [
  "frame-system-benchmarking",
  "frame-system-rpc-runtime-api",
  "frame-try-runtime",
+ "pallet-assets",
  "pallet-aura",
  "pallet-authorship",
  "pallet-balances",
@@ -2296,6 +2298,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "darwinia-precompile-assets"
+version = "6.0.0"
+dependencies = [
+ "fp-evm",
+ "frame-support",
+ "frame-system",
+ "pallet-assets",
+ "pallet-balances",
+ "pallet-evm",
+ "pallet-timestamp",
+ "parity-scale-codec",
+ "precompile-utils",
+ "scale-info",
+ "sha3 0.8.2",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "darwinia-precompile-bls12-381"
 version = "6.0.0"
 dependencies = [
@@ -2354,6 +2377,7 @@ dependencies = [
  "cumulus-primitives-timestamp",
  "cumulus-primitives-utility",
  "darwinia-common-runtime",
+ "darwinia-precompile-assets",
  "darwinia-precompile-bls12-381",
  "darwinia-precompile-state-storage",
  "dc-primitives",
@@ -2367,6 +2391,7 @@ dependencies = [
  "frame-system-benchmarking",
  "frame-system-rpc-runtime-api",
  "frame-try-runtime",
+ "pallet-assets",
  "pallet-aura",
  "pallet-authorship",
  "pallet-balances",
@@ -6027,6 +6052,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-assets"
+version = "4.0.0-dev"
+source = "git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.30#a3ed0119c45cdd0d571ad34e5b3ee7518c8cef8d"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "pallet-aura"
 version = "4.0.0-dev"
 source = "git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.30#a3ed0119c45cdd0d571ad34e5b3ee7518c8cef8d"
@@ -7144,6 +7183,7 @@ dependencies = [
  "cumulus-primitives-timestamp",
  "cumulus-primitives-utility",
  "darwinia-common-runtime",
+ "darwinia-precompile-assets",
  "darwinia-precompile-bls12-381",
  "darwinia-precompile-state-storage",
  "dc-primitives",
@@ -7157,6 +7197,7 @@ dependencies = [
  "frame-system-benchmarking",
  "frame-system-rpc-runtime-api",
  "frame-try-runtime",
+ "pallet-assets",
  "pallet-aura",
  "pallet-authorship",
  "pallet-balances",
