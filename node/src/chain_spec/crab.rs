@@ -219,7 +219,7 @@ pub fn config() -> ChainSpec {
 				evm: Default::default(),
 				base_fee: Default::default(),
 
-				// Darwinia <> Crab
+				// S2S stuff
 				bridge_darwinia_grandpa: Default::default(),
 				bridge_darwinia_messages: Default::default(),
 				darwinia_fee_market: Default::default(),
@@ -345,7 +345,7 @@ fn testnet_genesis(
 		},
 		base_fee: Default::default(),
 
-		// Darwinia <> Crab
+		// S2S stuff
 		bridge_darwinia_grandpa: Default::default(),
 		bridge_darwinia_messages: Default::default(),
 		darwinia_fee_market: Default::default(),

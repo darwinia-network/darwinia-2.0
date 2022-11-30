@@ -314,11 +314,11 @@ frame_support::construct_runtime! {
 		Evm: pallet_evm = 32,
 		BaseFee: pallet_base_fee = 33,
 
-		// Darwinia <> Crab
-		BridgeDarwiniaGrandpa: pallet_bridge_grandpa::<Instance1> = 34,
-		BridgeDarwiniaMessages: pallet_bridge_messages::<Instance1> = 35,
-		BridgeDarwiniaDispatch: pallet_bridge_dispatch::<Instance1> = 36,
-		DarwiniaFeeMarket: pallet_fee_market::<Instance1> = 37
+		// S2S stuff
+		BridgeDarwiniaGrandpa: pallet_bridge_grandpa::<Instance1> = 35,
+		BridgeDarwiniaMessages: pallet_bridge_messages::<Instance1> = 36,
+		BridgeDarwiniaDispatch: pallet_bridge_dispatch::<Instance1> = 37,
+		DarwiniaFeeMarket: pallet_fee_market::<Instance1> = 38
 	}
 }
 
