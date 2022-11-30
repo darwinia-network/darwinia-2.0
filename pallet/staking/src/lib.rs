@@ -322,6 +322,7 @@ pub mod pallet {
 		pub fn collect(origin: OriginFor<T>, commission: Perbill) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
+			<frame_system::Pallet<T>>::inc_consumers(&who)?;
 			<Collators<T>>::insert(who, commission);
 
 			Ok(())
@@ -332,6 +333,7 @@ pub mod pallet {
 		pub fn nominate(origin: OriginFor<T>, target: T::AccountId) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
+			<frame_system::Pallet<T>>::inc_consumers(&who)?;
 			<Nominators<T>>::insert(who, target);
 
 			Ok(())
@@ -342,6 +344,7 @@ pub mod pallet {
 		pub fn chill(origin: OriginFor<T>) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
+			<frame_system::Pallet<T>>::dec_consumers(&who);
 			// TODO
 
 			Ok(())
@@ -356,21 +359,21 @@ pub mod pallet {
 			P: frame_support::StorageValue<Balance, Query = Balance>,
 		{
 			P::try_mutate(|p| {
-				let np = if increase {
-					let Some(np) = p.checked_add(amount) else {
+				let p_new = if increase {
+					let Some(p_new) = p.checked_add(amount) else {
 						return Err("[pallet::staking] `u128` must not be overflowed; qed".into());
 					};
 
-					np
+					p_new
 				} else {
-					let Some(np) = p.checked_sub(amount) else {
+					let Some(p_new) = p.checked_sub(amount) else {
 						return Err("[pallet::staking] `u128` must not be overflowed; qed".into());
 					};
 
-					np
+					p_new
 				};
 
-				*p = np;
+				*p = p_new;
 
 				Ok(())
 			})
@@ -566,18 +569,18 @@ pub mod pallet {
 
 		// TODO: weight
 		/// Pay the session reward to the stakers.
-		pub fn payout(period: Timestamp) {
+		pub fn payout(session_duration: Timestamp) {
 			let unminted = TOTAL_SUPPLY - T::Currency::total_issuance();
 			let elapsed = <ElapsedTime<T>>::get();
 			let Some(inflation) = dc_inflation::in_period(
 				unminted,
-				period,
+				session_duration,
 				elapsed,
 			) else {
 				log::error!("\
 					[pallet::staking] failed to make the payout for: \
 					`unminted = {unminted}`, \
-					`period = {period}`, \
+					`session_duration = {session_duration}`, \
 					`elapsed = {elapsed}`\
 				");
 
