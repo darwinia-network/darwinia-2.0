@@ -99,9 +99,9 @@ mod ethereum;
 mod evm;
 pub use evm::*;
 
-// S2S stuff
 mod base_fee;
 
+// S2S stuff
 mod bridge_dispatch;
 pub use bridge_dispatch::*;
 
