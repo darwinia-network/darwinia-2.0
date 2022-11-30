@@ -86,6 +86,8 @@ pub trait Stake {
 
 	/// Claim the stakes from the pallet/contract account.
 	///
+	/// This will transfer the stakes back to the staker's account.
+	///
 	/// Ignore this if there isn't a bonding duration restriction for the target item.
 	fn claim(_who: &Self::AccountId, _item: Self::Item) -> DispatchResult {
 		Ok(())
