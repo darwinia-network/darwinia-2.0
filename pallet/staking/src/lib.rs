@@ -28,6 +28,7 @@
 //! - KTON: Darwinia's commitment token
 //! - Deposit: Locking RINGs' ticket
 
+// TODO: weight
 // TODO: nomination upper limit
 
 #![cfg_attr(not(feature = "std"), no_std)]
@@ -277,7 +278,7 @@ pub mod pallet {
 	}
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-		/// TODO
+		/// Stake the "assets" ready to participate in staking.
 		#[pallet::weight(0)]
 		pub fn stake(
 			origin: OriginFor<T>,
@@ -294,10 +295,12 @@ pub mod pallet {
 				Self::stake_deposit(&who, d)?;
 			}
 
+			// TODO: event?
+
 			Ok(())
 		}
 
-		/// TODO
+		/// Unstake the "assets".
 		#[pallet::weight(0)]
 		pub fn unstake(
 			origin: OriginFor<T>,
@@ -314,21 +317,36 @@ pub mod pallet {
 				Self::unstake_deposit(&who, d)?;
 			}
 
+			// TODO: event?
+
 			Ok(())
 		}
 
-		/// TODO
+		/// Declare the desire to collect.
+		///
+		/// Effects will be felt at the beginning of the next session.
 		#[pallet::weight(0)]
 		pub fn collect(origin: OriginFor<T>, commission: Perbill) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
-			<frame_system::Pallet<T>>::inc_consumers(&who)?;
-			<Collators<T>>::insert(who, commission);
+			<Collators<T>>::mutate(&who, |c| {
+				if c.is_none() {
+					<frame_system::Pallet<T>>::inc_consumers(&who)?;
+				}
+
+				*c = Some(commission);
+
+				DispatchResult::Ok(())
+			})?;
+
+			// TODO: event?
 
 			Ok(())
 		}
 
-		/// TODO
+		/// Declare the desire to nominate a collator.
+		///
+		/// Effects will be felt at the beginning of the next session.
 		#[pallet::weight(0)]
 		pub fn nominate(origin: OriginFor<T>, target: T::AccountId) -> DispatchResult {
 			let who = ensure_signed(origin)?;
@@ -343,16 +361,25 @@ pub mod pallet {
 				DispatchResult::Ok(())
 			})?;
 
+			// TODO: event?
+
 			Ok(())
 		}
 
-		/// TODO
+		/// Declare no desire to either collect or nominate.
+		///
+		/// Effects will be felt at the beginning of the next era.
+		///
+		/// If the target is a collator, its nominators need to re-nominate.
 		#[pallet::weight(0)]
 		pub fn chill(origin: OriginFor<T>) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
+			<Collators<T>>::remove(&who);
+			<Nominators<T>>::remove(&who);
 			<frame_system::Pallet<T>>::dec_consumers(&who);
-			// TODO
+
+			// TODO: event?
 
 			Ok(())
 		}
@@ -475,8 +502,6 @@ pub mod pallet {
 		}
 
 		fn unstake_ring(who: &T::AccountId, amount: Balance) -> DispatchResult {
-			// TODO: check in validating/nominating
-
 			T::Ring::unstake(who, amount)?;
 			<Ledgers<T>>::try_mutate(who, |l| {
 				let Some(l) = l else {
@@ -497,8 +522,6 @@ pub mod pallet {
 		}
 
 		fn unstake_kton(who: &T::AccountId, amount: Balance) -> DispatchResult {
-			// TODO: check in validating/nominating
-
 			T::Kton::unstake(who, amount)?;
 			<Ledgers<T>>::try_mutate(who, |l| {
 				let Some(l) = l else {
@@ -519,8 +542,6 @@ pub mod pallet {
 		}
 
 		fn unstake_deposit(who: &T::AccountId, deposit: DepositId<T>) -> DispatchResult {
-			// TODO: check in validating/nominating
-
 			T::Deposit::unstake(who, deposit)?;
 			<Ledgers<T>>::try_mutate(who, |l| {
 				let Some(l) = l else {
@@ -618,7 +639,7 @@ pub mod pallet {
 				if let Ok(_i) = T::Currency::deposit_into_existing(&c, c_payout) {
 					actual_payout += c_payout;
 
-					// TODO: payout events?
+					// TODO: event?
 				}
 
 				for n_exposure in c_exposure.others {
@@ -628,7 +649,7 @@ pub mod pallet {
 					if let Ok(_i) = T::Currency::deposit_into_existing(&n_exposure.who, n_payout) {
 						actual_payout += n_payout;
 
-						// TODO: payout events?
+						// TODO: event?
 					}
 				}
 			}
@@ -715,11 +736,7 @@ where
 			<frame_system::Pallet<T>>::block_number(),
 		);
 
-		let collators = Self::elect();
-
-		// TODO: clean old session data
-
-		Some(collators)
+		Some(Self::elect())
 	}
 
 	fn start_session(_: u32) {
