@@ -37,8 +37,10 @@ cumulus-pallet-session-benchmarking = { optional = true, default-features = fals
 
 # darwinia
 darwinia-common-runtime           = { default-features = false, path = "../common" }
-darwinia-precompile-bls12-381     = { default-features = false, path = "../../precompile/bls12-381" }
-darwinia-precompile-state-storage = { default-features = false, path = "../../precompile/state-storage" }
+darwinia-message-transact         = { default-features = false, path = "../../pallets/message-transact" }
+darwinia-precompile-assets        = { default-features = false, path = "../../precompiles/assets" }
+darwinia-precompile-bls12-381     = { default-features = false, path = "../../precompiles/bls12-381" }
+darwinia-precompile-state-storage = { default-features = false, path = "../../precompiles/state-storage" }
 darwinia-staking                  = { default-features = false, path = "../../pallet/staking" }
 dc-primitives                     = { default-features = false, path = "../../core/primitives" }
 
@@ -82,6 +84,7 @@ frame-executive                            = { default-features = false, git = "
 frame-support                              = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
 frame-system                               = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
 frame-system-rpc-runtime-api               = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
+pallet-assets                              = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
 pallet-aura                                = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
 pallet-authorship                          = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
 pallet-balances                            = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
@@ -143,6 +146,8 @@ std = [
 
 	# darwinia
 	"darwinia-common-runtime/std",
+	"darwinia-message-transact/std",
+	"darwinia-precompile-assets/std",
 	"darwinia-precompile-bls12-381/std",
 	"darwinia-precompile-state-storage/std",
 	"darwinia-staking/std",
@@ -188,6 +193,7 @@ std = [
 	"frame-support/std",
 	"frame-system/std",
 	"frame-system-rpc-runtime-api/std",
+	"pallet-assets/std",
 	"pallet-aura/std",
 	"pallet-authorship/std",
 	"pallet-balances/std",
@@ -262,6 +268,7 @@ runtime-benchmarks = [
 	# substrate
 	"frame-support/runtime-benchmarks",
 	"frame-system/runtime-benchmarks",
+	"pallet-assets/runtime-benchmarks",
 	"pallet-balances/runtime-benchmarks",
 	"pallet-collective/runtime-benchmarks",
 	"pallet-democracy/runtime-benchmarks",
@@ -306,6 +313,7 @@ try-runtime = [
 	"frame-executive/try-runtime",
 	"frame-support/try-runtime",
 	"frame-system/try-runtime",
+	"pallet-assets/try-runtime",
 	"pallet-aura/try-runtime",
 	"pallet-authorship/try-runtime",
 	"pallet-balances/try-runtime",

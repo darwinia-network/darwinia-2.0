@@ -35,6 +35,9 @@ mod timestamp;
 mod parachain_info_;
 
 // Monetary stuff.
+mod assets;
+pub use assets::*;
+
 mod balances;
 
 mod transaction_payment;
@@ -99,3 +102,18 @@ mod evm;
 pub use evm::*;
 
 mod base_fee;
+
+mod message_transact;
+
+// S2S stuff
+mod bridge_dispatch;
+pub use bridge_dispatch::*;
+
+mod bridge_grandpa;
+pub use bridge_grandpa::*;
+
+mod bridge_messages;
+pub use bridge_messages::*;
+
+mod fee_market;
+pub use fee_market::*;

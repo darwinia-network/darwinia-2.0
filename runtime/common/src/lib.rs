@@ -20,3 +20,7 @@
 
 pub mod gov_origin;
 pub mod xcm_barrier;
+
+pub use bp_darwinia_core as bp_crab;
+pub use bp_darwinia_core as bp_darwinia;
+pub use bp_darwinia_core as bp_pangolin;
