@@ -135,7 +135,6 @@ pub struct Exposure<AccountId> {
 	/// Nominators' stake power.
 	pub others: Vec<IndividualExposure<AccountId>>,
 }
-
 /// A snapshot of the staker's state.
 #[derive(Encode, Decode, MaxEncodedLen, TypeInfo, RuntimeDebug)]
 pub struct IndividualExposure<AccountId> {

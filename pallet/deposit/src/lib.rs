@@ -37,11 +37,34 @@ use dc_inflation::MILLISECS_PER_YEAR;
 use dc_types::{Balance, Timestamp};
 
 // substrate
-use frame_support::{pallet_prelude::*, traits::UnixTime};
+use frame_support::{pallet_prelude::*, traits::UnixTime, PalletId};
 use frame_system::pallet_prelude::*;
+use sp_runtime::traits::AccountIdConversion;
 
 type DepositId = u8;
 
+/// To meet the minimum requirement of interacting with the deposit interest asset.
+pub trait SimpleAsset {
+	/// Account type.
+	type AccountId;
+
+	/// Mint API.
+	fn mint(beneficiary: &Self::AccountId, amount: Balance) -> DispatchResult;
+
+	/// Transfer API.
+	fn transfer(from: &Self::AccountId, to: &Self::AccountId, amount: Balance) -> DispatchResult;
+}
+
+/// Deposit manager.
+#[derive(Encode, Decode, MaxEncodedLen, TypeInfo, RuntimeDebug)]
+#[scale_info(skip_type_params(T))]
+pub struct DepositManager<T>
+where
+	T: Config,
+{
+	id_pool: BoundedVec<bool, T::MaxDeposits>,
+	deposits: BoundedVec<Deposit, T::MaxDeposits>,
+}
 /// Deposit.
 #[derive(Encode, Decode, MaxEncodedLen, TypeInfo, RuntimeDebug)]
 pub struct Deposit {
@@ -67,6 +90,9 @@ pub mod pallet {
 
 		/// Unix time getter.
 		type UnixTime: UnixTime;
+
+		/// KTON asset.
+		type Kton: SimpleAsset<AccountId = Self::AccountId>;
 
 		/// Maximum deposit count.
 		#[pallet::constant]
@@ -137,11 +163,8 @@ pub mod pallet {
 				})
 				.map_err(|_| <Error<T>>::ExceedMaxDeposits)
 			})?;
-
-			// TODO: transfer
-
-			// TODO: mint
-			let interest = dc_inflation::deposit_interest(amount, months);
+			T::Kton::transfer(&who, &Self::account_id(), amount)?;
+			T::Kton::mint(&who, dc_inflation::deposit_interest(amount, months))?;
 
 			// TODO: event?
 
@@ -166,8 +189,7 @@ pub mod pallet {
 					}
 				});
 			});
-
-			// TODO: withdraw
+			T::Kton::transfer(&Self::account_id(), &who, claimed)?;
 
 			// TODO: event?
 
@@ -175,6 +197,15 @@ pub mod pallet {
 		}
 
 		// TODO: claim_with_penalty
+	}
+	impl<T> Pallet<T>
+	where
+		T: Config,
+	{
+		/// The account of the deposit pot.
+		pub fn account_id() -> T::AccountId {
+			PalletId(*b"dar/depo").into_account_truncating()
+		}
 	}
 }
 pub use pallet::*;
