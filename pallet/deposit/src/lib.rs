@@ -55,16 +55,6 @@ pub trait SimpleAsset {
 	fn transfer(from: &Self::AccountId, to: &Self::AccountId, amount: Balance) -> DispatchResult;
 }
 
-/// Deposit manager.
-#[derive(Encode, Decode, MaxEncodedLen, TypeInfo, RuntimeDebug)]
-#[scale_info(skip_type_params(T))]
-pub struct DepositManager<T>
-where
-	T: Config,
-{
-	id_pool: BoundedVec<bool, T::MaxDeposits>,
-	deposits: BoundedVec<Deposit, T::MaxDeposits>,
-}
 /// Deposit.
 #[derive(Encode, Decode, MaxEncodedLen, TypeInfo, RuntimeDebug)]
 pub struct Deposit {
@@ -119,6 +109,8 @@ pub mod pallet {
 	}
 
 	/// All deposits.
+	///
+	/// The items must be sorted by the id.
 	#[pallet::storage]
 	#[pallet::getter(fn deposit_of)]
 	pub type Deposits<T: Config> = StorageMap<
@@ -152,15 +144,38 @@ pub mod pallet {
 			if months == 0 {
 				Err(<Error<T>>::LockAtLeastOneMonth)?;
 			}
+			if <Deposits<T>>::decode_len(&who).unwrap_or_default() as u32 >= T::MaxDeposits::get() {
+				Err(<Error<T>>::ExceedMaxDeposits)?;
+			}
 
 			<Deposits<T>>::try_mutate(&who, |ds| {
-				ds.try_push(Deposit {
-					// TODO: unique identifier
-					id: 0,
-					value: amount,
-					expired_time: MILLISECS_PER_YEAR / months as Timestamp,
-					in_use: false,
-				})
+				// Keep the list sorted in increasing order.
+				// And find the missing id.
+				let id = ds
+					.first()
+					.and_then(|d| d.id.checked_sub(1))
+					.or_else(|| {
+						ds.iter().enumerate().find_map(|(i, d)| {
+							let i = i as DepositId;
+
+							if i == d.id {
+								None
+							} else {
+								Some(i)
+							}
+						})
+					})
+					.unwrap_or_default();
+
+				ds.try_insert(
+					id as _,
+					Deposit {
+						id,
+						value: amount,
+						expired_time: MILLISECS_PER_YEAR / months as Timestamp,
+						in_use: false,
+					},
+				)
 				.map_err(|_| <Error<T>>::ExceedMaxDeposits)
 			})?;
 			T::Kton::transfer(&who, &Self::account_id(), amount)?;
