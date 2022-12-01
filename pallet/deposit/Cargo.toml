@@ -26,6 +26,14 @@ sp-core       = { default-features = false, git = "https://github.com/paritytech
 sp-runtime    = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
 sp-std        = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
 
+[dev-dependencies]
+# darwinia
+darwinia-staking = { path = "../staking" }
+
+# substrate
+pallet-balances = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
+sp-io           = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
+
 [features]
 default = ["std"]
 std = [

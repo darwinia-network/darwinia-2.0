@@ -37,22 +37,27 @@ use dc_inflation::MILLISECS_PER_YEAR;
 use dc_types::{Balance, Timestamp};
 
 // substrate
-use frame_support::{pallet_prelude::*, traits::UnixTime, PalletId};
+use frame_support::{
+	pallet_prelude::*,
+	traits::{
+		Currency,
+		ExistenceRequirement::{AllowDeath, KeepAlive},
+		UnixTime,
+	},
+	PalletId,
+};
 use frame_system::pallet_prelude::*;
 use sp_runtime::traits::AccountIdConversion;
 
 type DepositId = u8;
 
-/// To meet the minimum requirement of interacting with the deposit interest asset.
-pub trait SimpleAsset {
+/// Asset's minting API.
+pub trait Minting {
 	/// Account type.
 	type AccountId;
 
 	/// Mint API.
 	fn mint(beneficiary: &Self::AccountId, amount: Balance) -> DispatchResult;
-
-	/// Transfer API.
-	fn transfer(from: &Self::AccountId, to: &Self::AccountId, amount: Balance) -> DispatchResult;
 }
 
 /// Deposit.
@@ -81,8 +86,15 @@ pub mod pallet {
 		/// Unix time getter.
 		type UnixTime: UnixTime;
 
+		/// RING asset.
+		type Ring: Currency<Self::AccountId, Balance = Balance>;
+
 		/// KTON asset.
-		type Kton: SimpleAsset<AccountId = Self::AccountId>;
+		type Kton: Minting<AccountId = Self::AccountId>;
+
+		/// Minimum amount to lock at least.
+		#[pallet::constant]
+		type MinLockAmount: Get<Balance>;
 
 		/// Maximum deposit count.
 		#[pallet::constant]
@@ -96,6 +108,8 @@ pub mod pallet {
 
 	#[pallet::error]
 	pub enum Error<T> {
+		/// Lock at least for a specific amount.
+		LockAtLeastSome,
 		/// Lock at least for one month.
 		LockAtLeastOneMonth,
 		/// Exceed maximum deposit count.
@@ -141,6 +155,9 @@ pub mod pallet {
 		pub fn lock(origin: OriginFor<T>, amount: Balance, months: u8) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
+			if amount < T::MinLockAmount::get() {
+				Err(<Error<T>>::LockAtLeastSome)?;
+			}
 			if months == 0 {
 				Err(<Error<T>>::LockAtLeastOneMonth)?;
 			}
@@ -172,15 +189,16 @@ pub mod pallet {
 					Deposit {
 						id,
 						value: amount,
-						expired_time: MILLISECS_PER_YEAR / months as Timestamp,
+						expired_time: MILLISECS_PER_YEAR / 12 * months as Timestamp,
 						in_use: false,
 					},
 				)
 				.map_err(|_| <Error<T>>::ExceedMaxDeposits)
 			})?;
-			T::Kton::transfer(&who, &Self::account_id(), amount)?;
+			T::Ring::transfer(&who, &Self::account_id(), amount, KeepAlive)?;
 			T::Kton::mint(&who, dc_inflation::deposit_interest(amount, months))?;
 
+			// TODO: account ref
 			// TODO: event?
 
 			Ok(())
@@ -195,7 +213,7 @@ pub mod pallet {
 
 			<Deposits<T>>::mutate(&who, |ds| {
 				ds.retain(|d| {
-					if d.expired_time >= now && !d.in_use {
+					if d.expired_time <= now && !d.in_use {
 						claimed += d.value;
 
 						false
@@ -204,8 +222,9 @@ pub mod pallet {
 					}
 				});
 			});
-			T::Kton::transfer(&Self::account_id(), &who, claimed)?;
+			T::Ring::transfer(&Self::account_id(), &who, claimed, AllowDeath)?;
 
+			// TODO: account ref
 			// TODO: event?
 
 			Ok(())
