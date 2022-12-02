@@ -18,6 +18,10 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
+// substrate
+use sp_core::H160;
+use sp_runtime::AccountId32;
+
 pub use pallet::*;
 
 #[frame_support::pallet]
@@ -25,6 +29,7 @@ pub mod pallet {
 	use super::*;
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
+	use sp_core::sr25519::Signature;
 
 	#[pallet::pallet]
 	pub struct Pallet<T>(PhantomData<T>);
@@ -32,6 +37,32 @@ pub mod pallet {
 	#[pallet::config]
 	pub trait Config: frame_system::Config {}
 
+	// Storage the migrated balance map from darwinia-1.0 chain
+	#[pallet::storage]
+	pub(super) type Balances<T> = StorageMap<_, Blake2_128Concat, AccountId32, u128>;
+
 	#[pallet::error]
 	pub enum Error<T> {}
+
+	#[pallet::call]
+	impl<T: Config> Pallet<T> {
+		// Unsigned transaction
+		#[pallet::weight(0)]
+		pub fn claim_to(
+			origin: OriginFor<T>, // remove this
+			old_account_id: AccountId32,
+			new_account_id: H160,
+			sig: Signature,
+			message: Vec<u8>,
+		) -> DispatchResult {
+			// verify signature
+
+			// deposit to new_account_id
+
+			// Update the balances storage
+
+			// Add event
+			todo!();
+		}
+	}
 }
