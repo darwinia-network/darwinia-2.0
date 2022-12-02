@@ -18,6 +18,11 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
+#[cfg(test)]
+mod mock;
+#[cfg(test)]
+mod test;
+
 // substrate
 use sp_core::H160;
 use sp_runtime::AccountId32;
@@ -49,19 +54,31 @@ pub mod pallet {
 		// Unsigned transaction
 		#[pallet::weight(0)]
 		pub fn claim_to(
-			origin: OriginFor<T>, // remove this
+			origin: OriginFor<T>,
 			old_account_id: AccountId32,
 			new_account_id: H160,
 			sig: Signature,
 			message: Vec<u8>,
 		) -> DispatchResult {
-			// verify signature
+			ensure_none(origin)?;
 
 			// deposit to new_account_id
 
 			// Update the balances storage
 
 			// Add event
+			todo!();
+		}
+	}
+	#[pallet::validate_unsigned]
+	impl<T: Config> ValidateUnsigned for Pallet<T> {
+		type Call = Call<T>;
+
+		fn validate_unsigned(_source: TransactionSource, call: &Self::Call) -> TransactionValidity {
+			if let Call::claim_to { old_account_id, new_account_id, sig, message } = call {
+				// verify signature
+				todo!();
+			}
 			todo!();
 		}
 	}
