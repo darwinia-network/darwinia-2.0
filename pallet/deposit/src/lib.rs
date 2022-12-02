@@ -37,11 +37,9 @@ use core::{
 	cmp::Ordering::{Equal, Greater, Less},
 	ops::ControlFlow::{Break, Continue},
 };
-
 // darwinia
 use dc_inflation::MILLISECS_PER_YEAR;
 use dc_types::{Balance, Timestamp};
-
 // substrate
 use frame_support::{
 	pallet_prelude::*,
