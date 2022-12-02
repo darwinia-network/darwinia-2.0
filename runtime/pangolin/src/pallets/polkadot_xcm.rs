@@ -121,7 +121,7 @@ impl xcm_executor::Config for XcmExecutorConfig {
 	type RuntimeCall = RuntimeCall;
 	type SubscriptionService = PolkadotXcm;
 	type Trader = UsingComponents<
-		ConstantMultiplier<Balance, ConstU128<{ GWEI }>>,
+		ConstantMultiplier<Balance, ConstU128<GWEI>>,
 		AnchoringSelfReserve,
 		AccountId,
 		Balances,
