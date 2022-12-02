@@ -51,11 +51,31 @@ fn unique_identity_should_work() {
 		assert_eq!(
 			Deposit::deposit_of(&1).as_slice(),
 			&[
-				DepositS { id: 0, value: UNIT, expired_time: 2635200000, in_use: false },
-				DepositS { id: 1, value: 2 * UNIT, expired_time: 5270400000, in_use: false },
-				DepositS { id: 2, value: 3 * UNIT, expired_time: 2635200000, in_use: false },
-				DepositS { id: 3, value: 4 * UNIT, expired_time: 5270400000, in_use: false },
-				DepositS { id: 4, value: 5 * UNIT, expired_time: 2635200000, in_use: false }
+				DepositS { id: 0, value: UNIT, expired_time: MILLISECS_PER_MONTH, in_use: false },
+				DepositS {
+					id: 1,
+					value: 2 * UNIT,
+					expired_time: 2 * MILLISECS_PER_MONTH,
+					in_use: false
+				},
+				DepositS {
+					id: 2,
+					value: 3 * UNIT,
+					expired_time: MILLISECS_PER_MONTH,
+					in_use: false
+				},
+				DepositS {
+					id: 3,
+					value: 4 * UNIT,
+					expired_time: 2 * MILLISECS_PER_MONTH,
+					in_use: false
+				},
+				DepositS {
+					id: 4,
+					value: 5 * UNIT,
+					expired_time: MILLISECS_PER_MONTH,
+					in_use: false
+				}
 			]
 		);
 
@@ -66,9 +86,24 @@ fn unique_identity_should_work() {
 		assert_eq!(
 			Deposit::deposit_of(&1).as_slice(),
 			&[
-				DepositS { id: 0, value: 6 * UNIT, expired_time: 5270400000, in_use: false },
-				DepositS { id: 1, value: 2 * UNIT, expired_time: 5270400000, in_use: false },
-				DepositS { id: 3, value: 4 * UNIT, expired_time: 5270400000, in_use: false },
+				DepositS {
+					id: 0,
+					value: 6 * UNIT,
+					expired_time: 2 * MILLISECS_PER_MONTH,
+					in_use: false
+				},
+				DepositS {
+					id: 1,
+					value: 2 * UNIT,
+					expired_time: 2 * MILLISECS_PER_MONTH,
+					in_use: false
+				},
+				DepositS {
+					id: 3,
+					value: 4 * UNIT,
+					expired_time: 2 * MILLISECS_PER_MONTH,
+					in_use: false
+				},
 			]
 		);
 
@@ -76,10 +111,30 @@ fn unique_identity_should_work() {
 		assert_eq!(
 			Deposit::deposit_of(&1).as_slice(),
 			&[
-				DepositS { id: 0, value: 6 * UNIT, expired_time: 5270400000, in_use: false },
-				DepositS { id: 1, value: 2 * UNIT, expired_time: 5270400000, in_use: false },
-				DepositS { id: 2, value: 7 * UNIT, expired_time: 5270400000, in_use: false },
-				DepositS { id: 3, value: 4 * UNIT, expired_time: 5270400000, in_use: false },
+				DepositS {
+					id: 0,
+					value: 6 * UNIT,
+					expired_time: 2 * MILLISECS_PER_MONTH,
+					in_use: false
+				},
+				DepositS {
+					id: 1,
+					value: 2 * UNIT,
+					expired_time: 2 * MILLISECS_PER_MONTH,
+					in_use: false
+				},
+				DepositS {
+					id: 2,
+					value: 7 * UNIT,
+					expired_time: 2 * MILLISECS_PER_MONTH,
+					in_use: false
+				},
+				DepositS {
+					id: 3,
+					value: 4 * UNIT,
+					expired_time: 2 * MILLISECS_PER_MONTH,
+					in_use: false
+				},
 			]
 		);
 
@@ -87,18 +142,62 @@ fn unique_identity_should_work() {
 		assert_eq!(
 			Deposit::deposit_of(&1).as_slice(),
 			&[
-				DepositS { id: 0, value: 6 * UNIT, expired_time: 5270400000, in_use: false },
-				DepositS { id: 1, value: 2 * UNIT, expired_time: 5270400000, in_use: false },
-				DepositS { id: 2, value: 7 * UNIT, expired_time: 5270400000, in_use: false },
-				DepositS { id: 3, value: 4 * UNIT, expired_time: 5270400000, in_use: false },
-				DepositS { id: 4, value: 8 * UNIT, expired_time: 5270400000, in_use: false },
+				DepositS {
+					id: 0,
+					value: 6 * UNIT,
+					expired_time: 2 * MILLISECS_PER_MONTH,
+					in_use: false
+				},
+				DepositS {
+					id: 1,
+					value: 2 * UNIT,
+					expired_time: 2 * MILLISECS_PER_MONTH,
+					in_use: false
+				},
+				DepositS {
+					id: 2,
+					value: 7 * UNIT,
+					expired_time: 2 * MILLISECS_PER_MONTH,
+					in_use: false
+				},
+				DepositS {
+					id: 3,
+					value: 4 * UNIT,
+					expired_time: 2 * MILLISECS_PER_MONTH,
+					in_use: false
+				},
+				DepositS {
+					id: 4,
+					value: 8 * UNIT,
+					expired_time: 2 * MILLISECS_PER_MONTH,
+					in_use: false
+				},
 			]
 		);
 	});
 }
 
 #[test]
-fn expire_time_should_work() {}
+fn expire_time_should_work() {
+	new_test_ext().execute_with(|| {
+		(1..=8).for_each(|_| {
+			assert_ok!(Deposit::lock(RuntimeOrigin::signed(1), UNIT, 1));
+			Time::run(MILLISECS_PER_MONTH);
+		});
+		assert_eq!(
+			Deposit::deposit_of(&1).as_slice(),
+			(1..=8)
+				.map(|i| DepositS {
+					id: i - 1,
+					value: UNIT,
+					expired_time: i as Timestamp * MILLISECS_PER_MONTH,
+					in_use: false
+				})
+				.collect::<Vec<_>>()
+				.as_slice()
+		);
+	});
+}
 
 #[test]
 fn lock_should_fail() {
