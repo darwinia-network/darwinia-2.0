@@ -53,7 +53,11 @@ use frame_support::{
 use frame_system::pallet_prelude::*;
 use sp_runtime::traits::AccountIdConversion;
 
-type DepositId = u8;
+/// Deposit identifier.
+///
+/// It's not a global-unique identifier.
+/// It's only used for distinguishing the deposits under a specific account.
+pub type DepositId = u8;
 
 const MILLISECS_PER_MONTH: Timestamp = MILLISECS_PER_YEAR / 12;
 
@@ -121,6 +125,8 @@ pub mod pallet {
 		LockAtLeastSome,
 		/// Lock at least for one month.
 		LockAtLeastOneMonth,
+		/// Lock at most for thirty-six months.
+		LockAtMostThirtySixMonths,
 		/// Exceed maximum deposit count.
 		ExceedMaxDeposits,
 		/// Deposit not found.
@@ -159,6 +165,9 @@ pub mod pallet {
 			}
 			if months == 0 {
 				Err(<Error<T>>::LockAtLeastOneMonth)?;
+			}
+			if months > 36 {
+				Err(<Error<T>>::LockAtMostThirtySixMonths)?;
 			}
 			if <Deposits<T>>::decode_len(&who).unwrap_or_default() as u32 >= T::MaxDeposits::get() {
 				Err(<Error<T>>::ExceedMaxDeposits)?;

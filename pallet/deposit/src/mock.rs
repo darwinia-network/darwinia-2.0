@@ -18,7 +18,7 @@
 
 // darwinia
 use crate::{self as darwinia_deposit, *};
-use dc_types::UNIT;
+use dc_types::{AssetId, UNIT};
 
 impl frame_system::Config for Runtime {
 	type AccountData = pallet_balances::AccountData<Balance>;
@@ -58,20 +58,21 @@ impl pallet_balances::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = ();
 }
-impl pallet_balances::Config<pallet_balances::Instance1> for Runtime {
-	type AccountStore = frame_support::traits::StorageMapShim<
-		pallet_balances::Account<Runtime>,
-		frame_system::Provider<Runtime>,
-		u32,
-		pallet_balances::AccountData<Balance>,
-	>;
+
+impl pallet_assets::Config for Runtime {
+	type ApprovalDeposit = ();
+	type AssetAccountDeposit = ();
+	type AssetDeposit = ();
+	type AssetId = AssetId;
 	type Balance = Balance;
-	type DustRemoval = ();
-	type ExistentialDeposit = frame_support::traits::ConstU128<0>;
-	type MaxLocks = ();
-	type MaxReserves = ();
-	type ReserveIdentifier = [u8; 8];
+	type Currency = Balances;
+	type Extra = ();
+	type ForceOrigin = frame_system::EnsureRoot<u32>;
+	type Freezer = ();
+	type MetadataDepositBase = ();
+	type MetadataDepositPerByte = ();
 	type RuntimeEvent = RuntimeEvent;
+	type StringLimit = frame_support::traits::ConstU32<4>;
 	type WeightInfo = ();
 }
 
@@ -83,7 +84,7 @@ impl Time {
 		TIME.with(|v| *v.borrow_mut() += core::time::Duration::from_millis(milli_secs as _));
 	}
 }
-impl UnixTime for Time {
+impl frame_support::traits::UnixTime for Time {
 	fn now() -> core::time::Duration {
 		Time::get()
 	}
@@ -93,9 +94,7 @@ impl darwinia_deposit::Minting for KtonMinting {
 	type AccountId = u32;
 
 	fn mint(beneficiary: &Self::AccountId, amount: Balance) -> sp_runtime::DispatchResult {
-		let _ = Kton::deposit_creating(beneficiary, amount);
-
-		Ok(())
+		Assets::mint(RuntimeOrigin::signed(0), 0, *beneficiary, amount)
 	}
 }
 impl darwinia_deposit::Config for Runtime {
@@ -115,7 +114,7 @@ frame_support::construct_runtime!(
 	{
 		System: frame_system,
 		Balances: pallet_balances,
-		Kton: pallet_balances::<Instance1>,
+		Assets: pallet_assets,
 		Deposit: darwinia_deposit,
 	}
 );
@@ -125,6 +124,13 @@ pub(crate) fn new_test_ext() -> sp_io::TestExternalities {
 
 	pallet_balances::GenesisConfig::<Runtime> {
 		balances: (1..=2).map(|i| (i, (i as Balance) * 1_000 * UNIT)).collect(),
+	}
+	.assimilate_storage(&mut storage)
+	.unwrap();
+	pallet_assets::GenesisConfig::<Runtime> {
+		assets: vec![(0, 0, true, 1)],
+		metadata: vec![(0, b"KTON".to_vec(), b"KTON".to_vec(), 18)],
+		..Default::default()
 	}
 	.assimilate_storage(&mut storage)
 	.unwrap();

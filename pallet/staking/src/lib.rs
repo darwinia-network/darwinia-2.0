@@ -34,11 +34,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![deny(missing_docs)]
 
-#[cfg(test)]
-mod mock;
-#[cfg(test)]
-mod tests;
-
 mod weights;
 pub use weights::WeightInfo;
 
@@ -53,11 +48,7 @@ use dc_types::{Balance, Timestamp};
 use frame_support::{
 	log,
 	pallet_prelude::*,
-	traits::{
-		Currency,
-		ExistenceRequirement::{AllowDeath, KeepAlive},
-		OnUnbalanced, UnixTime,
-	},
+	traits::{Currency, OnUnbalanced, UnixTime},
 	PalletId,
 };
 use frame_system::pallet_prelude::*;
@@ -96,22 +87,6 @@ pub trait Stake {
 	/// Ignore this if there isn't a bonding duration restriction for the target item.
 	fn claim(_who: &Self::AccountId, _item: Self::Item) -> DispatchResult {
 		Ok(())
-	}
-}
-impl<T, I> Stake for pallet_balances::Pallet<T, I>
-where
-	T: pallet_balances::Config<I, Balance = Balance>,
-	I: 'static,
-{
-	type AccountId = T::AccountId;
-	type Item = Balance;
-
-	fn stake(who: &Self::AccountId, item: Self::Item) -> DispatchResult {
-		<Self as Currency<_>>::transfer(who, &account_id(), item, KeepAlive)
-	}
-
-	fn unstake(who: &Self::AccountId, item: Self::Item) -> DispatchResult {
-		<Self as Currency<_>>::transfer(&account_id(), who, item, AllowDeath)
 	}
 }
 /// Extended stake trait.

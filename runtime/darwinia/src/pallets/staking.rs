@@ -19,6 +19,29 @@
 // darwinia
 use crate::*;
 
+pub enum RingStaking {}
+impl darwinia_staking::Stake for RingStaking {
+	type AccountId = AccountId;
+	type Item = Balance;
+
+	fn stake(who: &Self::AccountId, item: Self::Item) -> sp_runtime::DispatchResult {
+		<Balances as frame_support::traits::Currency<_>>::transfer(
+			who,
+			&darwinia_staking::account_id(),
+			item,
+			frame_support::traits::ExistenceRequirement::KeepAlive,
+		)
+	}
+
+	fn unstake(who: &Self::AccountId, item: Self::Item) -> sp_runtime::DispatchResult {
+		<Balances as frame_support::traits::Currency<_>>::transfer(
+			&darwinia_staking::account_id(),
+			who,
+			item,
+			frame_support::traits::ExistenceRequirement::AllowDeath,
+		)
+	}
+}
 pub enum KtonStaking {}
 impl darwinia_staking::Stake for KtonStaking {
 	type AccountId = AccountId;
@@ -45,7 +68,7 @@ impl darwinia_staking::Config for Runtime {
 	type MinStakingDuration = ConstU32<{ 14 * DAYS }>;
 	type PayoutFraction = PayoutFraction;
 	type RewardRemainder = Treasury;
-	type Ring = Balances;
+	type Ring = RingStaking;
 	type RingCurrency = Balances;
 	type RuntimeEvent = RuntimeEvent;
 	type UnixTime = pallet_timestamp::Pallet<Self>;

@@ -31,11 +31,22 @@ fn lock_should_work() {
 	new_test_ext().execute_with(|| {
 		assert_eq!(Balances::free_balance(&Deposit::account_id()), 0);
 		assert_eq!(Balances::free_balance(&1), 1_000 * UNIT);
-		assert_eq!(Kton::free_balance(&1), 0);
 		assert_ok!(Deposit::lock(RuntimeOrigin::signed(1), 10 * UNIT, 1));
 		assert_eq!(Balances::free_balance(&Deposit::account_id()), 10 * UNIT);
 		assert_eq!(Balances::free_balance(&1), 990 * UNIT);
-		assert_eq!(Kton::free_balance(&1), 76_142_131_979_695);
+	});
+}
+
+#[test]
+fn deposit_interest_should_work() {
+	new_test_ext().execute_with(|| {
+		assert_eq!(Assets::balance(0, 1), 0);
+		assert_ok!(Deposit::lock(RuntimeOrigin::signed(1), UNIT, 1));
+		assert_eq!(Assets::balance(0, 1), 7_614_213_197_969);
+
+		assert_eq!(Assets::balance(0, 2), 0);
+		assert_ok!(Deposit::lock(RuntimeOrigin::signed(2), 1000 * UNIT, 36));
+		assert_eq!(Assets::balance(0, 2), 364_467_005_076_142_131);
 	});
 }
 
@@ -210,6 +221,11 @@ fn lock_should_fail() {
 		assert_noop!(
 			Deposit::lock(RuntimeOrigin::signed(1), UNIT, 0),
 			<Error<Runtime>>::LockAtLeastOneMonth
+		);
+
+		assert_noop!(
+			Deposit::lock(RuntimeOrigin::signed(1), UNIT, 37),
+			<Error<Runtime>>::LockAtMostThirtySixMonths
 		);
 
 		(0..<<Runtime as Config>::MaxDeposits as Get<_>>::get()).for_each(|_| {
