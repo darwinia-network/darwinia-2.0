@@ -75,6 +75,19 @@ impl pallet_balances::Config<pallet_balances::Instance1> for Runtime {
 	type WeightInfo = ();
 }
 
+frame_support::parameter_types! {
+	pub static Time: core::time::Duration = core::time::Duration::new(0, 0);
+}
+impl Time {
+	pub(crate) fn run(milli_secs: Timestamp) {
+		TIME.with(|v| *v.borrow_mut() += core::time::Duration::from_millis(milli_secs as _));
+	}
+}
+impl UnixTime for Time {
+	fn now() -> core::time::Duration {
+		Time::get()
+	}
+}
 pub enum KtonMinting {}
 impl Minting for KtonMinting {
 	type AccountId = u32;
@@ -92,20 +105,6 @@ impl darwinia_deposit::Config for Runtime {
 	type Ring = Balances;
 	type RuntimeEvent = RuntimeEvent;
 	type UnixTime = Time;
-}
-
-frame_support::parameter_types! {
-	pub static Time: core::time::Duration = core::time::Duration::new(0, 0);
-}
-impl Time {
-	pub(crate) fn run(milli_secs: Timestamp) {
-		TIME.with(|v| *v.borrow_mut() += core::time::Duration::from_millis(milli_secs as _));
-	}
-}
-impl UnixTime for Time {
-	fn now() -> core::time::Duration {
-		Time::get()
-	}
 }
 
 frame_support::construct_runtime!(

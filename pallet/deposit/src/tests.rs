@@ -40,6 +40,67 @@ fn lock_should_work() {
 }
 
 #[test]
+fn unique_identity_should_work() {
+	new_test_ext().execute_with(|| {
+		assert!(Deposit::deposit_of(&1).is_empty());
+		assert_ok!(Deposit::lock(RuntimeOrigin::signed(1), UNIT, 1));
+		assert_ok!(Deposit::lock(RuntimeOrigin::signed(1), 2 * UNIT, 2));
+		assert_ok!(Deposit::lock(RuntimeOrigin::signed(1), 3 * UNIT, 1));
+		assert_ok!(Deposit::lock(RuntimeOrigin::signed(1), 4 * UNIT, 2));
+		assert_ok!(Deposit::lock(RuntimeOrigin::signed(1), 5 * UNIT, 1));
+		assert_eq!(
+			Deposit::deposit_of(&1).as_slice(),
+			&[
+				DepositS { id: 0, value: UNIT, expired_time: 2635200000, in_use: false },
+				DepositS { id: 1, value: 2 * UNIT, expired_time: 5270400000, in_use: false },
+				DepositS { id: 2, value: 3 * UNIT, expired_time: 2635200000, in_use: false },
+				DepositS { id: 3, value: 4 * UNIT, expired_time: 5270400000, in_use: false },
+				DepositS { id: 4, value: 5 * UNIT, expired_time: 2635200000, in_use: false }
+			]
+		);
+
+		Time::run(MILLISECS_PER_MONTH);
+		assert_ok!(Deposit::claim(RuntimeOrigin::signed(1)));
+
+		assert_ok!(Deposit::lock(RuntimeOrigin::signed(1), 6 * UNIT, 1));
+		assert_eq!(
+			Deposit::deposit_of(&1).as_slice(),
+			&[
+				DepositS { id: 0, value: 6 * UNIT, expired_time: 5270400000, in_use: false },
+				DepositS { id: 1, value: 2 * UNIT, expired_time: 5270400000, in_use: false },
+				DepositS { id: 3, value: 4 * UNIT, expired_time: 5270400000, in_use: false },
+			]
+		);
+
+		assert_ok!(Deposit::lock(RuntimeOrigin::signed(1), 7 * UNIT, 1));
+		assert_eq!(
+			Deposit::deposit_of(&1).as_slice(),
+			&[
+				DepositS { id: 0, value: 6 * UNIT, expired_time: 5270400000, in_use: false },
+				DepositS { id: 1, value: 2 * UNIT, expired_time: 5270400000, in_use: false },
+				DepositS { id: 2, value: 7 * UNIT, expired_time: 5270400000, in_use: false },
+				DepositS { id: 3, value: 4 * UNIT, expired_time: 5270400000, in_use: false },
+			]
+		);
+
+		assert_ok!(Deposit::lock(RuntimeOrigin::signed(1), 8 * UNIT, 1));
+		assert_eq!(
+			Deposit::deposit_of(&1).as_slice(),
+			&[
+				DepositS { id: 0, value: 6 * UNIT, expired_time: 5270400000, in_use: false },
+				DepositS { id: 1, value: 2 * UNIT, expired_time: 5270400000, in_use: false },
+				DepositS { id: 2, value: 7 * UNIT, expired_time: 5270400000, in_use: false },
+				DepositS { id: 3, value: 4 * UNIT, expired_time: 5270400000, in_use: false },
+				DepositS { id: 4, value: 8 * UNIT, expired_time: 5270400000, in_use: false },
+			]
+		);
+	});
+}
+
+#[test]
+fn expire_time_should_work() {}
+
+#[test]
 fn lock_should_fail() {
 	new_test_ext().execute_with(|| {
 		assert_noop!(
@@ -77,17 +138,17 @@ fn claim_should_work() {
 		assert_ok!(Deposit::lock(RuntimeOrigin::signed(1), UNIT, 1));
 		assert!(!Deposit::deposit_of(&1).is_empty());
 
-		Time::run(MILLISECS_PER_YEAR / 12 - 1);
+		Time::run(MILLISECS_PER_MONTH - 1);
 		assert_ok!(Deposit::claim(RuntimeOrigin::signed(1)));
 		assert!(!Deposit::deposit_of(&1).is_empty());
 
-		Time::run(MILLISECS_PER_YEAR / 12);
+		Time::run(MILLISECS_PER_MONTH);
 		assert_ok!(Deposit::claim(RuntimeOrigin::signed(1)));
 		assert!(Deposit::deposit_of(&1).is_empty());
 
 		assert_ok!(Deposit::lock(RuntimeOrigin::signed(1), UNIT, 1));
 		assert_ok!(Deposit::stake(&1, 0));
-		Time::run(MILLISECS_PER_YEAR / 12);
+		Time::run(2 * MILLISECS_PER_MONTH);
 		assert_ok!(Deposit::claim(RuntimeOrigin::signed(1)));
 		assert!(!Deposit::deposit_of(&1).is_empty());
 

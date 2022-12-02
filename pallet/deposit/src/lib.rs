@@ -32,6 +32,9 @@ mod tests;
 mod weights;
 pub use weights::WeightInfo;
 
+// core
+use core::ops::ControlFlow::{Break, Continue};
+
 // darwinia
 use dc_inflation::MILLISECS_PER_YEAR;
 use dc_types::{Balance, Timestamp};
@@ -51,6 +54,8 @@ use sp_runtime::traits::AccountIdConversion;
 
 type DepositId = u8;
 
+const MILLISECS_PER_MONTH: Timestamp = MILLISECS_PER_YEAR / 12;
+
 /// Asset's minting API.
 pub trait Minting {
 	/// Account type.
@@ -61,6 +66,7 @@ pub trait Minting {
 }
 
 /// Deposit.
+#[cfg_attr(test, derive(Clone, PartialEq, Eq))]
 #[derive(Encode, Decode, MaxEncodedLen, TypeInfo, RuntimeDebug)]
 pub struct Deposit {
 	/// Deposit ID.
@@ -168,28 +174,25 @@ pub mod pallet {
 			<Deposits<T>>::try_mutate(&who, |ds| {
 				// Keep the list sorted in increasing order.
 				// And find the missing id.
-				let id = ds
-					.first()
-					.and_then(|d| d.id.checked_sub(1))
-					.or_else(|| {
-						ds.iter().enumerate().find_map(|(i, d)| {
-							let i = i as DepositId;
-
-							if i == d.id {
-								None
-							} else {
-								Some(i)
-							}
-						})
-					})
-					.unwrap_or_default();
-
+				let id = match ds.iter().map(|d| d.id).try_fold(0, |i, id| {
+					if i == id {
+						Continue(i + 1)
+					} else if i < id {
+						Break(i)
+					} else {
+						Break(i - 1)
+					}
+				}) {
+					Continue(c) => c,
+					Break(b) => b,
+				};
 				ds.try_insert(
 					id as _,
 					Deposit {
 						id,
 						value: amount,
-						expired_time: MILLISECS_PER_YEAR / 12 * months as Timestamp,
+						expired_time: T::UnixTime::now().as_millis()
+							+ MILLISECS_PER_MONTH * months as Timestamp,
 						in_use: false,
 					},
 				)
