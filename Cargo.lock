@@ -2299,6 +2299,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "darwinia-message-migrate"
+version = "6.0.0"
+dependencies = [
+ "fp-ethereum",
+ "fp-evm",
+ "frame-support",
+ "frame-system",
+ "pallet-evm",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-core",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "darwinia-message-transact"
 version = "6.0.0"
 dependencies = [
