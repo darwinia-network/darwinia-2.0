@@ -33,7 +33,10 @@ mod weights;
 pub use weights::WeightInfo;
 
 // core
-use core::ops::ControlFlow::{Break, Continue};
+use core::{
+	cmp::Ordering::{Equal, Greater, Less},
+	ops::ControlFlow::{Break, Continue},
+};
 
 // darwinia
 use dc_inflation::MILLISECS_PER_YEAR;
@@ -103,6 +106,8 @@ pub mod pallet {
 		type MinLockAmount: Get<Balance>;
 
 		/// Maximum deposit count.
+		///
+		/// In currently design, this should not be greater than `u8::MAX`.
 		#[pallet::constant]
 		type MaxDeposits: Get<u32>;
 	}
@@ -174,18 +179,15 @@ pub mod pallet {
 			<Deposits<T>>::try_mutate(&who, |ds| {
 				// Keep the list sorted in increasing order.
 				// And find the missing id.
-				let id = match ds.iter().map(|d| d.id).try_fold(0, |i, id| {
-					if i == id {
-						Continue(i + 1)
-					} else if i < id {
-						Break(i)
-					} else {
-						Break(i - 1)
-					}
+				let id = match ds.iter().map(|d| d.id).try_fold(0, |i, id| match i.cmp(&id) {
+					Less => Break(i),
+					Equal => Continue(i + 1),
+					Greater => Break(i - 1),
 				}) {
 					Continue(c) => c,
 					Break(b) => b,
 				};
+
 				ds.try_insert(
 					id as _,
 					Deposit {
