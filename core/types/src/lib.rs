@@ -27,6 +27,9 @@ pub type Balance = u128;
 /// Timestamp type.
 pub type Timestamp = u128;
 
+/// Asset identifier type.
+pub type AssetId = u64;
+
 // Unit = the base number of indivisible units for balances
 /// 1e18 wei — 1,000,000,000,000,000,000
 pub const UNIT: Balance = 1_000 * MILLIUNIT;

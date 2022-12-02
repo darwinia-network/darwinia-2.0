@@ -19,34 +19,22 @@
 // darwinia
 use crate::*;
 
-pub enum KtonStaking {}
-impl darwinia_staking::Stake for KtonStaking {
+pub enum KtonMinting {}
+impl darwinia_deposit::Minting for KtonMinting {
 	type AccountId = AccountId;
-	type Item = Balance;
 
-	fn stake(who: &Self::AccountId, item: Self::Item) -> sp_runtime::DispatchResult {
-		Assets::transfer(RuntimeOrigin::signed(*who), 0, darwinia_staking::account_id(), item)
-	}
+	fn mint(beneficiary: &Self::AccountId, amount: Balance) -> sp_runtime::DispatchResult {
+		let _ = Assets::mint(RuntimeOrigin::root(), 0, *beneficiary, amount);
 
-	fn unstake(who: &Self::AccountId, item: Self::Item) -> sp_runtime::DispatchResult {
-		Assets::transfer(RuntimeOrigin::signed(darwinia_staking::account_id()), 0, *who, item)
+		Ok(())
 	}
 }
 
-frame_support::parameter_types! {
-	pub const PayoutFraction: sp_runtime::Perbill = sp_runtime::Perbill::from_percent(20);
-}
-
-impl darwinia_staking::Config for Runtime {
-	type Deposit = Deposit;
-	type Kton = KtonStaking;
-	type MaxDeposits = ConstU32<16>;
-	type MaxUnstakings = ConstU32<16>;
-	type MinStakingDuration = ConstU32<{ 14 * DAYS }>;
-	type PayoutFraction = PayoutFraction;
-	type RewardRemainder = Treasury;
+impl darwinia_deposit::Config for Runtime {
+	type Kton = KtonMinting;
+	type MaxDeposits = frame_support::traits::ConstU32<16>;
+	type MinLockingAmount = frame_support::traits::ConstU128<UNIT>;
 	type Ring = Balances;
-	type RingCurrency = Balances;
 	type RuntimeEvent = RuntimeEvent;
 	type UnixTime = pallet_timestamp::Pallet<Self>;
 }

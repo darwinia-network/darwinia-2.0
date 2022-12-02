@@ -2426,6 +2426,7 @@ dependencies = [
  "cumulus-primitives-timestamp",
  "cumulus-primitives-utility",
  "darwinia-common-runtime",
+ "darwinia-deposit",
  "darwinia-message-transact",
  "darwinia-precompile-assets",
  "darwinia-precompile-bls12-381",
@@ -2508,15 +2509,18 @@ dependencies = [
 name = "darwinia-staking"
 version = "6.0.0"
 dependencies = [
+ "darwinia-deposit",
  "dc-inflation",
  "dc-types",
  "frame-support",
  "frame-system",
  "pallet-authorship",
+ "pallet-balances",
  "pallet-session",
  "parity-scale-codec",
  "scale-info",
  "sp-core",
+ "sp-io",
  "sp-runtime",
  "sp-std",
 ]

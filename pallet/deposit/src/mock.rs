@@ -89,10 +89,10 @@ impl UnixTime for Time {
 	}
 }
 pub enum KtonMinting {}
-impl Minting for KtonMinting {
+impl darwinia_deposit::Minting for KtonMinting {
 	type AccountId = u32;
 
-	fn mint(beneficiary: &Self::AccountId, amount: Balance) -> DispatchResult {
+	fn mint(beneficiary: &Self::AccountId, amount: Balance) -> sp_runtime::DispatchResult {
 		let _ = Kton::deposit_creating(beneficiary, amount);
 
 		Ok(())
@@ -101,7 +101,7 @@ impl Minting for KtonMinting {
 impl darwinia_deposit::Config for Runtime {
 	type Kton = KtonMinting;
 	type MaxDeposits = frame_support::traits::ConstU32<16>;
-	type MinLockAmount = frame_support::traits::ConstU128<UNIT>;
+	type MinLockingAmount = frame_support::traits::ConstU128<UNIT>;
 	type Ring = Balances;
 	type RuntimeEvent = RuntimeEvent;
 	type UnixTime = Time;

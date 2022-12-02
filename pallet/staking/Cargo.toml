@@ -22,10 +22,18 @@ dc-types     = { path = "../../core/types" }
 frame-support     = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
 frame-system      = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
 pallet-authorship = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
+pallet-balances   = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
 pallet-session    = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
 sp-core           = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
 sp-runtime        = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
 sp-std            = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
+
+[dev-dependencies]
+# darwinia
+darwinia-deposit = { path = "../deposit" }
+
+# substrate
+sp-io = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
 
 [features]
 default = ["std"]
@@ -41,6 +49,7 @@ std = [
 	"frame-support/std",
 	"frame-system/std",
 	"pallet-authorship/std",
+	"pallet-balances/std",
 	"pallet-session/std",
 	"sp-core/std",
 	"sp-runtime/std",

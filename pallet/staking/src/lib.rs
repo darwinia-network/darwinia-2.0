@@ -53,17 +53,22 @@ use dc_types::{Balance, Timestamp};
 use frame_support::{
 	log,
 	pallet_prelude::*,
-	traits::{Currency, OnUnbalanced, UnixTime},
+	traits::{
+		Currency,
+		ExistenceRequirement::{AllowDeath, KeepAlive},
+		OnUnbalanced, UnixTime,
+	},
+	PalletId,
 };
 use frame_system::pallet_prelude::*;
-use sp_runtime::{Perbill, Perquintill};
+use sp_runtime::{traits::AccountIdConversion, Perbill, Perquintill};
 use sp_std::{collections::btree_map::BTreeMap, prelude::*};
 
 type RewardPoint = u32;
 type Power = u32;
 
 type DepositId<T> = <<T as Config>::Deposit as Stake>::Item;
-type NegativeImbalance<T> = <<T as Config>::Currency as Currency<
+type NegativeImbalance<T> = <<T as Config>::RingCurrency as Currency<
 	<T as frame_system::Config>::AccountId,
 >>::NegativeImbalance;
 
@@ -91,6 +96,22 @@ pub trait Stake {
 	/// Ignore this if there isn't a bonding duration restriction for the target item.
 	fn claim(_who: &Self::AccountId, _item: Self::Item) -> DispatchResult {
 		Ok(())
+	}
+}
+impl<T, I> Stake for pallet_balances::Pallet<T, I>
+where
+	T: pallet_balances::Config<I, Balance = Balance>,
+	I: 'static,
+{
+	type AccountId = T::AccountId;
+	type Item = Balance;
+
+	fn stake(who: &Self::AccountId, item: Self::Item) -> DispatchResult {
+		<Self as Currency<_>>::transfer(who, &account_id(), item, KeepAlive)
+	}
+
+	fn unstake(who: &Self::AccountId, item: Self::Item) -> DispatchResult {
+		<Self as Currency<_>>::transfer(&account_id(), who, item, AllowDeath)
 	}
 }
 /// Extended stake trait.
@@ -157,28 +178,28 @@ pub mod pallet {
 		/// Unix time getter.
 		type UnixTime: UnixTime;
 
-		/// Currency interface.
+		/// RING [`Currency`] interface.
 		///
 		/// Only use for inflation.
-		type Currency: Currency<Self::AccountId, Balance = Balance>;
+		type RingCurrency: Currency<Self::AccountId, Balance = Balance>;
 
 		/// Tokens have been minted and are unused for stakers reward.
 		///
 		/// Usually, it's treasury.
 		type RewardRemainder: OnUnbalanced<NegativeImbalance<Self>>;
 
-		/// RING interface.
+		/// RING [`Stake`] interface.
 		type Ring: Stake<AccountId = Self::AccountId, Item = Balance>;
 
-		/// KTON interface.
+		/// KTON [`Stake`] interface.
 		type Kton: Stake<AccountId = Self::AccountId, Item = Balance>;
 
-		/// Deposit interface.
+		/// Deposit [`StakeExt`] interface.
 		type Deposit: StakeExt<AccountId = Self::AccountId, Amount = Balance>;
 
-		/// Number of blocks that stakes at least stake for.
+		/// Minimum time to stake at least.
 		#[pallet::constant]
-		type StakeAtLeast: Get<Self::BlockNumber>;
+		type MinStakingDuration: Get<Self::BlockNumber>;
 
 		/// The percentage of the total payout that is distributed to stakers.
 		///
@@ -531,7 +552,7 @@ pub mod pallet {
 				l.unstaking_ring
 					.try_push((
 						amount,
-						<frame_system::Pallet<T>>::block_number() + T::StakeAtLeast::get(),
+						<frame_system::Pallet<T>>::block_number() + T::MinStakingDuration::get(),
 					))
 					.map_err(|_| <Error<T>>::ExceedMaxUnstakings)?;
 
@@ -556,7 +577,7 @@ pub mod pallet {
 				l.unstaking_kton
 					.try_push((
 						amount,
-						<frame_system::Pallet<T>>::block_number() + T::StakeAtLeast::get(),
+						<frame_system::Pallet<T>>::block_number() + T::MinStakingDuration::get(),
 					))
 					.map_err(|_| <Error<T>>::ExceedMaxUnstakings)?;
 
@@ -654,7 +675,7 @@ pub mod pallet {
 		// TODO: weight
 		/// Pay the session reward to the stakers.
 		pub fn payout(session_duration: Timestamp) {
-			let unminted = TOTAL_SUPPLY - T::Currency::total_issuance();
+			let unminted = TOTAL_SUPPLY - T::RingCurrency::total_issuance();
 			let elapsed = <ElapsedTime<T>>::get();
 			let Some(inflation) = dc_inflation::in_period(
 				unminted,
@@ -692,7 +713,7 @@ pub mod pallet {
 				let c_payout = c_commission_payout
 					+ Perbill::from_rational(c_exposure.own, c_exposure.total) * n_payout;
 
-				if let Ok(_i) = T::Currency::deposit_into_existing(&c, c_payout) {
+				if let Ok(_i) = T::RingCurrency::deposit_into_existing(&c, c_payout) {
 					actual_payout += c_payout;
 
 					// TODO: event?
@@ -702,7 +723,9 @@ pub mod pallet {
 					let n_payout =
 						Perbill::from_rational(n_exposure.value, c_exposure.total) * n_payout;
 
-					if let Ok(_i) = T::Currency::deposit_into_existing(&n_exposure.who, n_payout) {
+					if let Ok(_i) =
+						T::RingCurrency::deposit_into_existing(&n_exposure.who, n_payout)
+					{
 						actual_payout += n_payout;
 
 						// TODO: event?
@@ -710,7 +733,7 @@ pub mod pallet {
 				}
 			}
 
-			T::RewardRemainder::on_unbalanced(T::Currency::issue(inflation - actual_payout));
+			T::RewardRemainder::on_unbalanced(T::RingCurrency::issue(inflation - actual_payout));
 		}
 
 		/// Clean the old session data.
@@ -806,4 +829,12 @@ where
 	}
 
 	fn end_session(_: u32) {}
+}
+
+/// The account of the staking pot.
+pub fn account_id<A>() -> A
+where
+	A: FullCodec,
+{
+	PalletId(*b"dar/stak").into_account_truncating()
 }

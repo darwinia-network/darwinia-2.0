@@ -101,7 +101,7 @@ pub mod pallet {
 
 		/// Minimum amount to lock at least.
 		#[pallet::constant]
-		type MinLockAmount: Get<Balance>;
+		type MinLockingAmount: Get<Balance>;
 
 		/// Maximum deposit count.
 		///
@@ -144,16 +144,6 @@ pub mod pallet {
 		ValueQuery,
 	>;
 
-	#[derive(Default)]
-	#[pallet::genesis_config]
-	pub struct GenesisConfig {
-		// TODO
-	}
-	#[pallet::genesis_build]
-	impl<T: Config> GenesisBuild<T> for GenesisConfig {
-		fn build(&self) {}
-	}
-
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
 	pub struct Pallet<T>(PhantomData<T>);
@@ -164,7 +154,7 @@ pub mod pallet {
 		pub fn lock(origin: OriginFor<T>, amount: Balance, months: u8) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
-			if amount < T::MinLockAmount::get() {
+			if amount < T::MinLockingAmount::get() {
 				Err(<Error<T>>::LockAtLeastSome)?;
 			}
 			if months == 0 {
