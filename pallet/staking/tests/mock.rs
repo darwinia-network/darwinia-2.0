@@ -228,6 +228,23 @@ frame_support::construct_runtime!(
 	}
 );
 
+pub trait ZeroDefault {
+	fn default() -> Self;
+}
+impl ZeroDefault for darwinia_staking::Ledger<Runtime> {
+	fn default() -> Self {
+		Self {
+			account: Default::default(),
+			staked_ring: Default::default(),
+			staked_kton: Default::default(),
+			staked_deposits: Default::default(),
+			unstaking_ring: Default::default(),
+			unstaking_kton: Default::default(),
+			unstaking_deposits: Default::default(),
+		}
+	}
+}
+
 pub enum Efflux {}
 impl Efflux {
 	pub fn time(milli_secs: Moment) {

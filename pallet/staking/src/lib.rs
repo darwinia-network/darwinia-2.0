@@ -124,6 +124,8 @@ where
 	pub unstaking_ring: BoundedVec<(Balance, T::BlockNumber), T::MaxUnstakings>,
 	/// The KTON in unstaking process.
 	pub unstaking_kton: BoundedVec<(Balance, T::BlockNumber), T::MaxUnstakings>,
+	/// The deposit in unstaking process.
+	pub unstaking_deposits: BoundedVec<(DepositId<T>, T::BlockNumber), T::MaxUnstakings>,
 }
 impl<T> Ledger<T>
 where
@@ -135,6 +137,7 @@ where
 			&& self.staked_deposits.is_empty()
 			&& self.unstaking_ring.is_empty()
 			&& self.unstaking_kton.is_empty()
+			&& self.unstaking_deposits.is_empty()
 	}
 }
 
@@ -242,7 +245,7 @@ pub mod pallet {
 
 	/// The map from (wannabe) collator to the preferences of that collator.
 	#[pallet::storage]
-	#[pallet::getter(fn validator_of)]
+	#[pallet::getter(fn collator_of)]
 	pub type Collators<T: Config> = StorageMap<_, Twox64Concat, T::AccountId, Perbill>;
 
 	/// Stakers' exposure.
@@ -307,6 +310,10 @@ pub mod pallet {
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
+			if !<Ledgers<T>>::contains_key(&who) {
+				<frame_system::Pallet<T>>::inc_consumers(&who)?;
+			}
+
 			if ring_amount != 0 {
 				Self::stake_ring(&who, ring_amount)?;
 			}
@@ -317,6 +324,7 @@ pub mod pallet {
 			for d in deposits {
 				Self::stake_deposit(&who, d)?;
 			}
+
 
 			// TODO: event?
 
@@ -344,8 +352,6 @@ pub mod pallet {
 				Self::unstake_deposit(&who, d)?;
 			}
 
-			Self::try_clean_ledger_of(&who);
-
 			// TODO: event?
 
 			Ok(())
@@ -372,15 +378,7 @@ pub mod pallet {
 		pub fn collect(origin: OriginFor<T>, commission: Perbill) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
-			<Collators<T>>::try_mutate(&who, |c| {
-				if c.is_none() {
-					<frame_system::Pallet<T>>::inc_consumers(&who)?;
-				}
-
-				*c = Some(commission);
-
-				DispatchResult::Ok(())
-			})?;
+			<Collators<T>>::mutate(&who, |c| *c = Some(commission));
 
 			// TODO: event?
 
@@ -394,15 +392,7 @@ pub mod pallet {
 		pub fn nominate(origin: OriginFor<T>, target: T::AccountId) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
-			<Nominators<T>>::try_mutate(&who, |n| {
-				if n.is_none() {
-					<frame_system::Pallet<T>>::inc_consumers(&who)?;
-				}
-
-				*n = Some(target);
-
-				DispatchResult::Ok(())
-			})?;
+			<Nominators<T>>::mutate(&who, |n| *n = Some(target));
 
 			// TODO: event?
 
@@ -420,7 +410,6 @@ pub mod pallet {
 
 			<Collators<T>>::remove(&who);
 			<Nominators<T>>::remove(&who);
-			<frame_system::Pallet<T>>::dec_consumers(&who);
 
 			// TODO: event?
 
@@ -475,6 +464,7 @@ pub mod pallet {
 						staked_deposits: Default::default(),
 						unstaking_ring: Default::default(),
 						unstaking_kton: Default::default(),
+						unstaking_deposits: Default::default(),
 					});
 
 					Ok(())
@@ -504,6 +494,7 @@ pub mod pallet {
 						staked_deposits: Default::default(),
 						unstaking_ring: Default::default(),
 						unstaking_kton: Default::default(),
+						unstaking_deposits: Default::default(),
 					});
 
 					Ok(())
@@ -531,6 +522,7 @@ pub mod pallet {
 						staked_deposits: BoundedVec::truncate_from(vec![deposit]),
 						unstaking_ring: Default::default(),
 						unstaking_kton: Default::default(),
+						unstaking_deposits: Default::default(),
 					});
 
 					Ok(())
@@ -589,6 +581,29 @@ pub mod pallet {
 			Ok(())
 		}
 
+		fn unstake_deposit(who: &T::AccountId, deposit: DepositId<T>) -> DispatchResult {
+			<Ledgers<T>>::try_mutate(who, |l| {
+				let Some(l) = l else {
+					return DispatchResult::Err(<Error<T>>::NotStaker.into());
+				};
+				let Some(i) = l.staked_deposits.iter().position(|d| d == &deposit) else {
+					return Err("[pallet::staking] deposit id must be existed, due to previous unstake OP; qed".into());
+				};
+
+				l.unstaking_deposits
+					.try_push((
+						l.staked_deposits.remove(i),
+						<frame_system::Pallet<T>>::block_number() + T::MinStakingDuration::get(),
+					))
+					.map_err(|_| <Error<T>>::ExceedMaxUnstakings)?;
+
+				Ok(())
+			})?;
+			Self::update_pool::<RingPool<T>>(false, T::Deposit::amount(who, deposit))?;
+
+			Ok(())
+		}
+
 		fn claim_unstakings(who: &T::AccountId) -> DispatchResult {
 			<Ledgers<T>>::try_mutate(who, |l| {
 				let Some(l) = l else {
@@ -616,27 +631,24 @@ pub mod pallet {
 				claim(&mut l.unstaking_kton, &mut k_claimed);
 				T::Kton::unstake(who, k_claimed)?;
 
+				let mut d_claimed = Vec::new();
+
+				l.unstaking_deposits.retain(|(d, t)| {
+					if t <= &now {
+						d_claimed.push(*d);
+
+						false
+					} else {
+						true
+					}
+				});
+
+				for d in d_claimed {
+					T::Deposit::unstake(who, d)?;
+				}
+
 				Ok(())
 			})
-		}
-
-		fn unstake_deposit(who: &T::AccountId, deposit: DepositId<T>) -> DispatchResult {
-			T::Deposit::unstake(who, deposit)?;
-			<Ledgers<T>>::try_mutate(who, |l| {
-				let Some(l) = l else {
-					return DispatchResult::Err(<Error<T>>::NotStaker.into());
-				};
-				let Some(i) = l.staked_deposits.iter().position(|d| d == &deposit) else {
-					return Err("[pallet::staking] deposit id must be existed, due to previous unstake OP; qed".into());
-				};
-
-				l.staked_deposits.remove(i);
-
-				Ok(())
-			})?;
-			Self::update_pool::<RingPool<T>>(false, T::Deposit::amount(who, deposit))?;
-
-			Ok(())
 		}
 
 		fn try_clean_ledger_of(who: &T::AccountId) {
@@ -645,6 +657,8 @@ pub mod pallet {
 
 				if l.is_empty() {
 					*maybe_l = None;
+
+					<frame_system::Pallet<T>>::dec_consumers(who);
 
 					Ok(())
 				} else {
