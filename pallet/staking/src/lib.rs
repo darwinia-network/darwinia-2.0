@@ -211,10 +211,27 @@ pub mod pallet {
 		type MaxUnstakings: Get<u32>;
 	}
 
+	#[allow(missing_docs)]
 	#[pallet::event]
-	// TODO: event?
-	// #[pallet::generate_deposit(pub(super) fn deposit_event)]
-	pub enum Event<T: Config> {}
+	#[pallet::generate_deposit(pub(super) fn deposit_event)]
+	pub enum Event<T: Config> {
+		/// An account has staked.
+		Staked {
+			staker: T::AccountId,
+			ring_amount: Balance,
+			kton_amount: Balance,
+			deposits: Vec<DepositId<T>>,
+		},
+		/// An account has unstaked.
+		Unstaked {
+			staker: T::AccountId,
+			ring_amount: Balance,
+			kton_amount: Balance,
+			deposits: Vec<DepositId<T>>,
+		},
+		/// A payout has been made for the staker.
+		Payout { staker: T::AccountId, ring_amount: Balance },
+	}
 
 	#[pallet::error]
 	pub enum Error<T> {
@@ -304,7 +321,8 @@ pub mod pallet {
 			<CollatorCount<T>>::put(self.collator_count);
 
 			self.collators.iter().cloned().for_each(|(who, stake)| {
-				<Pallet<T>>::stake(RawOrigin::Signed(who.clone()).into(), stake, 0, Vec::new()).unwrap();
+				<Pallet<T>>::stake(RawOrigin::Signed(who.clone()).into(), stake, 0, Vec::new())
+					.unwrap();
 				<Pallet<T>>::collect(RawOrigin::Signed(who).into(), Default::default()).unwrap();
 			});
 		}
@@ -326,6 +344,10 @@ pub mod pallet {
 			deposits: Vec<DepositId<T>>,
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
+
+			if ring_amount == 0 && kton_amount == 0 && deposits.is_empty() {
+				return Ok(());
+			}
 
 			<Ledgers<T>>::try_mutate(&who, |l| {
 				let l = if let Some(l) = l {
@@ -353,14 +375,19 @@ pub mod pallet {
 					Self::stake_kton(l, kton_amount)?;
 				}
 
-				for d in deposits {
+				for d in deposits.clone() {
 					Self::stake_deposit(l, d)?;
 				}
 
 				DispatchResult::Ok(())
 			})?;
 
-			// TODO: event?
+			Self::deposit_event(Event::<T>::Staked {
+				staker: who,
+				ring_amount,
+				kton_amount,
+				deposits,
+			});
 
 			Ok(())
 		}
@@ -374,6 +401,10 @@ pub mod pallet {
 			deposits: Vec<DepositId<T>>,
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
+
+			if ring_amount == 0 && kton_amount == 0 && deposits.is_empty() {
+				return Ok(());
+			}
 
 			<Ledgers<T>>::try_mutate(&who, |l| {
 				let Some(l) = l else {
@@ -699,18 +730,21 @@ pub mod pallet {
 		pub fn payout(session_duration: Moment) {
 			let unminted = TOTAL_SUPPLY - T::RingCurrency::total_issuance();
 			let elapsed = <ElapsedTime<T>>::get();
+
+			log::info!(
+				"\
+					[pallet::staking] making a payout for: \
+					`unminted = {unminted}`, \
+					`session_duration = {session_duration}`, \
+					`elapsed = {elapsed}`\
+				"
+			);
+
 			let Some(inflation) = dc_inflation::in_period(
 				unminted,
 				session_duration,
 				elapsed,
 			) else {
-				log::error!("\
-					[pallet::staking] failed to make the payout for: \
-					`unminted = {unminted}`, \
-					`session_duration = {session_duration}`, \
-					`elapsed = {elapsed}`\
-				");
-
 				return;
 			};
 			let payout = T::PayoutFraction::get() * inflation;
@@ -738,7 +772,7 @@ pub mod pallet {
 				if let Ok(_i) = T::RingCurrency::deposit_into_existing(&c, c_payout) {
 					actual_payout += c_payout;
 
-					// TODO: event?
+					Self::deposit_event(Event::<T>::Payout { staker: c, ring_amount: c_payout });
 				}
 
 				for n_exposure in c_exposure.others {
@@ -750,7 +784,10 @@ pub mod pallet {
 					{
 						actual_payout += n_payout;
 
-						// TODO: event?
+						Self::deposit_event(Event::<T>::Payout {
+							staker: n_exposure.who,
+							ring_amount: n_payout,
+						});
 					}
 				}
 			}
@@ -787,18 +824,21 @@ pub mod pallet {
 						})
 						.collect();
 
-					<Exposures<T>>::insert(
-						&c,
-						Exposure { total: t_power, own: c_power, others: i_exposures },
-					);
-
-					(c, t_power)
+					((c, Exposure { total: t_power, own: c_power, others: i_exposures }), t_power)
 				})
 				.collect::<Vec<_>>();
 
 			collators.sort_by_key(|(_, p)| *p);
 
-			collators.into_iter().take(<CollatorCount<T>>::get() as _).map(|(c, _)| c).collect()
+			collators
+				.into_iter()
+				.take(<CollatorCount<T>>::get() as _)
+				.map(|((c, e), _)| {
+					<Exposures<T>>::insert(&c, e);
+
+					c
+				})
+				.collect()
 		}
 	}
 }

@@ -40,12 +40,12 @@ impl pallet_session::Config for Runtime {
 	type Keys = SessionKeys;
 	type NextSessionRotation = pallet_session::PeriodicSessions<Period, Offset>;
 	type RuntimeEvent = RuntimeEvent;
-	// Essentially just Aura, but lets be pedantic.
+	// Essentially just AURA, but lets be pedantic.
 	type SessionHandler = <SessionKeys as sp_runtime::traits::OpaqueKeys>::KeyTypeIdProviders;
 	type SessionManager = Staking;
 	type ShouldEndSession = pallet_session::PeriodicSessions<Period, Offset>;
 	type ValidatorId = <Self as frame_system::Config>::AccountId;
-	// we don't have stash and controller, thus we don't need the convert as well.
+	// We don't have stash and controller, thus we don't need the convert as well.
 	type ValidatorIdOf = darwinia_staking::IdentityCollator;
 	type WeightInfo = weights::pallet_session::WeightInfo<Self>;
 }
