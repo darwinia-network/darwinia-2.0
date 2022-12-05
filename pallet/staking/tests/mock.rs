@@ -227,14 +227,14 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 	let mut storage = frame_system::GenesisConfig::default().build_storage::<Runtime>().unwrap();
 
 	pallet_balances::GenesisConfig::<Runtime> {
-		balances: (1..=2).map(|i| (i, (i as Balance) * 1_000 * UNIT)).collect(),
+		balances: (1..=4).map(|i| (i, (i as Balance) * 1_000 * UNIT)).collect(),
 	}
 	.assimilate_storage(&mut storage)
 	.unwrap();
 	pallet_assets::GenesisConfig::<Runtime> {
 		assets: vec![(0, 0, true, 1)],
 		metadata: vec![(0, b"KTON".to_vec(), b"KTON".to_vec(), 18)],
-		accounts: (1..=2).map(|i| (0, i, (i as Balance) * 1_000 * UNIT)).collect(),
+		accounts: (1..=4).map(|i| (0, i, (i as Balance) * 1_000 * UNIT)).collect(),
 	}
 	.assimilate_storage(&mut storage)
 	.unwrap();

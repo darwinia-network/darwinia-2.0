@@ -302,8 +302,12 @@ pub mod pallet {
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
-			Self::stake_ring(&who, ring_amount)?;
-			Self::stake_kton(&who, kton_amount)?;
+			if ring_amount != 0 {
+				Self::stake_ring(&who, ring_amount)?;
+			}
+			if kton_amount != 0 {
+				Self::stake_kton(&who, kton_amount)?;
+			}
 
 			for d in deposits {
 				Self::stake_deposit(&who, d)?;
@@ -324,8 +328,12 @@ pub mod pallet {
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
-			Self::unstake_ring(&who, ring_amount)?;
-			Self::unstake_kton(&who, kton_amount)?;
+			if ring_amount != 0 {
+				Self::unstake_ring(&who, ring_amount)?;
+			}
+			if kton_amount != 0 {
+				Self::unstake_kton(&who, kton_amount)?;
+			}
 
 			for d in deposits {
 				Self::unstake_deposit(&who, d)?;
@@ -646,7 +654,8 @@ pub mod pallet {
 			(Perquintill::from_rational(amount, P::get().max(1)) * 500_000_000_u128) as _
 		}
 
-		fn power_of(who: &T::AccountId) -> Power {
+		/// Calculate the power of the given account.
+		pub fn power_of(who: &T::AccountId) -> Power {
 			<Ledgers<T>>::get(who)
 				.map(|l| {
 					Self::balance2power::<RingPool<T>>(
