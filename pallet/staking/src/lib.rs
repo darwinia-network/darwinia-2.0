@@ -606,7 +606,7 @@ pub mod pallet {
 				let now = <frame_system::Pallet<T>>::block_number();
 				let claim = |u: &mut BoundedVec<_, _>, c: &mut Balance| {
 					u.retain(|(a, t)| {
-						if t >= &now {
+						if t < &now {
 							*c += a;
 
 							false
