@@ -129,7 +129,6 @@ pub mod pallet {
 					if is_valid {
 						return ValidTransaction::with_tag_prefix("MigrateClaim")
 							.priority(TransactionPriority::max_value())
-							// TODO: ADD more config?
 							.propagate(true)
 							.build();
 					}
