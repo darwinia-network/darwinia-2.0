@@ -25,8 +25,14 @@ sp_runtime::impl_opaque_keys! {
 	}
 }
 
+#[cfg(feature = "production")]
 frame_support::parameter_types! {
 	pub const Period: u32 = 6 * HOURS;
+	pub const Offset: u32 = 0;
+}
+#[cfg(not(feature = "production"))]
+frame_support::parameter_types! {
+	pub const Period: u32 = MINUTES;
 	pub const Offset: u32 = 0;
 }
 

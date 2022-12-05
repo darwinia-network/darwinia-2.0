@@ -99,7 +99,7 @@ substrate-prometheus-endpoint  = { git = "https://github.com/paritytech/substrat
 try-runtime-cli                = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
 
 [features]
-default = []
+default = ["darwinia-runtime/production"]
 
 runtime-benchmarks = [
 	# darwinia

@@ -57,7 +57,7 @@ pub fn development_config() -> ChainSpec {
 		ChainType::Development,
 		move || {
 			testnet_genesis(
-				// initial collators.
+				// Initial collators.
 				vec![
 					// Bind the `Alice` to `Alith` to make `--alice` available for testnet.
 					(
@@ -92,159 +92,8 @@ pub fn development_config() -> ChainSpec {
 		},
 	)
 }
-
-pub fn local_testnet_config() -> ChainSpec {
-	// Give your base currency a unit name and decimal places
-	let mut properties = sc_chain_spec::Properties::new();
-	properties.insert("tokenSymbol".into(), "RING".into());
-	properties.insert("tokenDecimals".into(), 18.into());
-	properties.insert("ss58Format".into(), 18.into());
-
-	ChainSpec::from_genesis(
-		// Name
-		"Darwinia2 Local Testnet",
-		// ID
-		"darwinia_local_testnet",
-		ChainType::Local,
-		move || {
-			testnet_genesis(
-				// initial collators.
-				vec![
-					// Bind the `Alice` to `Alith` to make `--alice` available for testnet.
-					(
-						array_bytes::hex_n_into_unchecked(ALITH),
-						get_collator_keys_from_seed("Alice"),
-					),
-					// Bind the `Bob` to `Balthar` to make `--bob` available for testnet.
-					(
-						array_bytes::hex_n_into_unchecked(BALTATHAR),
-						get_collator_keys_from_seed("Bob"),
-					),
-				],
-				vec![
-					array_bytes::hex_n_into_unchecked(ALITH),
-					array_bytes::hex_n_into_unchecked(BALTATHAR),
-					array_bytes::hex_n_into_unchecked(CHARLETH),
-					array_bytes::hex_n_into_unchecked(DOROTHY),
-					array_bytes::hex_n_into_unchecked(ETHAN),
-					array_bytes::hex_n_into_unchecked(FAITH),
-				],
-				2046.into(),
-			)
-		},
-		// Bootnodes
-		Vec::new(),
-		// Telemetry
-		None,
-		// Protocol ID
-		Some("darwinia"),
-		// Fork ID
-		None,
-		// Properties
-		Some(properties),
-		// Extensions
-		Extensions {
-			relay_chain: "rococo-local".into(), // You MUST set this to the correct network!
-			para_id: 2046,
-		},
-	)
-}
-
-pub fn config() -> ChainSpec {
-	// Give your base currency a unit name and decimal places
-	let mut properties = sc_chain_spec::Properties::new();
-	properties.insert("tokenSymbol".into(), "RING".into());
-	properties.insert("tokenDecimals".into(), 18.into());
-	properties.insert("ss58Format".into(), 18.into());
-
-	// TODO: update this before final release
-	ChainSpec::from_genesis(
-		// Name
-		"Darwinia2",
-		// ID
-		"darwinia",
-		ChainType::Live,
-		move || {
-			darwinia_runtime::GenesisConfig {
-				// System stuff.
-				system: darwinia_runtime::SystemConfig {
-					code: darwinia_runtime::WASM_BINARY
-						.expect("WASM binary was not build, please build it!")
-						.to_vec(),
-				},
-				parachain_system: Default::default(),
-				parachain_info: darwinia_runtime::ParachainInfoConfig { parachain_id: 2046.into() },
-
-				// Monetary stuff.
-				balances: Default::default(),
-				transaction_payment: Default::default(),
-				assets: Default::default(),
-
-				// Consensus stuff.
-				staking: darwinia_runtime::StakingConfig {
-					collator_count: 3,
-					collators: Vec::new(),
-				},
-				session: darwinia_runtime::SessionConfig {
-					keys: vec![(
-						array_bytes::hex_n_into_unchecked(ALITH),
-						array_bytes::hex_n_into_unchecked(ALITH),
-						session_keys(get_collator_keys_from_seed("Alice")),
-					)],
-				},
-				// no need to pass anything to aura, in fact it will panic if we do. Session will
-				// take care of this.
-				aura: Default::default(),
-				aura_ext: Default::default(),
-
-				// Governance stuff.
-				democracy: Default::default(),
-				council: Default::default(),
-				technical_committee: Default::default(),
-				phragmen_election: Default::default(),
-				technical_membership: Default::default(),
-				treasury: Default::default(),
-
-				// Utility stuff.
-				sudo: Default::default(),
-				vesting: Default::default(),
-
-				// XCM stuff.
-				polkadot_xcm: darwinia_runtime::PolkadotXcmConfig {
-					safe_xcm_version: Some(SAFE_XCM_VERSION),
-				},
-
-				// EVM stuff.
-				ethereum: Default::default(),
-				evm: Default::default(),
-				base_fee: Default::default(),
-
-				// S2S stuff
-				bridge_crab_grandpa: Default::default(),
-				bridge_crab_messages: Default::default(),
-				crab_fee_market: Default::default(),
-			}
-		},
-		// Bootnodes
-		Vec::new(),
-		// Telemetry
-		None,
-		// Protocol ID
-		Some("darwinia"),
-		// Fork ID
-		None,
-		// Properties
-		Some(properties),
-		// Extensions
-		Extensions {
-			relay_chain: "polkadot".into(), // You MUST set this to the correct network!
-			para_id: 2046,
-		},
-	)
-}
-
 fn testnet_genesis(
-	invulnerables: Vec<(AccountId, AuraId)>,
+	collators: Vec<(AccountId, AuraId)>,
 	endowed_accounts: Vec<AccountId>,
 	id: ParaId,
 ) -> darwinia_runtime::GenesisConfig {
@@ -265,11 +114,11 @@ fn testnet_genesis(
 
 		// Consensus stuff.
 		staking: darwinia_runtime::StakingConfig {
-			collator_count: 3,
-			collators: vec![(array_bytes::hex_n_into_unchecked(ALITH), UNIT)],
+			collator_count: collators.len() as _,
+			collators: collators.iter().map(|(a, _)| (a.to_owned(), UNIT)).collect(),
 		},
 		session: darwinia_runtime::SessionConfig {
-			keys: invulnerables
+			keys: collators
 				.into_iter()
 				.map(|(acc, aura)| {
 					(
@@ -280,8 +129,6 @@ fn testnet_genesis(
 				})
 				.collect(),
 		},
-		// no need to pass anything to aura, in fact it will panic if we do. Session will take care
-		// of this.
 		aura: Default::default(),
 		aura_ext: Default::default(),
 
@@ -357,4 +204,95 @@ fn testnet_genesis(
 
 pub fn genesis_config() -> ChainSpec {
 	unimplemented!("TODO")
+}
+
+pub fn config() -> ChainSpec {
+	// Give your base currency a unit name and decimal places
+	let mut properties = sc_chain_spec::Properties::new();
+	properties.insert("tokenSymbol".into(), "RING".into());
+	properties.insert("tokenDecimals".into(), 18.into());
+	properties.insert("ss58Format".into(), 18.into());
+
+	// TODO: update this before final release
+	ChainSpec::from_genesis(
+		// Name
+		"Darwinia2",
+		// ID
+		"darwinia",
+		ChainType::Live,
+		move || {
+			darwinia_runtime::GenesisConfig {
+				// System stuff.
+				system: darwinia_runtime::SystemConfig {
+					code: darwinia_runtime::WASM_BINARY
+						.expect("WASM binary was not build, please build it!")
+						.to_vec(),
+				},
+				parachain_system: Default::default(),
+				parachain_info: darwinia_runtime::ParachainInfoConfig { parachain_id: 2046.into() },
+
+				// Monetary stuff.
+				balances: Default::default(),
+				transaction_payment: Default::default(),
+				assets: Default::default(),
+
+				// Consensus stuff.
+				staking: darwinia_runtime::StakingConfig {
+					collator_count: 3,
+					collators: Vec::new(),
+				},
+				session: darwinia_runtime::SessionConfig {
+					keys: vec![(
+						array_bytes::hex_n_into_unchecked(ALITH),
+						array_bytes::hex_n_into_unchecked(ALITH),
+						session_keys(get_collator_keys_from_seed("Alice")),
+					)],
+				},
+				aura: Default::default(),
+				aura_ext: Default::default(),
+
+				// Governance stuff.
+				democracy: Default::default(),
+				council: Default::default(),
+				technical_committee: Default::default(),
+				phragmen_election: Default::default(),
+				technical_membership: Default::default(),
+				treasury: Default::default(),
+
+				// Utility stuff.
+				sudo: Default::default(),
+				vesting: Default::default(),
+
+				// XCM stuff.
+				polkadot_xcm: darwinia_runtime::PolkadotXcmConfig {
+					safe_xcm_version: Some(SAFE_XCM_VERSION),
+				},
+
+				// EVM stuff.
+				ethereum: Default::default(),
+				evm: Default::default(),
+				base_fee: Default::default(),
+
+				// S2S stuff
+				bridge_crab_grandpa: Default::default(),
+				bridge_crab_messages: Default::default(),
+				crab_fee_market: Default::default(),
+			}
+		},
+		// Bootnodes
+		Vec::new(),
+		// Telemetry
+		None,
+		// Protocol ID
+		Some("darwinia"),
+		// Fork ID
+		None,
+		// Properties
+		Some(properties),
+		// Extensions
+		Extensions {
+			relay_chain: "polkadot".into(), // You MUST set this to the correct network!
+			para_id: 2046,
+		},
+	)
 }

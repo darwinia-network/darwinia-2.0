@@ -304,7 +304,8 @@ pub mod pallet {
 			<CollatorCount<T>>::put(self.collator_count);
 
 			self.collators.iter().cloned().for_each(|(who, stake)| {
-				<Pallet<T>>::stake(RawOrigin::Signed(who).into(), stake, 0, Vec::new()).unwrap();
+				<Pallet<T>>::stake(RawOrigin::Signed(who.clone()).into(), stake, 0, Vec::new()).unwrap();
+				<Pallet<T>>::collect(RawOrigin::Signed(who).into(), Default::default()).unwrap();
 			});
 		}
 	}

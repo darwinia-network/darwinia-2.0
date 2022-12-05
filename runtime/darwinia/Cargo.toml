@@ -125,6 +125,7 @@ frame-try-runtime         = { optional = true, default-features = false, git = "
 
 [features]
 default = ["std"]
+production = []
 std = [
 	# crates.io
 	"codec/std",
