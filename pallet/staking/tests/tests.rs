@@ -21,7 +21,7 @@ use mock::*;
 
 // darwinia
 use darwinia_staking::*;
-use dc_types::UNIT;
+use dc_types::{Balance, UNIT};
 // substrate
 use frame_support::{assert_ok, BoundedVec};
 use sp_runtime::Perbill;
@@ -289,7 +289,7 @@ fn nominate_should_work() {
 		assert_ok!(Staking::stake(RuntimeOrigin::signed(1), UNIT, 0, Vec::new()));
 		assert_ok!(Staking::collect(RuntimeOrigin::signed(1), Default::default()));
 
-		(2..=4).for_each(|n| {
+		(2..=10).for_each(|n| {
 			assert!(Staking::nominator_of(n).is_none());
 			assert_ok!(Staking::stake(RuntimeOrigin::signed(n), UNIT, 0, Vec::new()));
 			assert_ok!(Staking::nominate(RuntimeOrigin::signed(n), 1));
@@ -303,18 +303,18 @@ fn chill_should_work() {
 	new_test_ext().execute_with(|| {
 		assert_ok!(Staking::stake(RuntimeOrigin::signed(1), UNIT, 0, Vec::new()));
 		assert_ok!(Staking::collect(RuntimeOrigin::signed(1), Default::default()));
-		(2..=4).for_each(|n| {
+		(2..=10).for_each(|n| {
 			assert_ok!(Staking::stake(RuntimeOrigin::signed(n), UNIT, 0, Vec::new()));
 			assert_ok!(Staking::nominate(RuntimeOrigin::signed(n), 1));
 		});
 		assert!(Staking::collator_of(1).is_some());
-		(2..=4).for_each(|n| assert!(Staking::nominator_of(n).is_some()));
+		(2..=10).for_each(|n| assert!(Staking::nominator_of(n).is_some()));
 
-		(1..=4).for_each(|i| {
+		(1..=10).for_each(|i| {
 			assert_ok!(Staking::chill(RuntimeOrigin::signed(i)));
 		});
 		assert!(Staking::collator_of(1).is_none());
-		(2..=4).for_each(|n| assert!(Staking::nominator_of(n).is_none()));
+		(2..=10).for_each(|n| assert!(Staking::nominator_of(n).is_none()));
 	});
 }
 
@@ -382,7 +382,50 @@ fn power_should_work() {
 
 #[test]
 fn elect_should_work() {
-	new_test_ext().execute_with(|| {});
+	new_test_ext().execute_with(|| {
+		(1..=5).for_each(|i| {
+			assert_ok!(Staking::stake(
+				RuntimeOrigin::signed(i),
+				i as Balance * 100 * UNIT,
+				UNIT,
+				Vec::new()
+			));
+			assert_ok!(Staking::collect(RuntimeOrigin::signed(i), Default::default()));
+		});
+		(6..=10).for_each(|i| {
+			assert_ok!(Staking::stake(
+				RuntimeOrigin::signed(i),
+				0,
+				(11 - i as Balance) * UNIT,
+				Vec::new()
+			));
+			assert_ok!(Staking::nominate(RuntimeOrigin::signed(i), i - 5));
+		});
+
+		assert_eq!(Staking::elect(), vec![1, 2, 3]);
+	});
+	new_test_ext().execute_with(|| {
+		(1..=5).for_each(|i| {
+			assert_ok!(Staking::stake(
+				RuntimeOrigin::signed(i),
+				i as Balance * 100 * UNIT,
+				0,
+				Vec::new()
+			));
+			assert_ok!(Staking::collect(RuntimeOrigin::signed(i), Default::default()));
+		});
+		(6..=10).for_each(|i| {
+			assert_ok!(Staking::stake(
+				RuntimeOrigin::signed(i),
+				UNIT,
+				(11 - i as Balance) * UNIT,
+				Vec::new()
+			));
+			assert_ok!(Staking::nominate(RuntimeOrigin::signed(i), i - 5));
+		});
+
+		assert_eq!(Staking::elect(), vec![5, 4, 3]);
+	});
 }
 
 #[test]

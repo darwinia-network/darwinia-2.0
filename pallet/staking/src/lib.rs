@@ -224,6 +224,8 @@ pub mod pallet {
 		ExceedMaxUnstakings,
 		/// You are not a staker.
 		NotStaker,
+		/// Target is not a collator.
+		TargetNotCollator,
 	}
 
 	/// All staking ledgers.
@@ -286,11 +288,14 @@ pub mod pallet {
 	#[derive(Default)]
 	#[pallet::genesis_config]
 	pub struct GenesisConfig {
-		// TODO
+		/// Genesis collator count.
+		pub collator_count: u32,
 	}
 	#[pallet::genesis_build]
 	impl<T: Config> GenesisBuild<T> for GenesisConfig {
-		fn build(&self) {}
+		fn build(&self) {
+			<CollatorCount<T>>::put(self.collator_count);
+		}
 	}
 
 	#[pallet::pallet]
@@ -419,6 +424,11 @@ pub mod pallet {
 			let who = ensure_signed(origin)?;
 
 			Self::ensure_staker(&who)?;
+
+			if !<Collators<T>>::contains_key(&target) {
+				Err(<Error<T>>::TargetNotCollator)?;
+			}
+
 			<Nominators<T>>::mutate(&who, |n| *n = Some(target));
 
 			// TODO: event?
