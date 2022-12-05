@@ -23,7 +23,7 @@ use mock::*;
 use darwinia_staking::*;
 use dc_types::UNIT;
 // substrate
-use frame_support::{assert_ok, BoundedVec};
+use frame_support::{assert_ok, traits::Get, BoundedVec};
 
 #[test]
 fn stake_should_work() {
@@ -171,6 +171,27 @@ fn unstake_should_work() {
 				unstaking_kton: BoundedVec::truncate_from(vec![(UNIT, 5), (UNIT, 6), (UNIT, 7)])
 			}
 		);
+	});
+}
+
+#[test]
+fn clean_ledger_should_work() {
+	new_test_ext().execute_with(|| {
+		assert!(Staking::ledger_of(1).is_none());
+		assert_ok!(Deposit::lock(RuntimeOrigin::signed(1), UNIT, 1));
+		assert_ok!(Staking::stake(RuntimeOrigin::signed(1), 0, 0, vec![0]));
+		assert!(Staking::ledger_of(1).is_some());
+
+		assert_ok!(Staking::unstake(RuntimeOrigin::signed(1), 0, 0, vec![0]));
+		assert!(Staking::ledger_of(1).is_none());
+
+		assert_ok!(Staking::stake(RuntimeOrigin::signed(1), UNIT, 0, Vec::new()));
+		assert_ok!(Staking::unstake(RuntimeOrigin::signed(1), UNIT, 0, Vec::new()));
+		assert!(Staking::ledger_of(1).is_some());
+
+		Efflux::block(<Runtime as Config>::MinStakingDuration::get());
+		assert_ok!(Staking::claim(RuntimeOrigin::signed(1)));
+		assert!(Staking::ledger_of(1).is_none());
 	});
 }
 
