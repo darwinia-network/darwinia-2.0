@@ -28,6 +28,9 @@ sp-runtime        = { default-features = false, git = "https://github.com/parity
 sp-std            = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
 
 [dev-dependencies]
+# crates.io
+pretty_env_logger = { version = "0.4" }
+
 # darwinia
 darwinia-deposit = { path = "../deposit" }
 

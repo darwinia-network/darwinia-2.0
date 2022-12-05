@@ -19,16 +19,18 @@
 mod mock;
 use mock::*;
 
+// core
+use core::time::Duration;
 // darwinia
 use darwinia_staking::*;
 use dc_types::{Balance, UNIT};
 // substrate
 use frame_support::{assert_ok, BoundedVec};
-use sp_runtime::Perbill;
+use sp_runtime::{assert_eq_error_rate, Perbill};
 
 #[test]
 fn stake_should_work() {
-	new_test_ext().execute_with(|| {
+	ExtBuilder::default().build().execute_with(|| {
 		assert_eq!(System::account(1).consumers, 0);
 		assert!(Staking::ledger_of(1).is_none());
 		assert_eq!(Balances::free_balance(1), 1_000 * UNIT);
@@ -89,7 +91,7 @@ fn stake_should_work() {
 
 #[test]
 fn unstake_should_work() {
-	new_test_ext().execute_with(|| {
+	ExtBuilder::default().build().execute_with(|| {
 		assert_ok!(Deposit::lock(RuntimeOrigin::signed(1), UNIT, 1));
 		assert_ok!(Deposit::lock(RuntimeOrigin::signed(1), UNIT, 1));
 		assert_ok!(Deposit::lock(RuntimeOrigin::signed(1), UNIT, 1));
@@ -177,7 +179,7 @@ fn unstake_should_work() {
 
 #[test]
 fn claim_should_work() {
-	new_test_ext().execute_with(|| {
+	ExtBuilder::default().build().execute_with(|| {
 		assert_ok!(Deposit::lock(RuntimeOrigin::signed(1), UNIT, 1));
 		assert_ok!(Deposit::lock(RuntimeOrigin::signed(1), UNIT, 1));
 		assert_ok!(Deposit::lock(RuntimeOrigin::signed(1), UNIT, 1));
@@ -270,7 +272,7 @@ fn claim_should_work() {
 
 #[test]
 fn collect_should_work() {
-	new_test_ext().execute_with(|| {
+	ExtBuilder::default().build().execute_with(|| {
 		assert!(Staking::collator_of(1).is_none());
 		assert_ok!(Staking::stake(RuntimeOrigin::signed(1), UNIT, 0, Vec::new()));
 
@@ -285,7 +287,7 @@ fn collect_should_work() {
 
 #[test]
 fn nominate_should_work() {
-	new_test_ext().execute_with(|| {
+	ExtBuilder::default().build().execute_with(|| {
 		assert_ok!(Staking::stake(RuntimeOrigin::signed(1), UNIT, 0, Vec::new()));
 		assert_ok!(Staking::collect(RuntimeOrigin::signed(1), Default::default()));
 
@@ -300,7 +302,7 @@ fn nominate_should_work() {
 
 #[test]
 fn chill_should_work() {
-	new_test_ext().execute_with(|| {
+	ExtBuilder::default().build().execute_with(|| {
 		assert_ok!(Staking::stake(RuntimeOrigin::signed(1), UNIT, 0, Vec::new()));
 		assert_ok!(Staking::collect(RuntimeOrigin::signed(1), Default::default()));
 		(2..=10).for_each(|n| {
@@ -320,7 +322,7 @@ fn chill_should_work() {
 
 #[test]
 fn power_should_work() {
-	new_test_ext().execute_with(|| {
+	ExtBuilder::default().build().execute_with(|| {
 		assert_eq!(Staking::power_of(&1), 0);
 		assert_eq!(Staking::power_of(&2), 0);
 		assert_eq!(Staking::power_of(&3), 0);
@@ -382,11 +384,11 @@ fn power_should_work() {
 
 #[test]
 fn elect_should_work() {
-	new_test_ext().execute_with(|| {
+	ExtBuilder::default().collator_count(3).build().execute_with(|| {
 		(1..=5).for_each(|i| {
 			assert_ok!(Staking::stake(
 				RuntimeOrigin::signed(i),
-				i as Balance * 100 * UNIT,
+				i as Balance * UNIT,
 				UNIT,
 				Vec::new()
 			));
@@ -404,11 +406,11 @@ fn elect_should_work() {
 
 		assert_eq!(Staking::elect(), vec![1, 2, 3]);
 	});
-	new_test_ext().execute_with(|| {
+	ExtBuilder::default().collator_count(3).build().execute_with(|| {
 		(1..=5).for_each(|i| {
 			assert_ok!(Staking::stake(
 				RuntimeOrigin::signed(i),
-				i as Balance * 100 * UNIT,
+				i as Balance * UNIT,
 				0,
 				Vec::new()
 			));
@@ -430,5 +432,57 @@ fn elect_should_work() {
 
 #[test]
 fn payout_should_work() {
-	new_test_ext().execute_with(|| {});
+	ExtBuilder::default().collator_count(5).build().execute_with(|| {
+		(1..=5).for_each(|i| {
+			assert_ok!(Staking::stake(
+				RuntimeOrigin::signed(i),
+				0,
+				i as Balance * UNIT,
+				Vec::new()
+			));
+			assert_ok!(Staking::collect(RuntimeOrigin::signed(i), Perbill::from_percent(i * 10)));
+		});
+		(6..=10).for_each(|i| {
+			assert_ok!(Staking::stake(
+				RuntimeOrigin::signed(i),
+				0,
+				(11 - i as Balance) * UNIT,
+				Vec::new()
+			));
+			assert_ok!(Staking::nominate(RuntimeOrigin::signed(i), i - 5));
+		});
+		Staking::elect();
+		Staking::reward_by_ids(&[(1, 20), (2, 20), (3, 20), (4, 20), (5, 20)]);
+		(1..=10).for_each(|i| assert_eq!(Balances::free_balance(i), 1_000 * UNIT));
+
+		let session_duration = Duration::new(6 * 60 * 60, 0).as_millis();
+		Staking::payout(session_duration);
+		let rewards = [
+			683_059_435_062_369_982_561_u128,
+			1_275_044_256_196_592_252_422,
+			1_775_954_509_850_707_836_449,
+			2_185_790_171_434_577_367_478,
+			2_504_551_227_287_012_308_196,
+			2_049_178_272_400_257_458_130,
+			1_457_193_451_266_035_188_269,
+			956_283_197_611_919_604_242,
+			546_447_536_028_050_073_213,
+			227_686_480_175_615_132_495,
+		];
+		(1..=10)
+			.zip(rewards.iter())
+			.for_each(|(i, r)| assert_eq!(Balances::free_balance(i), 1_000 * UNIT + r));
+		assert_eq_error_rate!(
+			<Runtime as darwinia_staking::Config>::PayoutFraction::get()
+				* dc_inflation::in_period(
+					dc_inflation::TOTAL_SUPPLY - Balances::total_issuance(),
+					session_duration,
+					0
+				)
+				.unwrap(),
+			rewards.iter().sum::<Balance>(),
+			// Error rate 0.02 RING
+			2 * UNIT / 100
+		);
+	});
 }

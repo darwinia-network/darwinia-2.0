@@ -264,33 +264,47 @@ fn initialize_block(number: u64) {
 	<AllPalletsWithSystem as frame_support::traits::OnInitialize<u64>>::on_initialize(number);
 }
 
-pub fn new_test_ext() -> sp_io::TestExternalities {
-	// substrate
-	use frame_support::traits::GenesisBuild;
+#[derive(Default)]
+pub struct ExtBuilder {
+	collator_count: u32,
+}
+impl ExtBuilder {
+	pub fn collator_count(mut self, collator_count: u32) -> Self {
+		self.collator_count = collator_count;
 
-	let mut storage = frame_system::GenesisConfig::default().build_storage::<Runtime>().unwrap();
-
-	pallet_balances::GenesisConfig::<Runtime> {
-		balances: (1..=10).map(|i| (i, (i as Balance) * 1_000 * UNIT)).collect(),
+		self
 	}
-	.assimilate_storage(&mut storage)
-	.unwrap();
-	pallet_assets::GenesisConfig::<Runtime> {
-		assets: vec![(0, 0, true, 1)],
-		metadata: vec![(0, b"KTON".to_vec(), b"KTON".to_vec(), 18)],
-		accounts: (1..=10).map(|i| (0, i, (i as Balance) * 1_000 * UNIT)).collect(),
+
+	pub fn build(self) -> sp_io::TestExternalities {
+		// substrate
+		use frame_support::traits::GenesisBuild;
+
+		let _ = pretty_env_logger::try_init();
+		let mut storage =
+			frame_system::GenesisConfig::default().build_storage::<Runtime>().unwrap();
+
+		pallet_balances::GenesisConfig::<Runtime> {
+			balances: (1..=10).map(|i| (i, 1_000 * UNIT)).collect(),
+		}
+		.assimilate_storage(&mut storage)
+		.unwrap();
+		pallet_assets::GenesisConfig::<Runtime> {
+			assets: vec![(0, 0, true, 1)],
+			metadata: vec![(0, b"KTON".to_vec(), b"KTON".to_vec(), 18)],
+			accounts: (1..=10).map(|i| (0, i, 1_000 * UNIT)).collect(),
+		}
+		.assimilate_storage(&mut storage)
+		.unwrap();
+		<darwinia_staking::GenesisConfig as GenesisBuild<Runtime>>::assimilate_storage(
+			&darwinia_staking::GenesisConfig { collator_count: self.collator_count },
+			&mut storage,
+		)
+		.unwrap();
+
+		let mut ext = sp_io::TestExternalities::from(storage);
+
+		ext.execute_with(|| initialize_block(1));
+
+		ext
 	}
-	.assimilate_storage(&mut storage)
-	.unwrap();
-	<darwinia_staking::GenesisConfig as GenesisBuild<Runtime>>::assimilate_storage(
-		&darwinia_staking::GenesisConfig { collator_count: 3 },
-		&mut storage,
-	)
-	.unwrap();
-
-	let mut ext = sp_io::TestExternalities::from(storage);
-
-	ext.execute_with(|| initialize_block(1));
-
-	ext
 }
