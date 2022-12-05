@@ -403,6 +403,7 @@ pub mod pallet {
 		pub fn collect(origin: OriginFor<T>, commission: Perbill) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
+			Self::ensure_staker(&who)?;
 			<Collators<T>>::mutate(&who, |c| *c = Some(commission));
 
 			// TODO: event?
@@ -417,6 +418,7 @@ pub mod pallet {
 		pub fn nominate(origin: OriginFor<T>, target: T::AccountId) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
+			Self::ensure_staker(&who)?;
 			<Nominators<T>>::mutate(&who, |n| *n = Some(target));
 
 			// TODO: event?
@@ -625,6 +627,14 @@ pub mod pallet {
 					Err(())
 				}
 			});
+		}
+
+		fn ensure_staker(who: &T::AccountId) -> DispatchResult {
+			if <Ledgers<T>>::contains_key(who) {
+				Ok(())
+			} else {
+				Err(<Error<T>>::NotStaker)?
+			}
 		}
 
 		/// Add reward points to collators using their account id.

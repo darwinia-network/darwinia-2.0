@@ -272,26 +272,50 @@ fn claim_should_work() {
 fn collect_should_work() {
 	new_test_ext().execute_with(|| {
 		assert!(Staking::collator_of(1).is_none());
+		assert_ok!(Staking::stake(RuntimeOrigin::signed(1), UNIT, 0, Vec::new()));
 
-		assert_ok!(Staking::collect(RuntimeOrigin::signed(1), Perbill::from_percent(1)));
-		assert_eq!(Staking::collator_of(1).unwrap(), Perbill::from_percent(1));
+		(0..=100).for_each(|c| {
+			let c = Perbill::from_percent(c);
 
-		assert_ok!(Staking::collect(RuntimeOrigin::signed(1), Perbill::from_percent(50)));
-		assert_eq!(Staking::collator_of(1).unwrap(), Perbill::from_percent(50));
-
-		assert_ok!(Staking::collect(RuntimeOrigin::signed(1), Perbill::from_percent(100)));
-		assert_eq!(Staking::collator_of(1).unwrap(), Perbill::from_percent(100));
+			assert_ok!(Staking::collect(RuntimeOrigin::signed(1), c));
+			assert_eq!(Staking::collator_of(1).unwrap(), c);
+		});
 	});
 }
 
 #[test]
 fn nominate_should_work() {
-	new_test_ext().execute_with(|| {});
+	new_test_ext().execute_with(|| {
+		assert_ok!(Staking::stake(RuntimeOrigin::signed(1), UNIT, 0, Vec::new()));
+		assert_ok!(Staking::collect(RuntimeOrigin::signed(1), Default::default()));
+
+		(2..=4).for_each(|n| {
+			assert!(Staking::nominator_of(n).is_none());
+			assert_ok!(Staking::stake(RuntimeOrigin::signed(n), UNIT, 0, Vec::new()));
+			assert_ok!(Staking::nominate(RuntimeOrigin::signed(n), 1));
+			assert_eq!(Staking::nominator_of(n).unwrap(), 1);
+		});
+	});
 }
 
 #[test]
 fn chill_should_work() {
-	new_test_ext().execute_with(|| {});
+	new_test_ext().execute_with(|| {
+		assert_ok!(Staking::stake(RuntimeOrigin::signed(1), UNIT, 0, Vec::new()));
+		assert_ok!(Staking::collect(RuntimeOrigin::signed(1), Default::default()));
+		(2..=4).for_each(|n| {
+			assert_ok!(Staking::stake(RuntimeOrigin::signed(n), UNIT, 0, Vec::new()));
+			assert_ok!(Staking::nominate(RuntimeOrigin::signed(n), 1));
+		});
+		assert!(Staking::collator_of(1).is_some());
+		(2..=4).for_each(|n| assert!(Staking::nominator_of(n).is_some()));
+
+		(1..=4).for_each(|i| {
+			assert_ok!(Staking::chill(RuntimeOrigin::signed(i)));
+		});
+		assert!(Staking::collator_of(1).is_none());
+		(2..=4).for_each(|n| assert!(Staking::nominator_of(n).is_none()));
+	});
 }
 
 #[test]
