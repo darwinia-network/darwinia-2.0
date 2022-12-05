@@ -124,7 +124,7 @@ pub mod pallet {
 					new_pub_key,
 				);
 				if let Ok(signer) = Public::from_slice(old_pub_key.as_ref()) {
-					let is_valid = sig.verify(&message.hash_raw_bytes()[..], &signer);
+					let is_valid = sig.verify(&blake2_256(&message.raw_bytes())[..], &signer);
 
 					if is_valid {
 						return ValidTransaction::with_tag_prefix("MigrateClaim")
@@ -157,12 +157,11 @@ impl<'m> ClaimMessage<'m> {
 		Self { chain_id, old_pub_key, new_pub_key }
 	}
 
-	fn hash_raw_bytes(&self) -> [u8; 32] {
+	fn raw_bytes(&self) -> Vec<u8> {
 		let mut result = Vec::new();
 		result.extend_from_slice(&self.chain_id.to_be_bytes());
 		result.extend_from_slice(self.old_pub_key.as_slice());
 		result.extend_from_slice(&self.new_pub_key.as_bytes());
-
-		blake2_256(&result[..])
+		result
 	}
 }
