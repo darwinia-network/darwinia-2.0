@@ -19,7 +19,11 @@
 #![allow(clippy::derive_partial_eq_without_eq)]
 
 // std
-use std::{collections::BTreeMap, str::FromStr};
+use std::{
+	collections::BTreeMap,
+	str::FromStr,
+	time::{SystemTime, UNIX_EPOCH},
+};
 // cumulus
 use cumulus_primitives_core::ParaId;
 // darwinia
@@ -69,6 +73,11 @@ pub fn development_config() -> ChainSpec {
 						array_bytes::hex_n_into_unchecked(BALTATHAR),
 						get_collator_keys_from_seed("Bob"),
 					),
+					// Bind the `Charlie` to `CHARLETH` to make `--charlie` available for testnet.
+					(
+						array_bytes::hex_n_into_unchecked(CHARLETH),
+						get_collator_keys_from_seed("Charlie"),
+					),
 				],
 				vec![
 					array_bytes::hex_n_into_unchecked(ALITH),
@@ -114,6 +123,8 @@ fn testnet_genesis(
 
 		// Consensus stuff.
 		staking: darwinia_runtime::StakingConfig {
+			now: SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis(),
+			elapsed_time: 0,
 			collator_count: collators.len() as _,
 			collators: collators.iter().map(|(a, _)| (a.to_owned(), UNIT)).collect(),
 		},
@@ -238,6 +249,8 @@ pub fn config() -> ChainSpec {
 
 				// Consensus stuff.
 				staking: darwinia_runtime::StakingConfig {
+					now: SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis(),
+					elapsed_time: 0,
 					collator_count: 3,
 					collators: Vec::new(),
 				},

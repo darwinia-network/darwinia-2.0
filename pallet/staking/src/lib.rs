@@ -306,6 +306,10 @@ pub mod pallet {
 
 	#[pallet::genesis_config]
 	pub struct GenesisConfig<T: Config> {
+		/// Current timestamp.
+		pub now: Moment,
+		/// The running time of Darwinia1.
+		pub elapsed_time: Moment,
 		/// Genesis collator count.
 		pub collator_count: u32,
 		/// Genesis collator preferences.
@@ -314,12 +318,14 @@ pub mod pallet {
 	#[cfg(feature = "std")]
 	impl<T: Config> Default for GenesisConfig<T> {
 		fn default() -> Self {
-			GenesisConfig { collator_count: 0, collators: Vec::new() }
+			GenesisConfig { now: 0, elapsed_time: 0, collator_count: 0, collators: Vec::new() }
 		}
 	}
 	#[pallet::genesis_build]
 	impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
 		fn build(&self) {
+			<SessionStartedTime<T>>::put(self.now);
+			<ElapsedTime<T>>::put(self.elapsed_time);
 			<CollatorCount<T>>::put(self.collator_count);
 
 			self.collators.iter().cloned().for_each(|(who, stake)| {
@@ -729,23 +735,22 @@ pub mod pallet {
 
 		// TODO: weight
 		/// Pay the session reward to the stakers.
-		pub fn payout(session_duration: Moment) {
+		pub fn payout(session_duration: Moment, elapsed_time: Moment) {
 			let unminted = TOTAL_SUPPLY - T::RingCurrency::total_issuance();
-			let elapsed = <ElapsedTime<T>>::get();
 
 			log::info!(
 				"\
 					[pallet::staking] making a payout for: \
 					`unminted = {unminted}`, \
 					`session_duration = {session_duration}`, \
-					`elapsed = {elapsed}`\
+					`elapsed_time = {elapsed_time}`\
 				"
 			);
 
 			let Some(inflation) = dc_inflation::in_period(
 				unminted,
 				session_duration,
-				elapsed,
+				elapsed_time,
 			) else {
 				return;
 			};
@@ -886,17 +891,22 @@ where
 		Some(collators)
 	}
 
-	fn start_session(_: u32) {
+	fn start_session(_: u32) {}
+
+	fn end_session(_: u32) {
 		let now = T::UnixTime::now().as_millis();
 		let session_duration = now - <SessionStartedTime<T>>::get();
+		let elapsed_time = <ElapsedTime<T>>::mutate(|t| {
+			*t += session_duration;
 
-		<ElapsedTime<T>>::mutate(|t| *t += session_duration);
+			*t
+		});
 
-		Self::payout(session_duration);
+		<SessionStartedTime<T>>::put(now);
+
+		Self::payout(session_duration, elapsed_time);
 		Self::clean_old_session();
 	}
-
-	fn end_session(_: u32) {}
 }
 
 /// The account of the staking pot.

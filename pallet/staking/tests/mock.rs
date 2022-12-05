@@ -297,7 +297,7 @@ impl ExtBuilder {
 		.unwrap();
 		darwinia_staking::GenesisConfig::<Runtime> {
 			collator_count: self.collator_count,
-			collators: Vec::new(),
+			..Default::default()
 		}
 		.assimilate_storage(&mut storage)
 		.unwrap();

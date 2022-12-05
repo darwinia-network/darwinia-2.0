@@ -456,7 +456,7 @@ fn payout_should_work() {
 		(1..=10).for_each(|i| assert_eq!(Balances::free_balance(i), 1_000 * UNIT));
 
 		let session_duration = Duration::new(6 * 60 * 60, 0).as_millis();
-		Staking::payout(session_duration);
+		Staking::payout(session_duration, Staking::elapsed_time());
 		let rewards = [
 			683_059_435_062_369_982_561_u128,
 			1_275_044_256_196_592_252_422,
