@@ -228,15 +228,23 @@ frame_support::construct_runtime!(
 	}
 );
 
-pub fn time_efflux(milli_secs: Moment) {
-	Timestamp::set_timestamp(Timestamp::now() + milli_secs);
+pub enum Efflux {}
+impl Efflux {
+	pub fn time(milli_secs: Moment) {
+		Timestamp::set_timestamp(Timestamp::now() + milli_secs);
+	}
+
+	pub fn block(number: u64) {
+		for number in 0..=number {
+			initialize_block(System::block_number() + number)
+		}
+	}
 }
 
-pub fn block_efflux(block_number: u64) {
-	for i in System::block_number() + 1..=block_number {
-		System::set_block_number(i);
-		<AllPalletsWithSystem as frame_support::traits::OnInitialize<u64>>::on_initialize(i);
-	}
+fn initialize_block(number: u64) {
+	System::set_block_number(number);
+	Efflux::time(1);
+	<AllPalletsWithSystem as frame_support::traits::OnInitialize<u64>>::on_initialize(number);
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
@@ -260,10 +268,7 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 
 	let mut ext = sp_io::TestExternalities::from(storage);
 
-	ext.execute_with(|| {
-		System::set_block_number(1);
-		block_efflux(1);
-	});
+	ext.execute_with(|| initialize_block(1));
 
 	ext
 }

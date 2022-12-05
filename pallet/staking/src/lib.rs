@@ -132,6 +132,18 @@ where
 	/// The KTON in unstaking process.
 	pub unstaking_kton: BoundedVec<(Balance, T::BlockNumber), T::MaxUnstakings>,
 }
+impl<T> Ledger<T>
+where
+	T: Config,
+{
+	fn is_empty(&self) -> bool {
+		self.staked_ring == 0
+			&& self.staked_kton == 0
+			&& self.staked_deposits.is_empty()
+			&& self.unstaking_ring.is_empty()
+			&& self.unstaking_kton.is_empty()
+	}
+}
 
 /// A snapshot of the stake backing a single collator in the system.
 #[derive(Encode, Decode, MaxEncodedLen, TypeInfo, RuntimeDebug)]
@@ -339,6 +351,8 @@ pub mod pallet {
 				Self::unstake_deposit(&who, d)?;
 			}
 
+			Self::try_clean_ledger_of(&who);
+
 			// TODO: event?
 
 			Ok(())
@@ -351,6 +365,7 @@ pub mod pallet {
 
 			// Deposit doesn't need to be claimed.
 			Self::claim_unstakings(&who)?;
+			Self::try_clean_ledger_of(&who);
 
 			// TODO: event?
 
@@ -631,6 +646,20 @@ pub mod pallet {
 			Self::update_pool::<RingPool<T>>(false, T::Deposit::amount(who, deposit))?;
 
 			Ok(())
+		}
+
+		fn try_clean_ledger_of(who: &T::AccountId) {
+			let _ = <Ledgers<T>>::try_mutate(who, |maybe_l| {
+				let Some(l) = maybe_l else { return Err(()); };
+
+				if l.is_empty() {
+					*maybe_l = None;
+
+					Ok(())
+				} else {
+					Err(())
+				}
+			});
 		}
 
 		/// Add reward points to collators using their account id.
