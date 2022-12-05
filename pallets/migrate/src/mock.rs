@@ -17,12 +17,14 @@
 // along with Darwinia. If not, see <https://www.gnu.org/licenses/>.
 
 //! Test utilities
-//!
-//! // crates.io
+
+// crates.io
 use codec::{Decode, Encode, MaxEncodedLen};
 // frontier
 use pallet_evm::IdentityAddressMapping;
 // parity
+#[cfg(feature = "std")]
+use frame_support::traits::GenesisBuild;
 use frame_support::{
 	pallet_prelude::Weight,
 	traits::{ConstU32, Everything},
@@ -32,6 +34,7 @@ use sp_core::{H160, H256, U256};
 use sp_runtime::{
 	testing::Header,
 	traits::{BlakeTwo256, IdentityLookup},
+	AccountId32, BuildStorage,
 };
 use sp_std::{marker::PhantomData, prelude::*};
 // darwinia
@@ -139,6 +142,33 @@ frame_support::construct_runtime! {
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage},
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
 		EVM: pallet_evm::{Pallet, Call, Storage, Config, Event<T>},
-		Migrate: darwinia_migrate::{Pallet, Call, Storage, Event},
+		Migrate: darwinia_migrate::{Pallet, Call, Storage, Config, Event},
+	}
+}
+
+#[derive(Default)]
+pub(crate) struct ExtBuilder {
+	migrated_accounts: Vec<(AccountId32, Balance)>,
+}
+
+impl ExtBuilder {
+	pub(crate) fn with_migrated_accounts(mut self, accounts: Vec<(AccountId32, Balance)>) -> Self {
+		self.migrated_accounts = accounts;
+		self
+	}
+
+	pub(crate) fn build(self) -> sp_io::TestExternalities {
+		let t = GenesisConfig {
+			system: Default::default(),
+			balances: Default::default(),
+			evm: Default::default(),
+			migrate: darwinia_migrate::GenesisConfig { migrated_accounts: self.migrated_accounts },
+		}
+		.build_storage()
+		.unwrap();
+
+		let mut ext = sp_io::TestExternalities::new(t);
+		ext.execute_with(|| System::set_block_number(1));
+		ext
 	}
 }

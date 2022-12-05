@@ -33,6 +33,8 @@ type BalanceOf<T> =
 use dc_primitives::Balance;
 // substrate
 use frame_support::traits::Currency;
+#[cfg(feature = "std")]
+use frame_support::traits::GenesisBuild;
 use sp_core::{
 	blake2_256,
 	sr25519::{Public, Signature},
@@ -73,6 +75,21 @@ pub mod pallet {
 	pub enum Event {
 		/// Claim to the new account id.
 		Claim { old_pub_key: AccountId32, new_pub_key: H160, amount: Balance },
+	}
+
+	#[pallet::genesis_config]
+	#[cfg_attr(feature = "std", derive(Default))]
+	pub struct GenesisConfig {
+		pub migrated_accounts: Vec<(AccountId32, Balance)>,
+	}
+
+	#[pallet::genesis_build]
+	impl<T: Config> GenesisBuild<T> for GenesisConfig {
+		fn build(&self) {
+			self.migrated_accounts.iter().for_each(|(account, amount)| {
+				Balances::<T>::insert(account, amount);
+			});
+		}
 	}
 
 	#[pallet::call]
