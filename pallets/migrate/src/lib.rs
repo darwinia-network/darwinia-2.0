@@ -23,13 +23,21 @@ mod mock;
 #[cfg(test)]
 mod test;
 
+/// Type alias for currency AccountId.
 type AccountIdOf<R> = <R as frame_system::pallet::Config>::AccountId;
-pub type BalanceOf<T> =
+/// Type alias for currency balance.
+type BalanceOf<T> =
 	<<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
 
+// darwinia
+use dc_primitives::Balance;
 // substrate
 use frame_support::traits::Currency;
-use sp_core::{blake2_256, sr25519, ByteArray, Pair, H160};
+use sp_core::{
+	blake2_256,
+	sr25519::{Public, Signature},
+	ByteArray, H160,
+};
 use sp_runtime::{traits::Verify, AccountId32};
 
 pub use pallet::*;
@@ -38,7 +46,6 @@ pub mod pallet {
 	use super::*;
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
-	use sp_core::sr25519::Signature;
 
 	#[pallet::pallet]
 	pub struct Pallet<T>(PhantomData<T>);
@@ -47,53 +54,52 @@ pub mod pallet {
 	pub trait Config: frame_system::Config + pallet_evm::Config {
 		/// The overarching event type.
 		type RuntimeEvent: From<Event> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
+		/// Currency type for the runtime.
 		type Currency: Currency<Self::AccountId>;
 	}
 
-	// Storage the migrated balance map from darwinia-1.0 chain
-	// TODO: check if u128 if enough?
+	// Store the migrated balance snapshot for the darwinia-1.0 chain state.
 	#[pallet::storage]
-	pub(super) type Balances<T> = StorageMap<_, Blake2_128Concat, AccountId32, u128>;
+	pub(super) type Balances<T> = StorageMap<_, Blake2_128Concat, AccountId32, Balance>;
 
 	#[pallet::error]
 	pub enum Error<T> {
-		InvalidSignature,
+		/// This account does not exist in the darwinia 1.0 chain state.
 		AccountNotExist,
 	}
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event {
-		Claim { old_account_id_pub_key: AccountId32, new_account_id: H160, amount: u128 },
+		/// Claim to the new account id.
+		Claim { old_pub_key: AccountId32, new_pub_key: H160, amount: Balance },
 	}
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T>
 	where
 		AccountIdOf<T>: From<H160>,
-		BalanceOf<T>: From<u128>,
+		BalanceOf<T>: From<Balance>,
 	{
-		// Unsigned transaction
+		// TODO: update the weight
 		#[pallet::weight(0)]
 		pub fn claim_to(
 			origin: OriginFor<T>,
-			old_account_id_pub_key: AccountId32,
-			new_account_id: H160,
+			old_pub_key: AccountId32,
+			new_pub_key: H160,
+			// since signature verification is done in `validate_unsigned`
+			// we can skip doing it here again.
 			_sig: Signature,
 		) -> DispatchResult {
 			ensure_none(origin)?;
 
-			if let Some(amount) = Balances::<T>::take(&old_account_id_pub_key) {
+			if let Some(amount) = Balances::<T>::take(&old_pub_key) {
 				<T as pallet::Config>::Currency::deposit_into_existing(
-					&new_account_id.into(),
+					&new_pub_key.into(),
 					amount.into(),
 				)?;
 
-				Self::deposit_event(Event::Claim {
-					old_account_id_pub_key,
-					new_account_id,
-					amount,
-				});
+				Self::deposit_event(Event::Claim { old_pub_key, new_pub_key, amount });
 			}
 			Err(Error::<T>::AccountNotExist.into())
 		}
@@ -102,19 +108,23 @@ pub mod pallet {
 	impl<T: Config> ValidateUnsigned for Pallet<T>
 	where
 		AccountIdOf<T>: From<H160>,
-		BalanceOf<T>: From<u128>,
+		BalanceOf<T>: From<Balance>,
 	{
 		type Call = Call<T>;
 
 		fn validate_unsigned(_source: TransactionSource, call: &Self::Call) -> TransactionValidity {
-			if let Call::claim_to { old_account_id_pub_key, new_account_id, sig } = call {
+			if let Call::claim_to { old_pub_key, new_pub_key, sig } = call {
+				if !Balances::<T>::contains_key(&old_pub_key) {
+					return InvalidTransaction::BadSigner.into();
+				}
+
 				let message = ClaimMessage::new(
 					<T as pallet_evm::Config>::ChainId::get(),
-					old_account_id_pub_key,
-					new_account_id,
+					old_pub_key,
+					new_pub_key,
 				);
-				if let Ok(signer) = sr25519::Public::from_slice(old_account_id_pub_key.as_ref()) {
-					let is_valid = sig.verify(&message.raw_bytes()[..], &signer);
+				if let Ok(signer) = Public::from_slice(old_pub_key.as_ref()) {
+					let is_valid = sig.verify(&message.hash_raw_bytes()[..], &signer);
 
 					if is_valid {
 						return ValidTransaction::with_tag_prefix("MigrateClaim")
@@ -132,26 +142,26 @@ pub mod pallet {
 	}
 }
 
+/// ClaimMessage is the metadata that needs to be signed when the user invokes claim dispatch.
+///
+/// It consists of three parts, namely the chain_id, the AccountId32 account for darwinia 1.0, and
+/// the H160 account for darwinia 2.0.
 pub struct ClaimMessage<'m> {
 	pub chain_id: u64,
-	pub old_account_id_pub_key: &'m AccountId32,
-	pub new_account_id_pub_key: &'m H160,
+	pub old_pub_key: &'m AccountId32,
+	pub new_pub_key: &'m H160,
 }
 
 impl<'m> ClaimMessage<'m> {
-	fn new(
-		chain_id: u64,
-		old_account_id_pub_key: &'m AccountId32,
-		new_account_id_pub_key: &'m H160,
-	) -> Self {
-		Self { chain_id, old_account_id_pub_key, new_account_id_pub_key }
+	fn new(chain_id: u64, old_pub_key: &'m AccountId32, new_pub_key: &'m H160) -> Self {
+		Self { chain_id, old_pub_key, new_pub_key }
 	}
 
-	fn raw_bytes(&self) -> [u8; 32] {
+	fn hash_raw_bytes(&self) -> [u8; 32] {
 		let mut result = Vec::new();
 		result.extend_from_slice(&self.chain_id.to_be_bytes());
-		result.extend_from_slice(self.old_account_id_pub_key.as_slice());
-		result.extend_from_slice(&self.new_account_id_pub_key.0);
+		result.extend_from_slice(self.old_pub_key.as_slice());
+		result.extend_from_slice(&self.new_pub_key.as_bytes());
 
 		blake2_256(&result[..])
 	}

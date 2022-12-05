@@ -2302,6 +2302,7 @@ dependencies = [
 name = "darwinia-message-migrate"
 version = "6.0.0"
 dependencies = [
+ "dc-primitives",
  "fp-ethereum",
  "fp-evm",
  "frame-support",
