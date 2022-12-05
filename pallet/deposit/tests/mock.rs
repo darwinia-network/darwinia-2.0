@@ -46,6 +46,13 @@ impl frame_system::Config for Runtime {
 	type Version = ();
 }
 
+impl pallet_timestamp::Config for Runtime {
+	type MinimumPeriod = ();
+	type Moment = Moment;
+	type OnTimestampSet = ();
+	type WeightInfo = ();
+}
+
 impl pallet_balances::Config for Runtime {
 	type AccountStore = System;
 	type Balance = Balance;
@@ -75,19 +82,6 @@ impl pallet_assets::Config for Runtime {
 	type WeightInfo = ();
 }
 
-frame_support::parameter_types! {
-	pub static Time: core::time::Duration = core::time::Duration::new(0, 0);
-}
-impl Time {
-	pub fn run(milli_secs: Moment) {
-		Time::mutate(|t| *t += core::time::Duration::from_millis(milli_secs as _));
-	}
-}
-impl frame_support::traits::UnixTime for Time {
-	fn now() -> core::time::Duration {
-		Time::get()
-	}
-}
 pub enum KtonMinting {}
 impl darwinia_deposit::Minting for KtonMinting {
 	type AccountId = u32;
@@ -102,7 +96,7 @@ impl darwinia_deposit::Config for Runtime {
 	type MinLockingAmount = frame_support::traits::ConstU128<UNIT>;
 	type Ring = Balances;
 	type RuntimeEvent = RuntimeEvent;
-	type UnixTime = Time;
+	type UnixTime = Timestamp;
 }
 
 frame_support::construct_runtime!(
@@ -112,11 +106,16 @@ frame_support::construct_runtime!(
 		UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Runtime>,
 	{
 		System: frame_system,
+		Timestamp: pallet_timestamp,
 		Balances: pallet_balances,
 		Assets: pallet_assets,
 		Deposit: darwinia_deposit,
 	}
 );
+
+pub fn efflux(milli_secs: Moment) {
+	Timestamp::set_timestamp(Timestamp::now() + milli_secs);
+}
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
 	// substrate

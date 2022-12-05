@@ -48,6 +48,13 @@ impl frame_system::Config for Runtime {
 	type Version = ();
 }
 
+impl pallet_timestamp::Config for Runtime {
+	type MinimumPeriod = ();
+	type Moment = Moment;
+	type OnTimestampSet = ();
+	type WeightInfo = ();
+}
+
 impl pallet_balances::Config for Runtime {
 	type AccountStore = System;
 	type Balance = Balance;
@@ -212,6 +219,7 @@ frame_support::construct_runtime!(
 		UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Runtime>,
 	{
 		System: frame_system,
+		Timestamp: pallet_timestamp,
 		Balances: pallet_balances,
 		Assets: pallet_assets,
 		Deposit: darwinia_deposit,
@@ -219,6 +227,17 @@ frame_support::construct_runtime!(
 		Staking: darwinia_staking,
 	}
 );
+
+pub fn time_efflux(milli_secs: Moment) {
+	Timestamp::set_timestamp(Timestamp::now() + milli_secs);
+}
+
+pub fn block_efflux(block_number: u64) {
+	for i in System::block_number() + 1..=block_number {
+		System::set_block_number(i);
+		<AllPalletsWithSystem as frame_support::traits::OnInitialize<u64>>::on_initialize(i);
+	}
+}
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
 	// substrate
@@ -239,5 +258,12 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 	.assimilate_storage(&mut storage)
 	.unwrap();
 
-	storage.into()
+	let mut ext = sp_io::TestExternalities::from(storage);
+
+	ext.execute_with(|| {
+		System::set_block_number(1);
+		block_efflux(1);
+	});
+
+	ext
 }

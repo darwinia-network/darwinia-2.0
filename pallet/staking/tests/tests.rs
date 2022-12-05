@@ -112,7 +112,7 @@ fn unstake_should_work() {
 				staked_ring: 2 * UNIT,
 				staked_kton: 3 * UNIT,
 				staked_deposits: BoundedVec::truncate_from(vec![0, 1]),
-				unstaking_ring: BoundedVec::truncate_from(vec![(UNIT, 3)]),
+				unstaking_ring: BoundedVec::truncate_from(vec![(UNIT, 4)]),
 				unstaking_kton: Default::default()
 			}
 		);
@@ -125,8 +125,8 @@ fn unstake_should_work() {
 				staked_ring: 2 * UNIT,
 				staked_kton: 2 * UNIT,
 				staked_deposits: BoundedVec::truncate_from(vec![0, 1]),
-				unstaking_ring: BoundedVec::truncate_from(vec![(UNIT, 3)]),
-				unstaking_kton: BoundedVec::truncate_from(vec![(UNIT, 3)])
+				unstaking_ring: BoundedVec::truncate_from(vec![(UNIT, 4)]),
+				unstaking_kton: BoundedVec::truncate_from(vec![(UNIT, 4)])
 			}
 		);
 	});

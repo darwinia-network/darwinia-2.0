@@ -90,7 +90,7 @@ fn unique_identity_should_work() {
 			]
 		);
 
-		Time::run(MILLISECS_PER_MONTH);
+		efflux(MILLISECS_PER_MONTH);
 		assert_ok!(Deposit::claim(RuntimeOrigin::signed(1)));
 
 		assert_ok!(Deposit::lock(RuntimeOrigin::signed(1), 6 * UNIT, 1));
@@ -193,7 +193,7 @@ fn expire_time_should_work() {
 	new_test_ext().execute_with(|| {
 		(1..=8).for_each(|_| {
 			assert_ok!(Deposit::lock(RuntimeOrigin::signed(1), UNIT, 1));
-			Time::run(MILLISECS_PER_MONTH);
+			efflux(MILLISECS_PER_MONTH);
 		});
 		assert_eq!(
 			Deposit::deposit_of(&1).as_slice(),
@@ -253,17 +253,17 @@ fn claim_should_work() {
 		assert_ok!(Deposit::lock(RuntimeOrigin::signed(1), UNIT, 1));
 		assert!(!Deposit::deposit_of(&1).is_empty());
 
-		Time::run(MILLISECS_PER_MONTH - 1);
+		efflux(MILLISECS_PER_MONTH - 1);
 		assert_ok!(Deposit::claim(RuntimeOrigin::signed(1)));
 		assert!(!Deposit::deposit_of(&1).is_empty());
 
-		Time::run(MILLISECS_PER_MONTH);
+		efflux(MILLISECS_PER_MONTH);
 		assert_ok!(Deposit::claim(RuntimeOrigin::signed(1)));
 		assert!(Deposit::deposit_of(&1).is_empty());
 
 		assert_ok!(Deposit::lock(RuntimeOrigin::signed(1), UNIT, 1));
 		assert_ok!(Deposit::stake(&1, 0));
-		Time::run(2 * MILLISECS_PER_MONTH);
+		efflux(2 * MILLISECS_PER_MONTH);
 		assert_ok!(Deposit::claim(RuntimeOrigin::signed(1)));
 		assert!(!Deposit::deposit_of(&1).is_empty());
 

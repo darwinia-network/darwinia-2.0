@@ -32,10 +32,11 @@ sp-std            = { default-features = false, git = "https://github.com/parity
 darwinia-deposit = { path = "../deposit" }
 
 # substrate
-pallet-assets   = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
-pallet-balances = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
-pallet-session  = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
-sp-io           = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
+pallet-assets    = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
+pallet-balances  = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
+pallet-session   = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
+pallet-timestamp = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
+sp-io            = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
 
 [features]
 default = ["std"]
