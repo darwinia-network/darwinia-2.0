@@ -235,7 +235,7 @@ impl Efflux {
 	}
 
 	pub fn block(number: u64) {
-		for _ in 0..=number {
+		for _ in 0..number {
 			initialize_block(System::block_number() + 1)
 		}
 	}

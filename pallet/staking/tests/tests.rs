@@ -29,6 +29,9 @@ use frame_support::{assert_ok, traits::Get, BoundedVec};
 fn stake_should_work() {
 	new_test_ext().execute_with(|| {
 		assert!(Staking::ledger_of(1).is_none());
+		assert_eq!(Balances::free_balance(1), 1_000 * UNIT);
+		assert_eq!(Assets::balance(0, 1), 1_000 * UNIT);
+
 		assert_ok!(Staking::stake(RuntimeOrigin::signed(1), UNIT, 0, Vec::new()));
 		assert_eq!(
 			Staking::ledger_of(1).unwrap(),
@@ -41,8 +44,10 @@ fn stake_should_work() {
 				unstaking_kton: Default::default()
 			}
 		);
+		assert_eq!(Balances::free_balance(1), 999 * UNIT);
 
 		assert_ok!(Staking::stake(RuntimeOrigin::signed(1), 0, UNIT, Vec::new()));
+		assert_eq!(Assets::balance(0, 1), 999 * UNIT);
 		assert_eq!(
 			Staking::ledger_of(1).unwrap(),
 			Ledger {
@@ -72,6 +77,8 @@ fn stake_should_work() {
 		assert_ok!(Deposit::lock(RuntimeOrigin::signed(1), 200 * UNIT, 1));
 		assert_ok!(Deposit::lock(RuntimeOrigin::signed(1), 200 * UNIT, 1));
 		assert_ok!(Staking::stake(RuntimeOrigin::signed(1), 500 * UNIT, 500 * UNIT, vec![1, 2]));
+		assert_eq!(Balances::free_balance(1), 98 * UNIT);
+		assert_eq!(Assets::balance(0, 1), 499 * UNIT + 3_053_299_492_385_785);
 		assert_eq!(
 			Staking::ledger_of(1).unwrap(),
 			Ledger {
@@ -91,14 +98,15 @@ fn unstake_should_work() {
 	new_test_ext().execute_with(|| {
 		assert_ok!(Deposit::lock(RuntimeOrigin::signed(1), UNIT, 1));
 		assert_ok!(Deposit::lock(RuntimeOrigin::signed(1), UNIT, 1));
-		assert_ok!(Staking::stake(RuntimeOrigin::signed(1), 3 * UNIT, 3 * UNIT, vec![0, 1]));
+		assert_ok!(Deposit::lock(RuntimeOrigin::signed(1), UNIT, 1));
+		assert_ok!(Staking::stake(RuntimeOrigin::signed(1), 3 * UNIT, 3 * UNIT, vec![0, 1, 2]));
 		assert_eq!(
 			Staking::ledger_of(1).unwrap(),
 			Ledger {
 				account: 1,
 				staked_ring: 3 * UNIT,
 				staked_kton: 3 * UNIT,
-				staked_deposits: BoundedVec::truncate_from(vec![0, 1]),
+				staked_deposits: BoundedVec::truncate_from(vec![0, 1, 2]),
 				unstaking_ring: Default::default(),
 				unstaking_kton: Default::default()
 			}
@@ -111,7 +119,7 @@ fn unstake_should_work() {
 				account: 1,
 				staked_ring: 2 * UNIT,
 				staked_kton: 3 * UNIT,
-				staked_deposits: BoundedVec::truncate_from(vec![0, 1]),
+				staked_deposits: BoundedVec::truncate_from(vec![0, 1, 2]),
 				unstaking_ring: BoundedVec::truncate_from(vec![(UNIT, 4)]),
 				unstaking_kton: Default::default()
 			}
@@ -125,7 +133,7 @@ fn unstake_should_work() {
 				account: 1,
 				staked_ring: 2 * UNIT,
 				staked_kton: 2 * UNIT,
-				staked_deposits: BoundedVec::truncate_from(vec![0, 1]),
+				staked_deposits: BoundedVec::truncate_from(vec![0, 1, 2]),
 				unstaking_ring: BoundedVec::truncate_from(vec![(UNIT, 4)]),
 				unstaking_kton: BoundedVec::truncate_from(vec![(UNIT, 5)])
 			}
@@ -138,7 +146,7 @@ fn unstake_should_work() {
 				account: 1,
 				staked_ring: 2 * UNIT,
 				staked_kton: 2 * UNIT,
-				staked_deposits: BoundedVec::truncate_from(vec![1]),
+				staked_deposits: BoundedVec::truncate_from(vec![1, 2]),
 				unstaking_ring: BoundedVec::truncate_from(vec![(UNIT, 4)]),
 				unstaking_kton: BoundedVec::truncate_from(vec![(UNIT, 5)])
 			}
@@ -152,14 +160,14 @@ fn unstake_should_work() {
 				account: 1,
 				staked_ring: UNIT,
 				staked_kton: UNIT,
-				staked_deposits: BoundedVec::truncate_from(vec![1]),
+				staked_deposits: BoundedVec::truncate_from(vec![1, 2]),
 				unstaking_ring: BoundedVec::truncate_from(vec![(UNIT, 4), (UNIT, 6)]),
 				unstaking_kton: BoundedVec::truncate_from(vec![(UNIT, 5), (UNIT, 6)])
 			}
 		);
 
 		Efflux::block(1);
-		assert_ok!(Staking::unstake(RuntimeOrigin::signed(1), UNIT, UNIT, vec![1]));
+		assert_ok!(Staking::unstake(RuntimeOrigin::signed(1), UNIT, UNIT, vec![1, 2]));
 		assert_eq!(
 			Staking::ledger_of(1).unwrap(),
 			Ledger {
@@ -171,6 +179,22 @@ fn unstake_should_work() {
 				unstaking_kton: BoundedVec::truncate_from(vec![(UNIT, 5), (UNIT, 6), (UNIT, 7)])
 			}
 		);
+	});
+}
+
+#[test]
+fn claim_should_work() {
+	new_test_ext().execute_with(|| {
+		assert_ok!(Deposit::lock(RuntimeOrigin::signed(1), UNIT, 1));
+		assert_ok!(Deposit::lock(RuntimeOrigin::signed(1), UNIT, 1));
+		assert_ok!(Deposit::lock(RuntimeOrigin::signed(1), UNIT, 1));
+		assert_ok!(Staking::stake(RuntimeOrigin::signed(1), 3 * UNIT, 3 * UNIT, vec![0, 1, 2]));
+		assert_ok!(Staking::unstake(RuntimeOrigin::signed(1), UNIT, 0, Vec::new()));
+		// assert_ok!(Staking::unstake(RuntimeOrigin::signed(1), 0, UNIT, Vec::new()));
+		// assert_ok!(Staking::unstake(RuntimeOrigin::signed(1), 0, 0, vec![0]));
+		// assert_ok!(Staking::unstake(RuntimeOrigin::signed(1), UNIT, UNIT, vec![1, 2]));
+		assert_eq!(Balances::free_balance(1), 994 * UNIT);
+		// assert_eq!(Assets::balance(0, 1), 999 * UNIT + 22_842_639_593_907);
 	});
 }
 
@@ -193,6 +217,21 @@ fn clean_ledger_should_work() {
 		assert_ok!(Staking::claim(RuntimeOrigin::signed(1)));
 		assert!(Staking::ledger_of(1).is_none());
 	});
+}
+
+#[test]
+fn collect_should_work() {
+	new_test_ext().execute_with(|| {});
+}
+
+#[test]
+fn nominate_should_work() {
+	new_test_ext().execute_with(|| {});
+}
+
+#[test]
+fn chill_should_work() {
+	new_test_ext().execute_with(|| {});
 }
 
 #[test]
@@ -247,4 +286,9 @@ fn power_should_work() {
 		assert_eq!(Staking::power_of(&3), 0);
 		assert_eq!(Staking::power_of(&4), 0);
 	});
+}
+
+#[test]
+fn payout_should_work() {
+	new_test_ext().execute_with(|| {});
 }

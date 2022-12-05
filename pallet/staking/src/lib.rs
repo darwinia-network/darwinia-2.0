@@ -81,16 +81,9 @@ pub trait Stake {
 	fn stake(who: &Self::AccountId, item: Self::Item) -> DispatchResult;
 
 	/// Withdraw stakes from the staking pool.
-	fn unstake(who: &Self::AccountId, item: Self::Item) -> DispatchResult;
-
-	/// Claim the stakes from the pallet/contract account.
 	///
 	/// This will transfer the stakes back to the staker's account.
-	///
-	/// Ignore this if there isn't a bonding duration restriction for the target item.
-	fn claim(_who: &Self::AccountId, _item: Self::Item) -> DispatchResult {
-		Ok(())
-	}
+	fn unstake(who: &Self::AccountId, item: Self::Item) -> DispatchResult;
 }
 /// Extended stake trait.
 ///
@@ -549,7 +542,6 @@ pub mod pallet {
 		}
 
 		fn unstake_ring(who: &T::AccountId, amount: Balance) -> DispatchResult {
-			T::Ring::unstake(who, amount)?;
 			<Ledgers<T>>::try_mutate(who, |l| {
 				let Some(l) = l else {
 					return DispatchResult::Err(<Error<T>>::NotStaker.into());
@@ -574,7 +566,6 @@ pub mod pallet {
 		}
 
 		fn unstake_kton(who: &T::AccountId, amount: Balance) -> DispatchResult {
-			T::Kton::unstake(who, amount)?;
 			<Ledgers<T>>::try_mutate(who, |l| {
 				let Some(l) = l else {
 					return DispatchResult::Err(<Error<T>>::NotStaker.into());
@@ -606,7 +597,7 @@ pub mod pallet {
 				let now = <frame_system::Pallet<T>>::block_number();
 				let claim = |u: &mut BoundedVec<_, _>, c: &mut Balance| {
 					u.retain(|(a, t)| {
-						if t < &now {
+						if t <= &now {
 							*c += a;
 
 							false
@@ -618,12 +609,12 @@ pub mod pallet {
 				let mut r_claimed = 0;
 
 				claim(&mut l.unstaking_ring, &mut r_claimed);
-				T::Ring::claim(who, r_claimed)?;
+				T::Ring::unstake(who, r_claimed)?;
 
 				let mut k_claimed = 0;
 
 				claim(&mut l.unstaking_kton, &mut k_claimed);
-				T::Kton::claim(who, k_claimed)?;
+				T::Kton::unstake(who, k_claimed)?;
 
 				Ok(())
 			})
