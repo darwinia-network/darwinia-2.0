@@ -139,7 +139,7 @@ pub mod pallet {
 			if *chain_id != <T as pallet_evm::Config>::ChainId::get() {
 				return InvalidTransaction::BadProof.into();
 			}
-			if !Balances::<T>::contains_key(&old_pub_key) {
+			if !Balances::<T>::contains_key(old_pub_key) {
 				return InvalidTransaction::BadSigner.into();
 			}
 
@@ -158,7 +158,7 @@ pub mod pallet {
 						.build();
 				}
 			}
-			return InvalidTransaction::BadSigner.into();
+			InvalidTransaction::BadSigner.into()
 		}
 	}
 }
@@ -182,7 +182,7 @@ impl<'m> ClaimMessage<'m> {
 		let mut result = Vec::new();
 		result.extend_from_slice(&self.chain_id.to_be_bytes());
 		result.extend_from_slice(self.old_pub_key.as_slice());
-		result.extend_from_slice(&self.new_pub_key.as_bytes());
+		result.extend_from_slice(self.new_pub_key.as_bytes());
 		result
 	}
 }
