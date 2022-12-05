@@ -404,7 +404,7 @@ fn elect_should_work() {
 			assert_ok!(Staking::nominate(RuntimeOrigin::signed(i), i - 5));
 		});
 
-		assert_eq!(Staking::elect(), vec![1, 2, 3]);
+		assert_eq!(Staking::elect(), vec![5, 4, 3]);
 	});
 	ExtBuilder::default().collator_count(3).build().execute_with(|| {
 		(1..=5).for_each(|i| {
@@ -426,7 +426,7 @@ fn elect_should_work() {
 			assert_ok!(Staking::nominate(RuntimeOrigin::signed(i), i - 5));
 		});
 
-		assert_eq!(Staking::elect(), vec![5, 4, 3]);
+		assert_eq!(Staking::elect(), vec![1, 2, 3]);
 	});
 }
 

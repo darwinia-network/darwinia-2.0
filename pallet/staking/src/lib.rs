@@ -231,6 +231,8 @@ pub mod pallet {
 		},
 		/// A payout has been made for the staker.
 		Payout { staker: T::AccountId, ring_amount: Balance },
+		/// A new collator set has been elected.
+		Elected { collators: Vec<T::AccountId> },
 	}
 
 	#[pallet::error]
@@ -828,7 +830,7 @@ pub mod pallet {
 				})
 				.collect::<Vec<_>>();
 
-			collators.sort_by_key(|(_, p)| *p);
+			collators.sort_by(|(_, a), (_, b)| b.cmp(a));
 
 			collators
 				.into_iter()
@@ -877,7 +879,11 @@ where
 			<frame_system::Pallet<T>>::block_number(),
 		);
 
-		Some(Self::elect())
+		let collators = Self::elect();
+
+		Self::deposit_event(Event::<T>::Elected { collators: collators.clone() });
+
+		Some(collators)
 	}
 
 	fn start_session(_: u32) {
