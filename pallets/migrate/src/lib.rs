@@ -24,11 +24,10 @@ mod mock;
 mod test;
 
 // substrate
-use sp_core::H160;
-use sp_runtime::AccountId32;
+use sp_core::{blake2_256, sr25519, ByteArray, Pair, H160};
+use sp_runtime::{traits::Verify, AccountId32};
 
 pub use pallet::*;
-
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
@@ -40,14 +39,16 @@ pub mod pallet {
 	pub struct Pallet<T>(PhantomData<T>);
 
 	#[pallet::config]
-	pub trait Config: frame_system::Config {}
+	pub trait Config: frame_system::Config + pallet_evm::Config {}
 
 	// Storage the migrated balance map from darwinia-1.0 chain
 	#[pallet::storage]
 	pub(super) type Balances<T> = StorageMap<_, Blake2_128Concat, AccountId32, u128>;
 
 	#[pallet::error]
-	pub enum Error<T> {}
+	pub enum Error<T> {
+		InvalidSignature,
+	}
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
@@ -55,10 +56,9 @@ pub mod pallet {
 		#[pallet::weight(0)]
 		pub fn claim_to(
 			origin: OriginFor<T>,
-			old_account_id: AccountId32,
+			old_account_id_pub_key: AccountId32,
 			new_account_id: H160,
 			sig: Signature,
-			message: Vec<u8>,
 		) -> DispatchResult {
 			ensure_none(origin)?;
 
@@ -75,11 +75,54 @@ pub mod pallet {
 		type Call = Call<T>;
 
 		fn validate_unsigned(_source: TransactionSource, call: &Self::Call) -> TransactionValidity {
-			if let Call::claim_to { old_account_id, new_account_id, sig, message } = call {
-				// verify signature
+			if let Call::claim_to { old_account_id_pub_key, new_account_id, sig } = call {
+				let message = MessageType::new(
+					<T as pallet_evm::Config>::ChainId::get(),
+					old_account_id_pub_key,
+					new_account_id,
+				);
+				if let Ok(signer) = sr25519::Public::from_slice(old_account_id_pub_key.as_ref()) {
+					let is_valid = sig.verify(&message.claim_message()[..], &signer);
+
+					if is_valid {
+						return ValidTransaction::with_tag_prefix("MigrateClaim")
+							.priority(TransactionPriority::max_value())
+							.propagate(true)
+							.build();
+					} else {
+						return InvalidTransaction::BadSigner.into();
+					}
+				}
 				todo!();
+			} else {
+				InvalidTransaction::Call.into()
 			}
-			todo!();
 		}
+	}
+}
+
+pub struct MessageType<'m> {
+	pub chain_id: u64,
+	pub old_account_id_pub_key: &'m AccountId32,
+	pub new_account_id_pub_key: &'m H160,
+}
+
+impl<'m> MessageType<'m> {
+	fn new(
+		chain_id: u64,
+		old_account_id_pub_key: &'m AccountId32,
+		new_account_id_pub_key: &'m H160,
+	) -> Self {
+		Self { chain_id, old_account_id_pub_key, new_account_id_pub_key }
+	}
+
+	fn claim_message(&self) -> [u8; 32] {
+		let mut result = Vec::new();
+		result.extend_from_slice(&self.chain_id.to_be_bytes());
+		result.extend_from_slice(self.old_account_id_pub_key.as_slice());
+		result.extend_from_slice(&self.new_account_id_pub_key.0);
+
+		let hash = blake2_256(&result[..]);
+		hash
 	}
 }
