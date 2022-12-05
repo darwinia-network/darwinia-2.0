@@ -295,10 +295,11 @@ impl ExtBuilder {
 		}
 		.assimilate_storage(&mut storage)
 		.unwrap();
-		<darwinia_staking::GenesisConfig as GenesisBuild<Runtime>>::assimilate_storage(
-			&darwinia_staking::GenesisConfig { collator_count: self.collator_count },
-			&mut storage,
-		)
+		darwinia_staking::GenesisConfig::<Runtime> {
+			collator_count: self.collator_count,
+			collators: Vec::new(),
+		}
+		.assimilate_storage(&mut storage)
 		.unwrap();
 
 		let mut ext = sp_io::TestExternalities::from(storage);

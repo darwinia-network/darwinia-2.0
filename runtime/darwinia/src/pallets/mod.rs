@@ -46,8 +46,6 @@ mod deposit;
 // Consensus stuff.
 mod authorship;
 
-mod collator_selection;
-
 mod staking;
 
 mod session;

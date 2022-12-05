@@ -2452,7 +2452,6 @@ dependencies = [
  "pallet-bridge-dispatch",
  "pallet-bridge-grandpa",
  "pallet-bridge-messages",
- "pallet-collator-selection",
  "pallet-collective",
  "pallet-democracy",
  "pallet-elections-phragmen",

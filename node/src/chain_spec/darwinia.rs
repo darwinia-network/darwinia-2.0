@@ -181,11 +181,10 @@ pub fn config() -> ChainSpec {
 				assets: Default::default(),
 
 				// Consensus stuff.
-				collator_selection: darwinia_runtime::CollatorSelectionConfig {
-					invulnerables: vec![array_bytes::hex_n_into_unchecked(ALITH)],
-					..Default::default()
+				staking: darwinia_runtime::StakingConfig {
+					collator_count: 3,
+					collators: Vec::new(),
 				},
-				staking: Default::default(),
 				session: darwinia_runtime::SessionConfig {
 					keys: vec![(
 						array_bytes::hex_n_into_unchecked(ALITH),
@@ -265,12 +264,10 @@ fn testnet_genesis(
 		assets: Default::default(),
 
 		// Consensus stuff.
-		collator_selection: darwinia_runtime::CollatorSelectionConfig {
-			invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
-			candidacy_bond: UNIT,
-			..Default::default()
+		staking: darwinia_runtime::StakingConfig {
+			collator_count: 3,
+			collators: vec![(array_bytes::hex_n_into_unchecked(ALITH), UNIT)],
 		},
-		staking: Default::default(),
 		session: darwinia_runtime::SessionConfig {
 			keys: invulnerables
 				.into_iter()

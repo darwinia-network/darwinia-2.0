@@ -51,7 +51,7 @@ use frame_support::{
 	traits::{Currency, OnUnbalanced, UnixTime},
 	EqNoBound, PalletId, PartialEqNoBound,
 };
-use frame_system::pallet_prelude::*;
+use frame_system::{pallet_prelude::*, RawOrigin};
 use sp_runtime::{
 	traits::{AccountIdConversion, Convert},
 	Perbill, Perquintill,
@@ -285,16 +285,27 @@ pub mod pallet {
 	#[pallet::getter(fn elapsed_time)]
 	pub type ElapsedTime<T: Config> = StorageValue<_, Moment, ValueQuery>;
 
-	#[derive(Default)]
 	#[pallet::genesis_config]
-	pub struct GenesisConfig {
+	pub struct GenesisConfig<T: Config> {
 		/// Genesis collator count.
 		pub collator_count: u32,
+		/// Genesis collator preferences.
+		pub collators: Vec<(T::AccountId, Balance)>,
+	}
+	#[cfg(feature = "std")]
+	impl<T: Config> Default for GenesisConfig<T> {
+		fn default() -> Self {
+			GenesisConfig { collator_count: 0, collators: Vec::new() }
+		}
 	}
 	#[pallet::genesis_build]
-	impl<T: Config> GenesisBuild<T> for GenesisConfig {
+	impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
 		fn build(&self) {
 			<CollatorCount<T>>::put(self.collator_count);
+
+			self.collators.iter().cloned().for_each(|(who, stake)| {
+				<Pallet<T>>::stake(RawOrigin::Signed(who).into(), stake, 0, Vec::new()).unwrap();
+			});
 		}
 	}
 
