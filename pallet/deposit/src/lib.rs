@@ -24,11 +24,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![deny(missing_docs)]
 
-#[cfg(test)]
-mod mock;
-#[cfg(test)]
-mod tests;
-
 mod weights;
 pub use weights::WeightInfo;
 
@@ -39,7 +34,7 @@ use core::{
 };
 // darwinia
 use dc_inflation::MILLISECS_PER_YEAR;
-use dc_types::{Balance, Timestamp};
+use dc_types::{Balance, Moment};
 // substrate
 use frame_support::{
 	pallet_prelude::*,
@@ -59,7 +54,8 @@ use sp_runtime::traits::AccountIdConversion;
 /// It's only used for distinguishing the deposits under a specific account.
 pub type DepositId = u8;
 
-const MILLISECS_PER_MONTH: Timestamp = MILLISECS_PER_YEAR / 12;
+/// Milliseconds per month.
+pub const MILLISECS_PER_MONTH: Moment = MILLISECS_PER_YEAR / 12;
 
 /// Asset's minting API.
 pub trait Minting {
@@ -71,15 +67,14 @@ pub trait Minting {
 }
 
 /// Deposit.
-#[cfg_attr(test, derive(Clone, PartialEq, Eq))]
-#[derive(Encode, Decode, MaxEncodedLen, TypeInfo, RuntimeDebug)]
+#[derive(PartialEq, Eq, Encode, Decode, MaxEncodedLen, TypeInfo, RuntimeDebug)]
 pub struct Deposit {
 	/// Deposit ID.
 	pub id: DepositId,
 	/// Deposited RING.
 	pub value: Balance,
 	/// Expired timestamp.
-	pub expired_time: Timestamp,
+	pub expired_time: Moment,
 	/// Deposit state.
 	pub in_use: bool,
 }
@@ -191,7 +186,7 @@ pub mod pallet {
 						id,
 						value: amount,
 						expired_time: T::UnixTime::now().as_millis()
-							+ MILLISECS_PER_MONTH * months as Timestamp,
+							+ MILLISECS_PER_MONTH * months as Moment,
 						in_use: false,
 					},
 				)

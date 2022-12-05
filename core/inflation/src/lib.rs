@@ -27,7 +27,7 @@ mod test;
 // crates.io
 use primitive_types::U256;
 // darwinia
-use dc_types::{Balance, Timestamp, UNIT};
+use dc_types::{Balance, Moment, UNIT};
 // github
 use substrate_fixed::{
 	transcendental,
@@ -43,7 +43,7 @@ pub const MILLISECS_PER_YEAR: Balance = (366 * 24 * 60 * 60) * 1000;
 /// Compute the inflation of a period.
 ///
 /// Use `U94F34` here, because `2^94 > MAX_RING * 10^9`.
-pub fn in_period(unminted: Balance, period: Timestamp, elapsed: Timestamp) -> Option<Balance> {
+pub fn in_period(unminted: Balance, period: Moment, elapsed: Moment) -> Option<Balance> {
 	let unminted_per_millisecs = U94F34::from_num(unminted) / MILLISECS_PER_YEAR;
 	let x = (unminted_per_millisecs * period).floor().to_num();
 	let years = (elapsed / MILLISECS_PER_YEAR + 1) as _;

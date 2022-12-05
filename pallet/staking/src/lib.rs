@@ -43,16 +43,19 @@ use core::fmt::Debug;
 use codec::FullCodec;
 // darwinia
 use dc_inflation::TOTAL_SUPPLY;
-use dc_types::{Balance, Timestamp};
+use dc_types::{Balance, Moment};
 // substrate
 use frame_support::{
 	log,
 	pallet_prelude::*,
 	traits::{Currency, OnUnbalanced, UnixTime},
-	PalletId,
+	EqNoBound, PalletId, PartialEqNoBound,
 };
 use frame_system::pallet_prelude::*;
-use sp_runtime::{traits::AccountIdConversion, Perbill, Perquintill};
+use sp_runtime::{
+	traits::{AccountIdConversion, Convert},
+	Perbill, Perquintill,
+};
 use sp_std::{collections::btree_map::BTreeMap, prelude::*};
 
 type RewardPoint = u32;
@@ -100,8 +103,17 @@ pub trait StakeExt: Stake {
 	fn amount(who: &Self::AccountId, item: Self::Item) -> Self::Amount;
 }
 
+/// A convertor from collators id. Since this pallet does not have stash/controller, this is
+/// just identity.
+pub struct IdentityCollator;
+impl<T> Convert<T, Option<T>> for IdentityCollator {
+	fn convert(t: T) -> Option<T> {
+		Some(t)
+	}
+}
+
 /// Staking ledger.
-#[derive(Encode, Decode, MaxEncodedLen, TypeInfo, RuntimeDebug)]
+#[derive(PartialEqNoBound, EqNoBound, Encode, Decode, MaxEncodedLen, TypeInfo, RuntimeDebug)]
 #[scale_info(skip_type_params(T))]
 pub struct Ledger<T>
 where
@@ -256,12 +268,12 @@ pub mod pallet {
 	/// Active session's started timestamp.
 	#[pallet::storage]
 	#[pallet::getter(fn session_started_time)]
-	pub type SessionStartedTime<T: Config> = StorageValue<_, Timestamp, ValueQuery>;
+	pub type SessionStartedTime<T: Config> = StorageValue<_, Moment, ValueQuery>;
 
 	/// Elapsed time.
 	#[pallet::storage]
 	#[pallet::getter(fn elapsed_time)]
-	pub type ElapsedTime<T: Config> = StorageValue<_, Timestamp, ValueQuery>;
+	pub type ElapsedTime<T: Config> = StorageValue<_, Moment, ValueQuery>;
 
 	#[derive(Default)]
 	#[pallet::genesis_config]
@@ -649,7 +661,7 @@ pub mod pallet {
 
 		// TODO: weight
 		/// Pay the session reward to the stakers.
-		pub fn payout(session_duration: Timestamp) {
+		pub fn payout(session_duration: Moment) {
 			let unminted = TOTAL_SUPPLY - T::RingCurrency::total_issuance();
 			let elapsed = <ElapsedTime<T>>::get();
 			let Some(inflation) = dc_inflation::in_period(

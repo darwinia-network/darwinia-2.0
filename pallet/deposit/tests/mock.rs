@@ -17,8 +17,7 @@
 // along with Darwinia. If not, see <https://www.gnu.org/licenses/>.
 
 // darwinia
-use crate::{self as darwinia_deposit, *};
-use dc_types::{AssetId, UNIT};
+use dc_types::{AssetId, Balance, Moment, UNIT};
 
 impl frame_system::Config for Runtime {
 	type AccountData = pallet_balances::AccountData<Balance>;
@@ -80,8 +79,8 @@ frame_support::parameter_types! {
 	pub static Time: core::time::Duration = core::time::Duration::new(0, 0);
 }
 impl Time {
-	pub(crate) fn run(milli_secs: Timestamp) {
-		TIME.with(|v| *v.borrow_mut() += core::time::Duration::from_millis(milli_secs as _));
+	pub fn run(milli_secs: Moment) {
+		Time::mutate(|t| *t += core::time::Duration::from_millis(milli_secs as _));
 	}
 }
 impl frame_support::traits::UnixTime for Time {
@@ -119,7 +118,10 @@ frame_support::construct_runtime!(
 	}
 );
 
-pub(crate) fn new_test_ext() -> sp_io::TestExternalities {
+pub fn new_test_ext() -> sp_io::TestExternalities {
+	// substrate
+	use frame_support::traits::GenesisBuild;
+
 	let mut storage = frame_system::GenesisConfig::default().build_storage::<Runtime>().unwrap();
 
 	pallet_balances::GenesisConfig::<Runtime> {

@@ -24,8 +24,8 @@
 /// Balance type.
 pub type Balance = u128;
 
-/// Timestamp type.
-pub type Timestamp = u128;
+/// Time type.
+pub type Moment = u128;
 
 /// Asset identifier type.
 pub type AssetId = u64;

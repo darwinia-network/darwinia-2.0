@@ -17,7 +17,9 @@
 // along with Darwinia. If not, see <https://www.gnu.org/licenses/>.
 
 // darwinia
-use dc_types::{AssetId, Balance, Timestamp, UNIT};
+use dc_types::{AssetId, Balance, Moment, UNIT};
+// substrate
+use sp_runtime::RuntimeAppPublic;
 
 impl frame_system::Config for Runtime {
 	type AccountData = pallet_balances::AccountData<Balance>;
@@ -79,8 +81,8 @@ frame_support::parameter_types! {
 	pub static Time: core::time::Duration = core::time::Duration::new(0, 0);
 }
 impl Time {
-	pub(crate) fn run(milli_secs: Timestamp) {
-		TIME.with(|v| *v.borrow_mut() += core::time::Duration::from_millis(milli_secs as _));
+	pub fn run(milli_secs: Moment) {
+		Time::mutate(|t| *t += core::time::Duration::from_millis(milli_secs as _));
 	}
 }
 impl frame_support::traits::UnixTime for Time {
@@ -128,6 +130,51 @@ impl darwinia_staking::Stake for RingStaking {
 		)
 	}
 }
+
+frame_support::parameter_types! {
+	pub static SessionHandlerCollators: Vec<u32> = Vec::new();
+	pub static SessionChangeBlock: u64 = 0;
+}
+sp_runtime::impl_opaque_keys! {
+	pub struct SessionKeys {
+		pub aura: sp_runtime::testing::UintAuthorityId,
+	}
+}
+type Period = frame_support::traits::ConstU64<3>;
+pub struct TestSessionHandler;
+impl pallet_session::SessionHandler<u32> for TestSessionHandler {
+	const KEY_TYPE_IDS: &'static [sp_runtime::KeyTypeId] =
+		&[sp_runtime::testing::UintAuthorityId::ID];
+
+	fn on_genesis_session<Ks: sp_runtime::traits::OpaqueKeys>(keys: &[(u32, Ks)]) {
+		SessionHandlerCollators::set(keys.into_iter().map(|(a, _)| *a).collect::<Vec<_>>())
+	}
+
+	fn on_new_session<Ks: sp_runtime::traits::OpaqueKeys>(
+		_: bool,
+		keys: &[(u32, Ks)],
+		_: &[(u32, Ks)],
+	) {
+		SessionChangeBlock::set(System::block_number());
+		SessionHandlerCollators::set(keys.into_iter().map(|(a, _)| *a).collect::<Vec<_>>())
+	}
+
+	fn on_before_session_ending() {}
+
+	fn on_disabled(_: u32) {}
+}
+impl pallet_session::Config for Runtime {
+	type Keys = SessionKeys;
+	type NextSessionRotation = pallet_session::PeriodicSessions<Period, ()>;
+	type RuntimeEvent = RuntimeEvent;
+	type SessionHandler = pallet_session::TestSessionHandler;
+	type SessionManager = Staking;
+	type ShouldEndSession = pallet_session::PeriodicSessions<Period, ()>;
+	type ValidatorId = Self::AccountId;
+	type ValidatorIdOf = darwinia_staking::IdentityCollator;
+	type WeightInfo = ();
+}
+
 pub enum KtonStaking {}
 impl darwinia_staking::Stake for KtonStaking {
 	type AccountId = u32;
@@ -168,11 +215,12 @@ frame_support::construct_runtime!(
 		Balances: pallet_balances,
 		Assets: pallet_assets,
 		Deposit: darwinia_deposit,
+		Session: pallet_session,
 		Staking: darwinia_staking,
 	}
 );
 
-pub(crate) fn new_test_ext() -> sp_io::TestExternalities {
+pub fn new_test_ext() -> sp_io::TestExternalities {
 	// substrate
 	use frame_support::traits::GenesisBuild;
 
@@ -186,7 +234,7 @@ pub(crate) fn new_test_ext() -> sp_io::TestExternalities {
 	pallet_assets::GenesisConfig::<Runtime> {
 		assets: vec![(0, 0, true, 1)],
 		metadata: vec![(0, b"KTON".to_vec(), b"KTON".to_vec(), 18)],
-		..Default::default()
+		accounts: (1..=2).map(|i| (0, i, (i as Balance) * 1_000 * UNIT)).collect(),
 	}
 	.assimilate_storage(&mut storage)
 	.unwrap();

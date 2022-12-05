@@ -16,15 +16,15 @@
 // You should have received a copy of the GNU General Public License
 // along with Darwinia. If not, see <https://www.gnu.org/licenses/>.
 
+mod mock;
+use mock::{Deposit, *};
+
 // darwinia
-use crate::{
-	mock::{Deposit, *},
-	Deposit as DepositS, *,
-};
+use darwinia_deposit::{Deposit as DepositS, *};
 use darwinia_staking::Stake;
-use dc_types::UNIT;
+use dc_types::{Moment, UNIT};
 // substrate
-use frame_support::{assert_noop, assert_ok};
+use frame_support::{assert_noop, assert_ok, traits::Get};
 
 #[test]
 fn lock_should_work() {
@@ -201,7 +201,7 @@ fn expire_time_should_work() {
 				.map(|i| DepositS {
 					id: i - 1,
 					value: UNIT,
-					expired_time: i as Timestamp * MILLISECS_PER_MONTH,
+					expired_time: i as Moment * MILLISECS_PER_MONTH,
 					in_use: false
 				})
 				.collect::<Vec<_>>()

@@ -71,5 +71,5 @@ impl darwinia_staking::Config for Runtime {
 	type Ring = RingStaking;
 	type RingCurrency = Balances;
 	type RuntimeEvent = RuntimeEvent;
-	type UnixTime = pallet_timestamp::Pallet<Self>;
+	type UnixTime = Timestamp;
 }

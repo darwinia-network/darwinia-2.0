@@ -34,5 +34,5 @@ impl darwinia_deposit::Config for Runtime {
 	type MinLockingAmount = frame_support::traits::ConstU128<UNIT>;
 	type Ring = Balances;
 	type RuntimeEvent = RuntimeEvent;
-	type UnixTime = pallet_timestamp::Pallet<Self>;
+	type UnixTime = Timestamp;
 }
