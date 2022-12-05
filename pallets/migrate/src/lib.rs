@@ -62,6 +62,7 @@ pub mod pallet {
 
 	// Store the migrated balance snapshot for the darwinia-1.0 chain state.
 	#[pallet::storage]
+	#[pallet::getter(fn balance_of)]
 	pub(super) type Balances<T> = StorageMap<_, Blake2_128Concat, AccountId32, Balance>;
 
 	#[pallet::error]
@@ -98,27 +99,28 @@ pub mod pallet {
 		AccountIdOf<T>: From<H160>,
 		BalanceOf<T>: From<Balance>,
 	{
-		// TODO: update the weight
+		// since signature and chain_id verification is done in `validate_unsigned`
+		// we can skip doing it here again.
+
+		// TODO: update weight
 		#[pallet::weight(0)]
 		pub fn claim_to(
 			origin: OriginFor<T>,
+			_chain_id: u64,
 			old_pub_key: AccountId32,
 			new_pub_key: H160,
-			// since signature verification is done in `validate_unsigned`
-			// we can skip doing it here again.
 			_sig: Signature,
 		) -> DispatchResult {
 			ensure_none(origin)?;
 
-			if let Some(amount) = Balances::<T>::take(&old_pub_key) {
-				<T as pallet::Config>::Currency::deposit_into_existing(
-					&new_pub_key.into(),
-					amount.into(),
-				)?;
+			let Some(amount) = Balances::<T>::take(&old_pub_key) else  {
+				return Err(Error::<T>::AccountNotExist.into());
+			};
 
-				Self::deposit_event(Event::Claim { old_pub_key, new_pub_key, amount });
-			}
-			Err(Error::<T>::AccountNotExist.into())
+			<T as pallet::Config>::Currency::deposit_creating(&new_pub_key.into(), amount.into());
+			Self::deposit_event(Event::Claim { old_pub_key, new_pub_key, amount });
+
+			Ok(())
 		}
 	}
 	#[pallet::validate_unsigned]
@@ -130,7 +132,10 @@ pub mod pallet {
 		type Call = Call<T>;
 
 		fn validate_unsigned(_source: TransactionSource, call: &Self::Call) -> TransactionValidity {
-			if let Call::claim_to { old_pub_key, new_pub_key, sig } = call {
+			if let Call::claim_to { chain_id, old_pub_key, new_pub_key, sig } = call {
+				if *chain_id != <T as pallet_evm::Config>::ChainId::get() {
+					return InvalidTransaction::BadProof.into();
+				}
 				if !Balances::<T>::contains_key(&old_pub_key) {
 					return InvalidTransaction::BadSigner.into();
 				}

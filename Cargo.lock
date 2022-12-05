@@ -2299,23 +2299,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "darwinia-message-migrate"
-version = "6.0.0"
-dependencies = [
- "dc-primitives",
- "fp-ethereum",
- "fp-evm",
- "frame-support",
- "frame-system",
- "pallet-evm",
- "parity-scale-codec",
- "scale-info",
- "sp-core",
- "sp-runtime",
- "sp-std",
-]
-
-[[package]]
 name = "darwinia-message-transact"
 version = "6.0.0"
 dependencies = [
@@ -2339,6 +2322,26 @@ dependencies = [
  "rlp",
  "scale-info",
  "sha3 0.9.1",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "darwinia-migrate"
+version = "6.0.0"
+dependencies = [
+ "dc-primitives",
+ "fp-ethereum",
+ "fp-evm",
+ "frame-support",
+ "frame-system",
+ "pallet-balances",
+ "pallet-evm",
+ "pallet-timestamp",
+ "parity-scale-codec",
+ "scale-info",
  "sp-core",
  "sp-io",
  "sp-runtime",

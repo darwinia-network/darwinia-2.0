@@ -18,25 +18,20 @@
 
 //! Test utilities
 
-// crates.io
-use codec::{Decode, Encode, MaxEncodedLen};
 // frontier
 use pallet_evm::IdentityAddressMapping;
 // parity
-#[cfg(feature = "std")]
-use frame_support::traits::GenesisBuild;
 use frame_support::{
 	pallet_prelude::Weight,
 	traits::{ConstU32, Everything},
 };
-use frame_system::EnsureRoot;
-use sp_core::{H160, H256, U256};
+use sp_core::{sr25519::Pair, Pair as PairT, H160, H256, U256};
 use sp_runtime::{
 	testing::Header,
 	traits::{BlakeTwo256, IdentityLookup},
 	AccountId32, BuildStorage,
 };
-use sp_std::{marker::PhantomData, prelude::*};
+use sp_std::prelude::*;
 // darwinia
 use crate::{self as darwinia_migrate};
 
@@ -44,6 +39,43 @@ pub type Block = frame_system::mocking::MockBlock<TestRuntime>;
 pub type Balance = u128;
 pub type AccountId = H160;
 pub type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<TestRuntime>;
+
+pub enum EthAccounts {
+	Alice,
+	Bob,
+}
+
+impl Into<H160> for EthAccounts {
+	fn into(self) -> H160 {
+		match self {
+			EthAccounts::Alice => H160::repeat_byte(0xAA),
+			EthAccounts::Bob => H160::repeat_byte(0xBB),
+		}
+	}
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum SubAccounts {
+	Charlie,
+	Bogus,
+}
+
+impl SubAccounts {
+	pub fn to_pair(self) -> (Pair, AccountId32) {
+		match self {
+			SubAccounts::Charlie => {
+				let pair = Pair::from_seed(b"12345678901234567890123456789012");
+				let account_id = AccountId32::new(pair.public().0);
+				(pair, account_id)
+			},
+			SubAccounts::Bogus => {
+				let pair = Pair::from_seed(b"12345678901234567890123456789013");
+				let account_id = AccountId32::new(pair.public().0);
+				(pair, account_id)
+			},
+		}
+	}
+}
 
 frame_support::parameter_types! {
 	pub const BlockHashCount: u64 = 250;
@@ -149,6 +181,7 @@ frame_support::construct_runtime! {
 #[derive(Default)]
 pub(crate) struct ExtBuilder {
 	migrated_accounts: Vec<(AccountId32, Balance)>,
+	balances: Vec<(AccountId, Balance)>,
 }
 
 impl ExtBuilder {
@@ -157,10 +190,15 @@ impl ExtBuilder {
 		self
 	}
 
+	pub(crate) fn with_balances(mut self, balances: Vec<(AccountId, Balance)>) -> Self {
+		self.balances = balances;
+		self
+	}
+
 	pub(crate) fn build(self) -> sp_io::TestExternalities {
 		let t = GenesisConfig {
 			system: Default::default(),
-			balances: Default::default(),
+			balances: pallet_balances::GenesisConfig { balances: self.balances },
 			evm: Default::default(),
 			migrate: darwinia_migrate::GenesisConfig { migrated_accounts: self.migrated_accounts },
 		}
