@@ -251,11 +251,11 @@ where
 	fn stake(who: &Self::AccountId, item: Self::Item) -> DispatchResult {
 		<Deposits<T>>::try_mutate(who, |ds| {
 			let Some(d) = ds.iter_mut().find(|d| d.id == item) else {
-			    return DispatchResult::Err(<Error<T>>::DepositNotFound.into());
+			    return Err(<Error<T>>::DepositNotFound)?;
 			};
 
 			if d.in_use {
-				Err(<Error<T>>::DepositInUse.into())
+				Err(<Error<T>>::DepositInUse)?
 			} else {
 				d.in_use = true;
 
@@ -267,7 +267,7 @@ where
 	fn unstake(who: &Self::AccountId, item: Self::Item) -> DispatchResult {
 		<Deposits<T>>::try_mutate(who, |ds| {
 			let Some(d) = ds.iter_mut().find(|d| d.id == item) else {
-			    return DispatchResult::Err(<Error<T>>::DepositNotFound.into());
+			    return Err(<Error<T>>::DepositNotFound)?;
 			};
 
 			if d.in_use {
@@ -275,7 +275,7 @@ where
 
 				Ok(())
 			} else {
-				Err(<Error<T>>::DepositNotInUse.into())
+				Err(<Error<T>>::DepositNotInUse)?
 			}
 		})
 	}

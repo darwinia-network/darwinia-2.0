@@ -310,21 +310,38 @@ pub mod pallet {
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
-			if !<Ledgers<T>>::contains_key(&who) {
-				<frame_system::Pallet<T>>::inc_consumers(&who)?;
-			}
+			<Ledgers<T>>::try_mutate(&who, |l| {
+				let l = if let Some(l) = l {
+					l
+				} else {
+					<frame_system::Pallet<T>>::inc_consumers(&who)?;
 
-			if ring_amount != 0 {
-				Self::stake_ring(&who, ring_amount)?;
-			}
-			if kton_amount != 0 {
-				Self::stake_kton(&who, kton_amount)?;
-			}
+					*l = Some(Ledger {
+						account: who.to_owned(),
+						staked_ring: Default::default(),
+						staked_kton: Default::default(),
+						staked_deposits: Default::default(),
+						unstaking_ring: Default::default(),
+						unstaking_kton: Default::default(),
+						unstaking_deposits: Default::default(),
+					});
 
-			for d in deposits {
-				Self::stake_deposit(&who, d)?;
-			}
+					l.as_mut().expect("[pallet::staking] `l` must be some; qed")
+				};
 
+				if ring_amount != 0 {
+					Self::stake_ring(l, ring_amount)?;
+				}
+				if kton_amount != 0 {
+					Self::stake_kton(l, kton_amount)?;
+				}
+
+				for d in deposits {
+					Self::stake_deposit(l, d)?;
+				}
+
+				DispatchResult::Ok(())
+			})?;
 
 			// TODO: event?
 
@@ -341,16 +358,24 @@ pub mod pallet {
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
-			if ring_amount != 0 {
-				Self::unstake_ring(&who, ring_amount)?;
-			}
-			if kton_amount != 0 {
-				Self::unstake_kton(&who, kton_amount)?;
-			}
+			<Ledgers<T>>::try_mutate(&who, |l| {
+				let Some(l) = l else {
+					return Err(<Error<T>>::NotStaker)?;
+				};
 
-			for d in deposits {
-				Self::unstake_deposit(&who, d)?;
-			}
+				if ring_amount != 0 {
+					Self::unstake_ring(l, ring_amount)?;
+				}
+				if kton_amount != 0 {
+					Self::unstake_kton(l, kton_amount)?;
+				}
+
+				for d in deposits {
+					Self::unstake_deposit(l, d)?;
+				}
+
+				DispatchResult::Ok(())
+			})?;
 
 			// TODO: event?
 
@@ -427,13 +452,13 @@ pub mod pallet {
 			P::try_mutate(|p| {
 				let p_new = if increase {
 					let Some(p_new) = p.checked_add(amount) else {
-						return Err("[pallet::staking] `u128` must not be overflowed; qed".into());
+						return Err("[pallet::staking] `u128` must not be overflowed; qed")?;
 					};
 
 					p_new
 				} else {
 					let Some(p_new) = p.checked_sub(amount) else {
-						return Err("[pallet::staking] `u128` must not be overflowed; qed".into());
+						return Err("[pallet::staking] `u128` must not be overflowed; qed")?;
 					};
 
 					p_new
@@ -445,161 +470,96 @@ pub mod pallet {
 			})
 		}
 
-		fn stake_ring(who: &T::AccountId, amount: Balance) -> DispatchResult {
-			T::Ring::stake(who, amount)?;
-			<Ledgers<T>>::try_mutate(who, |l| {
-				if let Some(l) = l {
-					let Some(nr) = l.staked_ring.checked_add(amount) else {
-						return DispatchResult::Err("[pallet::staking] `u128` must not be overflowed; qed".into());
-					};
+		fn stake_ring(ledger: &mut Ledger<T>, amount: Balance) -> DispatchResult {
+			T::Ring::stake(&ledger.account, amount)?;
 
-					l.staked_ring = nr;
+			ledger.staked_ring = if let Some(r) = ledger.staked_ring.checked_add(amount) {
+				r
+			} else {
+				return Err("[pallet::staking] `u128` must not be overflowed; qed")?;
+			};
 
-					Ok(())
-				} else {
-					*l = Some(Ledger {
-						account: who.to_owned(),
-						staked_ring: amount,
-						staked_kton: Default::default(),
-						staked_deposits: Default::default(),
-						unstaking_ring: Default::default(),
-						unstaking_kton: Default::default(),
-						unstaking_deposits: Default::default(),
-					});
-
-					Ok(())
-				}
-			})?;
 			Self::update_pool::<RingPool<T>>(true, amount)?;
 
 			Ok(())
 		}
 
-		fn stake_kton(who: &T::AccountId, amount: Balance) -> DispatchResult {
-			T::Kton::stake(who, amount)?;
-			<Ledgers<T>>::try_mutate(who, |l| {
-				if let Some(l) = l {
-					let Some(nk) = l.staked_kton.checked_add(amount) else {
-						return DispatchResult::Err("[pallet::staking] `u128` must not be overflowed; qed".into());
-					};
+		fn stake_kton(ledger: &mut Ledger<T>, amount: Balance) -> DispatchResult {
+			T::Kton::stake(&ledger.account, amount)?;
 
-					l.staked_kton = nk;
+			ledger.staked_kton = if let Some(k) = ledger.staked_kton.checked_add(amount) {
+				k
+			} else {
+				return Err("[pallet::staking] `u128` must not be overflowed; qed")?;
+			};
 
-					Ok(())
-				} else {
-					*l = Some(Ledger {
-						account: who.to_owned(),
-						staked_ring: Default::default(),
-						staked_kton: amount,
-						staked_deposits: Default::default(),
-						unstaking_ring: Default::default(),
-						unstaking_kton: Default::default(),
-						unstaking_deposits: Default::default(),
-					});
-
-					Ok(())
-				}
-			})?;
 			Self::update_pool::<KtonPool<T>>(true, amount)?;
 
 			Ok(())
 		}
 
-		fn stake_deposit(who: &T::AccountId, deposit: DepositId<T>) -> DispatchResult {
-			T::Deposit::stake(who, deposit)?;
-			<Ledgers<T>>::try_mutate(who, |l| {
-				if let Some(l) = l {
-					l.staked_deposits
-						.try_push(deposit)
-						.map_err(|_| <Error<T>>::ExceedMaxDeposits)?;
+		fn stake_deposit(ledger: &mut Ledger<T>, deposit: DepositId<T>) -> DispatchResult {
+			T::Deposit::stake(&ledger.account, deposit)?;
 
-					DispatchResult::Ok(())
-				} else {
-					*l = Some(Ledger {
-						account: who.to_owned(),
-						staked_ring: Default::default(),
-						staked_kton: Default::default(),
-						staked_deposits: BoundedVec::truncate_from(vec![deposit]),
-						unstaking_ring: Default::default(),
-						unstaking_kton: Default::default(),
-						unstaking_deposits: Default::default(),
-					});
+			ledger.staked_deposits.try_push(deposit).map_err(|_| <Error<T>>::ExceedMaxDeposits)?;
 
-					Ok(())
-				}
-			})?;
-			Self::update_pool::<RingPool<T>>(true, T::Deposit::amount(who, deposit))?;
+			Self::update_pool::<RingPool<T>>(true, T::Deposit::amount(&ledger.account, deposit))?;
 
 			Ok(())
 		}
 
-		fn unstake_ring(who: &T::AccountId, amount: Balance) -> DispatchResult {
-			<Ledgers<T>>::try_mutate(who, |l| {
-				let Some(l) = l else {
-					return DispatchResult::Err(<Error<T>>::NotStaker.into());
-				};
-				let Some(nr) = l.staked_ring.checked_sub(amount) else {
-					return Err("[pallet::staking] `u128` must not be overflowed; qed".into());
-				};
+		fn unstake_ring(ledger: &mut Ledger<T>, amount: Balance) -> DispatchResult {
+			let Some(nr) = ledger.staked_ring.checked_sub(amount) else {
+				return Err("[pallet::staking] `u128` must not be overflowed; qed")?;
+			};
 
-				l.staked_ring = nr;
-				l.unstaking_ring
-					.try_push((
-						amount,
-						<frame_system::Pallet<T>>::block_number() + T::MinStakingDuration::get(),
-					))
-					.map_err(|_| <Error<T>>::ExceedMaxUnstakings)?;
+			ledger.staked_ring = nr;
+			ledger
+				.unstaking_ring
+				.try_push((
+					amount,
+					<frame_system::Pallet<T>>::block_number() + T::MinStakingDuration::get(),
+				))
+				.map_err(|_| <Error<T>>::ExceedMaxUnstakings)?;
 
-				Ok(())
-			})?;
 			Self::update_pool::<RingPool<T>>(false, amount)?;
 
 			Ok(())
 		}
 
-		fn unstake_kton(who: &T::AccountId, amount: Balance) -> DispatchResult {
-			<Ledgers<T>>::try_mutate(who, |l| {
-				let Some(l) = l else {
-					return DispatchResult::Err(<Error<T>>::NotStaker.into());
-				};
-				let Some(nk) = l.staked_kton.checked_sub(amount) else {
-					return Err("[pallet::staking] `u128` must not be overflowed; qed".into());
-				};
+		fn unstake_kton(ledger: &mut Ledger<T>, amount: Balance) -> DispatchResult {
+			let Some(nk) = ledger.staked_kton.checked_sub(amount) else {
+				return Err("[pallet::staking] `u128` must not be overflowed; qed")?;
+			};
 
-				l.staked_kton = nk;
-				l.unstaking_kton
-					.try_push((
-						amount,
-						<frame_system::Pallet<T>>::block_number() + T::MinStakingDuration::get(),
-					))
-					.map_err(|_| <Error<T>>::ExceedMaxUnstakings)?;
+			ledger.staked_kton = nk;
+			ledger
+				.unstaking_kton
+				.try_push((
+					amount,
+					<frame_system::Pallet<T>>::block_number() + T::MinStakingDuration::get(),
+				))
+				.map_err(|_| <Error<T>>::ExceedMaxUnstakings)?;
 
-				Ok(())
-			})?;
 			Self::update_pool::<KtonPool<T>>(false, amount)?;
 
 			Ok(())
 		}
 
-		fn unstake_deposit(who: &T::AccountId, deposit: DepositId<T>) -> DispatchResult {
-			<Ledgers<T>>::try_mutate(who, |l| {
-				let Some(l) = l else {
-					return DispatchResult::Err(<Error<T>>::NotStaker.into());
-				};
-				let Some(i) = l.staked_deposits.iter().position(|d| d == &deposit) else {
-					return Err("[pallet::staking] deposit id must be existed, due to previous unstake OP; qed".into());
-				};
+		fn unstake_deposit(ledger: &mut Ledger<T>, deposit: DepositId<T>) -> DispatchResult {
+			let Some(i) = ledger.staked_deposits.iter().position(|d| d == &deposit) else {
+				return Err("[pallet::staking] deposit id must be existed, due to previous unstake OP; qed")?;
+			};
 
-				l.unstaking_deposits
-					.try_push((
-						l.staked_deposits.remove(i),
-						<frame_system::Pallet<T>>::block_number() + T::MinStakingDuration::get(),
-					))
-					.map_err(|_| <Error<T>>::ExceedMaxUnstakings)?;
+			ledger
+				.unstaking_deposits
+				.try_push((
+					ledger.staked_deposits.remove(i),
+					<frame_system::Pallet<T>>::block_number() + T::MinStakingDuration::get(),
+				))
+				.map_err(|_| <Error<T>>::ExceedMaxUnstakings)?;
 
-				Ok(())
-			})?;
-			Self::update_pool::<RingPool<T>>(false, T::Deposit::amount(who, deposit))?;
+			Self::update_pool::<RingPool<T>>(false, T::Deposit::amount(&ledger.account, deposit))?;
 
 			Ok(())
 		}
@@ -607,7 +567,7 @@ pub mod pallet {
 		fn claim_unstakings(who: &T::AccountId) -> DispatchResult {
 			<Ledgers<T>>::try_mutate(who, |l| {
 				let Some(l) = l else {
-					return DispatchResult::Err(<Error<T>>::NotStaker.into());
+					return Err(<Error<T>>::NotStaker)?;
 				};
 				let now = <frame_system::Pallet<T>>::block_number();
 				let claim = |u: &mut BoundedVec<_, _>, c: &mut Balance| {
