@@ -132,33 +132,33 @@ pub mod pallet {
 		type Call = Call<T>;
 
 		fn validate_unsigned(_source: TransactionSource, call: &Self::Call) -> TransactionValidity {
-			if let Call::claim_to { chain_id, old_pub_key, new_pub_key, sig } = call {
-				if *chain_id != <T as pallet_evm::Config>::ChainId::get() {
-					return InvalidTransaction::BadProof.into();
-				}
-				if !Balances::<T>::contains_key(&old_pub_key) {
-					return InvalidTransaction::BadSigner.into();
-				}
+			let Call::claim_to { chain_id, old_pub_key, new_pub_key, sig } = call else {
+				return InvalidTransaction::Call.into();
+			};
 
-				let message = ClaimMessage::new(
-					<T as pallet_evm::Config>::ChainId::get(),
-					old_pub_key,
-					new_pub_key,
-				);
-				if let Ok(signer) = Public::from_slice(old_pub_key.as_ref()) {
-					let is_valid = sig.verify(&blake2_256(&message.raw_bytes())[..], &signer);
-
-					if is_valid {
-						return ValidTransaction::with_tag_prefix("MigrateClaim")
-							.priority(TransactionPriority::max_value())
-							.propagate(true)
-							.build();
-					}
-				}
-				return InvalidTransaction::BadSigner.into();
-			} else {
-				InvalidTransaction::Call.into()
+			if *chain_id != <T as pallet_evm::Config>::ChainId::get() {
+				return InvalidTransaction::BadProof.into();
 			}
+			if !Balances::<T>::contains_key(&old_pub_key) {
+				return InvalidTransaction::BadSigner.into();
+			}
+
+			let message = ClaimMessage::new(
+				<T as pallet_evm::Config>::ChainId::get(),
+				old_pub_key,
+				new_pub_key,
+			);
+			if let Ok(signer) = Public::from_slice(old_pub_key.as_ref()) {
+				let is_valid = sig.verify(&blake2_256(&message.raw_bytes())[..], &signer);
+
+				if is_valid {
+					return ValidTransaction::with_tag_prefix("MigrateClaim")
+						.priority(TransactionPriority::max_value())
+						.propagate(true)
+						.build();
+				}
+			}
+			return InvalidTransaction::BadSigner.into();
 		}
 	}
 }

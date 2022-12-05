@@ -19,40 +19,41 @@
 // darwinia
 use crate::{mock::*, ClaimMessage, Error};
 // substrate
-use frame_support::{assert_err, assert_ok};
+use frame_support::{assert_err, assert_ok, unsigned::ValidateUnsigned};
 use sp_core::{blake2_256, Pair, H160};
+use sp_runtime::transaction_validity::{InvalidTransaction, TransactionValidityError};
 
 #[test]
 fn claim_to_new_account() {
-	let (pair, charilie) = SubAccounts::Charlie.to_pair();
+	let (pair, charlie) = SubAccounts::Charlie.to_pair();
 	let alice: H160 = EthAccounts::Alice.into();
 
 	ExtBuilder::default()
-		.with_migrated_accounts(vec![(charilie.clone(), 1000)])
+		.with_migrated_accounts(vec![(charlie.clone(), 1000)])
 		.build()
 		.execute_with(|| {
-			let message = ClaimMessage::new(42, &charilie, &alice);
+			let message = ClaimMessage::new(42, &charlie, &alice);
 			let sig = pair.sign(&blake2_256(&message.raw_bytes())[..]);
 
-			assert_eq!(Migrate::balance_of(charilie.clone()), Some(1000));
+			assert_eq!(Migrate::balance_of(charlie.clone()), Some(1000));
 			assert_eq!(Balances::free_balance(alice), 0);
-			assert_ok!(Migrate::claim_to(RuntimeOrigin::none(), 42, charilie.clone(), alice, sig));
-			assert!(Migrate::balance_of(charilie).is_none());
+			assert_ok!(Migrate::claim_to(RuntimeOrigin::none(), 42, charlie.clone(), alice, sig));
+			assert!(Migrate::balance_of(charlie).is_none());
 			assert_eq!(Balances::free_balance(alice), 1000);
 		});
 }
 
 #[test]
 fn claim_with_not_exist_old_pub_key() {
-	let (pair, charilie) = SubAccounts::Charlie.to_pair();
+	let (pair, charlie) = SubAccounts::Charlie.to_pair();
 	let alice: H160 = EthAccounts::Alice.into();
 
 	ExtBuilder::default().build().execute_with(|| {
-		let message = ClaimMessage::new(42, &charilie, &alice);
+		let message = ClaimMessage::new(42, &charlie, &alice);
 		let sig = pair.sign(&blake2_256(&message.raw_bytes())[..]);
 
 		assert_err!(
-			Migrate::claim_to(RuntimeOrigin::none(), 42, charilie.clone(), alice, sig),
+			Migrate::claim_to(RuntimeOrigin::none(), 42, charlie.clone(), alice, sig),
 			Error::<TestRuntime>::AccountNotExist
 		);
 	});
@@ -81,21 +82,94 @@ fn claim_to_existed_account() {
 
 #[test]
 fn claim_event() {
-	let (pair, charilie) = SubAccounts::Charlie.to_pair();
+	let (pair, charlie) = SubAccounts::Charlie.to_pair();
 	let alice: H160 = EthAccounts::Alice.into();
 
 	ExtBuilder::default()
-		.with_migrated_accounts(vec![(charilie.clone(), 1000)])
+		.with_migrated_accounts(vec![(charlie.clone(), 1000)])
 		.build()
 		.execute_with(|| {
-			let message = ClaimMessage::new(42, &charilie, &alice);
+			let message = ClaimMessage::new(42, &charlie, &alice);
 			let sig = pair.sign(&blake2_256(&message.raw_bytes())[..]);
 
-			assert_ok!(Migrate::claim_to(RuntimeOrigin::none(), 42, charilie.clone(), alice, sig));
+			assert_ok!(Migrate::claim_to(RuntimeOrigin::none(), 42, charlie.clone(), alice, sig));
 			System::assert_has_event(RuntimeEvent::Migrate(crate::Event::Claim {
-				old_pub_key: charilie,
+				old_pub_key: charlie,
 				new_pub_key: alice,
 				amount: 1000,
 			}))
+		});
+}
+
+#[test]
+fn claim_pre_dispatch_with_invalid_chain_id() {
+	let (pair, charlie) = SubAccounts::Charlie.to_pair();
+	let alice: H160 = EthAccounts::Alice.into();
+
+	ExtBuilder::default()
+		.with_migrated_accounts(vec![(charlie.clone(), 1000)])
+		.build()
+		.execute_with(|| {
+			let message = ClaimMessage::new(42, &charlie, &alice);
+			let sig = pair.sign(&blake2_256(&message.raw_bytes())[..]);
+
+			let call = crate::Call::claim_to {
+				chain_id: 43, // The correct chain id is 42
+				old_pub_key: charlie.clone(),
+				new_pub_key: alice,
+				sig,
+			};
+			assert_err!(
+				Migrate::pre_dispatch(&call),
+				TransactionValidityError::Invalid(InvalidTransaction::BadProof)
+			);
+		});
+}
+
+#[test]
+fn claim_pre_dispatch_with_invalid_old_pub_key() {
+	let (pair, charlie) = SubAccounts::Charlie.to_pair();
+	let alice: H160 = EthAccounts::Alice.into();
+
+	ExtBuilder::default().with_migrated_accounts(vec![]).build().execute_with(|| {
+		let message = ClaimMessage::new(42, &charlie, &alice);
+		let sig = pair.sign(&blake2_256(&message.raw_bytes())[..]);
+
+		let call = crate::Call::claim_to {
+			chain_id: 42,
+			old_pub_key: charlie.clone(),
+			new_pub_key: alice,
+			sig,
+		};
+		assert_err!(
+			Migrate::pre_dispatch(&call),
+			TransactionValidityError::Invalid(InvalidTransaction::BadSigner)
+		);
+	});
+}
+
+#[test]
+fn claim_pre_dispatch_with_invalid_signature() {
+	let (_, charlie) = SubAccounts::Charlie.to_pair();
+	let (bogus_pair, _) = SubAccounts::Bogus.to_pair();
+	let alice: H160 = EthAccounts::Alice.into();
+
+	ExtBuilder::default()
+		.with_migrated_accounts(vec![(charlie.clone(), 1000)])
+		.build()
+		.execute_with(|| {
+			let message = ClaimMessage::new(42, &charlie, &alice);
+			let sig = bogus_pair.sign(&blake2_256(&message.raw_bytes())[..]);
+
+			let call = crate::Call::claim_to {
+				chain_id: 42,
+				old_pub_key: charlie.clone(),
+				new_pub_key: alice,
+				sig,
+			};
+			assert_err!(
+				Migrate::pre_dispatch(&call),
+				TransactionValidityError::Invalid(InvalidTransaction::BadSigner)
+			);
 		});
 }
