@@ -137,7 +137,7 @@ pub fn genesis_config() -> ChainSpec {
 		// Name
 		"Crab2",
 		// ID
-		"crab",
+		"crab2",
 		ChainType::Live,
 		move || {
 			GenesisConfig {
