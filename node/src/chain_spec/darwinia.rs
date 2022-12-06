@@ -179,6 +179,7 @@ pub fn config() -> ChainSpec {
 				assets: Default::default(),
 				balances: Default::default(),
 				transaction_payment: Default::default(),
+				migrate: Default::default(),
 
 				// Consensus stuff.
 				collator_selection: darwinia_runtime::CollatorSelectionConfig {
@@ -262,6 +263,7 @@ fn testnet_genesis(
 			balances: endowed_accounts.iter().cloned().map(|k| (k, 100_000_000 * UNIT)).collect(),
 		},
 		transaction_payment: Default::default(),
+		migrate: Default::default(),
 
 		// Consensus stuff.
 		collator_selection: darwinia_runtime::CollatorSelectionConfig {

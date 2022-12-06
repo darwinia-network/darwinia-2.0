@@ -36,11 +36,13 @@ use frame_support::traits::Currency;
 #[cfg(feature = "std")]
 use frame_support::traits::GenesisBuild;
 use sp_core::{
-	blake2_256,
+	crypto::ByteArray,
 	sr25519::{Public, Signature},
-	ByteArray, H160,
+	H160,
 };
+use sp_io::hashing::blake2_256;
 use sp_runtime::{traits::Verify, AccountId32};
+use sp_std::vec::Vec;
 
 pub use pallet::*;
 #[frame_support::pallet]
@@ -101,7 +103,6 @@ pub mod pallet {
 	{
 		// since signature and chain_id verification is done in `validate_unsigned`
 		// we can skip doing it here again.
-
 		// TODO: update weight
 		#[pallet::weight(0)]
 		pub fn claim_to(

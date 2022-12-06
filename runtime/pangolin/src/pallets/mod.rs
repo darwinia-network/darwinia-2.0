@@ -42,6 +42,8 @@ mod balances;
 
 mod transaction_payment;
 
+mod migrate;
+
 // Consensus stuff.
 mod authorship;
 
