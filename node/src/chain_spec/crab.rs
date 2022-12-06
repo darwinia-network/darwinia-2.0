@@ -155,6 +155,7 @@ pub fn genesis_config() -> ChainSpec {
 				balances: Default::default(),
 				transaction_payment: Default::default(),
 				assets: Default::default(),
+				account_migration: Default::default(),
 
 				// Consensus stuff.
 				collator_selection: CollatorSelectionConfig {
@@ -232,6 +233,7 @@ fn testnet_genesis(
 		},
 		transaction_payment: Default::default(),
 		assets: Default::default(),
+		account_migration: Default::default(),
 
 		// Consensus stuff.
 		collator_selection: CollatorSelectionConfig {
