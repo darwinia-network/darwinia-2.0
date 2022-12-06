@@ -35,10 +35,16 @@ fn claim_to_new_account() {
 			let message = ClaimMessage::new(42, &charlie, &alice);
 			let sig = pair.sign(&blake2_256(&message.raw_bytes())[..]);
 
-			assert_eq!(Migrate::balance_of(charlie.clone()), Some(1000));
+			assert_eq!(AccountMigration::balance_of(charlie.clone()), Some(1000));
 			assert_eq!(Balances::free_balance(alice), 0);
-			assert_ok!(Migrate::claim_to(RuntimeOrigin::none(), 42, charlie.clone(), alice, sig));
-			assert!(Migrate::balance_of(charlie).is_none());
+			assert_ok!(AccountMigration::claim_to(
+				RuntimeOrigin::none(),
+				42,
+				charlie.clone(),
+				alice,
+				sig
+			));
+			assert!(AccountMigration::balance_of(charlie).is_none());
 			assert_eq!(Balances::free_balance(alice), 1000);
 		});
 }
@@ -53,7 +59,7 @@ fn claim_with_not_exist_old_pub_key() {
 		let sig = pair.sign(&blake2_256(&message.raw_bytes())[..]);
 
 		assert_err!(
-			Migrate::claim_to(RuntimeOrigin::none(), 42, charlie.clone(), alice, sig),
+			AccountMigration::claim_to(RuntimeOrigin::none(), 42, charlie.clone(), alice, sig),
 			Error::<TestRuntime>::AccountNotExist
 		);
 	});
@@ -72,10 +78,16 @@ fn claim_to_existed_account() {
 			let message = ClaimMessage::new(42, &bogus, &bob);
 			let sig = pair.sign(&blake2_256(&message.raw_bytes())[..]);
 
-			assert_eq!(Migrate::balance_of(bogus.clone()), Some(1000));
+			assert_eq!(AccountMigration::balance_of(bogus.clone()), Some(1000));
 			assert_eq!(Balances::free_balance(bob), 500);
-			assert_ok!(Migrate::claim_to(RuntimeOrigin::none(), 42, bogus.clone(), bob, sig));
-			assert!(Migrate::balance_of(bogus).is_none());
+			assert_ok!(AccountMigration::claim_to(
+				RuntimeOrigin::none(),
+				42,
+				bogus.clone(),
+				bob,
+				sig
+			));
+			assert!(AccountMigration::balance_of(bogus).is_none());
 			assert_eq!(Balances::free_balance(bob), 1000 + 500);
 		});
 }
@@ -92,8 +104,14 @@ fn claim_event() {
 			let message = ClaimMessage::new(42, &charlie, &alice);
 			let sig = pair.sign(&blake2_256(&message.raw_bytes())[..]);
 
-			assert_ok!(Migrate::claim_to(RuntimeOrigin::none(), 42, charlie.clone(), alice, sig));
-			System::assert_has_event(RuntimeEvent::Migrate(crate::Event::Claim {
+			assert_ok!(AccountMigration::claim_to(
+				RuntimeOrigin::none(),
+				42,
+				charlie.clone(),
+				alice,
+				sig
+			));
+			System::assert_has_event(RuntimeEvent::AccountMigration(crate::Event::Claim {
 				old_pub_key: charlie,
 				new_pub_key: alice,
 				amount: 1000,
@@ -120,7 +138,7 @@ fn claim_pre_dispatch_with_invalid_chain_id() {
 				sig,
 			};
 			assert_err!(
-				Migrate::pre_dispatch(&call),
+				AccountMigration::pre_dispatch(&call),
 				TransactionValidityError::Invalid(InvalidTransaction::BadProof)
 			);
 		});
@@ -142,7 +160,7 @@ fn claim_pre_dispatch_with_invalid_old_pub_key() {
 			sig,
 		};
 		assert_err!(
-			Migrate::pre_dispatch(&call),
+			AccountMigration::pre_dispatch(&call),
 			TransactionValidityError::Invalid(InvalidTransaction::BadSigner)
 		);
 	});
@@ -168,7 +186,7 @@ fn claim_pre_dispatch_with_invalid_signature() {
 				sig,
 			};
 			assert_err!(
-				Migrate::pre_dispatch(&call),
+				AccountMigration::pre_dispatch(&call),
 				TransactionValidityError::Invalid(InvalidTransaction::BadSigner)
 			);
 		});

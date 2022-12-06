@@ -1348,9 +1348,9 @@ dependencies = [
  "cumulus-primitives-core",
  "cumulus-primitives-timestamp",
  "cumulus-primitives-utility",
+ "darwinia-account-migration",
  "darwinia-common-runtime",
  "darwinia-message-transact",
- "darwinia-migrate",
  "darwinia-precompile-assets",
  "darwinia-precompile-bls12-381",
  "darwinia-precompile-state-storage",
@@ -2287,6 +2287,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "darwinia-account-migration"
+version = "6.0.0"
+dependencies = [
+ "dc-primitives",
+ "fp-ethereum",
+ "fp-evm",
+ "frame-support",
+ "frame-system",
+ "pallet-balances",
+ "pallet-evm",
+ "pallet-timestamp",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "darwinia-common-runtime"
 version = "6.0.0"
 dependencies = [
@@ -2343,26 +2363,6 @@ dependencies = [
  "rlp",
  "scale-info",
  "sha3 0.9.1",
- "sp-core",
- "sp-io",
- "sp-runtime",
- "sp-std",
-]
-
-[[package]]
-name = "darwinia-migrate"
-version = "6.0.0"
-dependencies = [
- "dc-primitives",
- "fp-ethereum",
- "fp-evm",
- "frame-support",
- "frame-system",
- "pallet-balances",
- "pallet-evm",
- "pallet-timestamp",
- "parity-scale-codec",
- "scale-info",
  "sp-core",
  "sp-io",
  "sp-runtime",
@@ -2448,10 +2448,10 @@ dependencies = [
  "cumulus-primitives-core",
  "cumulus-primitives-timestamp",
  "cumulus-primitives-utility",
+ "darwinia-account-migration",
  "darwinia-common-runtime",
  "darwinia-deposit",
  "darwinia-message-transact",
- "darwinia-migrate",
  "darwinia-precompile-assets",
  "darwinia-precompile-bls12-381",
  "darwinia-precompile-state-storage",
@@ -7348,9 +7348,9 @@ dependencies = [
  "cumulus-primitives-core",
  "cumulus-primitives-timestamp",
  "cumulus-primitives-utility",
+ "darwinia-account-migration",
  "darwinia-common-runtime",
  "darwinia-message-transact",
- "darwinia-migrate",
  "darwinia-precompile-assets",
  "darwinia-precompile-bls12-381",
  "darwinia-precompile-state-storage",

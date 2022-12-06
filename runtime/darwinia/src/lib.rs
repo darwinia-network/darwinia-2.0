@@ -275,7 +275,7 @@ frame_support::construct_runtime! {
 		TransactionPayment: pallet_transaction_payment = 6,
 		Assets: pallet_assets = 34,
 		Deposit: darwinia_deposit = 40,
-		Migrate: darwinia_migrate = 41,
+		AccountMigration: darwinia_account_migration = 41,
 
 		// Consensus stuff.
 		Authorship: pallet_authorship = 7,

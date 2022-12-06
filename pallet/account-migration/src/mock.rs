@@ -33,7 +33,7 @@ use sp_runtime::{
 };
 use sp_std::prelude::*;
 // darwinia
-use crate::{self as darwinia_migrate};
+use crate::{self as darwinia_account_migration};
 
 pub type Block = frame_system::mocking::MockBlock<TestRuntime>;
 pub type Balance = u128;
@@ -159,7 +159,7 @@ impl pallet_evm::Config for TestRuntime {
 	type WithdrawOrigin = pallet_evm::EnsureAddressNever<AccountId>;
 }
 
-impl darwinia_migrate::Config for TestRuntime {
+impl darwinia_account_migration::Config for TestRuntime {
 	type Currency = Balances;
 	type RuntimeEvent = RuntimeEvent;
 }
@@ -174,7 +174,7 @@ frame_support::construct_runtime! {
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage},
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
 		EVM: pallet_evm::{Pallet, Call, Storage, Config, Event<T>},
-		Migrate: darwinia_migrate::{Pallet, Call, Storage, Config, Event},
+		AccountMigration: darwinia_account_migration::{Pallet, Call, Storage, Config, Event},
 	}
 }
 
@@ -200,7 +200,9 @@ impl ExtBuilder {
 			system: Default::default(),
 			balances: pallet_balances::GenesisConfig { balances: self.balances },
 			evm: Default::default(),
-			migrate: darwinia_migrate::GenesisConfig { migrated_accounts: self.migrated_accounts },
+			account_migration: darwinia_account_migration::GenesisConfig {
+				migrated_accounts: self.migrated_accounts,
+			},
 		}
 		.build_storage()
 		.unwrap();

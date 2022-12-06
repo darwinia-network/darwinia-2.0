@@ -19,7 +19,7 @@
 // darwinia
 use crate::*;
 
-impl darwinia_migrate::Config for Runtime {
+impl darwinia_account_migration::Config for Runtime {
 	type Currency = Balances;
 	type RuntimeEvent = RuntimeEvent;
 }
