@@ -21,8 +21,6 @@ use crate::*;
 use darwinia_precompile_assets::AccountToAssetId;
 // frontier
 use pallet_evm::Precompile;
-// substrate
-use sp_core::crypto::ByteArray;
 
 const WEIGHT_PER_GAS: u64 = 40_000;
 
@@ -40,6 +38,9 @@ impl<F: frame_support::traits::FindAuthor<u32>> frame_support::traits::FindAutho
 	where
 		I: 'a + IntoIterator<Item = (frame_support::ConsensusEngineId, &'a [u8])>,
 	{
+		// substrate
+		use sp_core::crypto::ByteArray;
+
 		F::find_author(digests).and_then(|i| {
 			Aura::authorities().get(i as usize).and_then(|id| {
 				let raw = id.to_raw_vec();
