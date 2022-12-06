@@ -37,12 +37,12 @@ use substrate_fixed::{
 /// Inflation's upper limit.
 pub const TOTAL_SUPPLY: Balance = 10_000_000_000 * UNIT;
 
-/// Milliseconds per year for the Julian year (365.25 days).
+/// Milliseconds per year.
 pub const MILLISECS_PER_YEAR: Balance = (366 * 24 * 60 * 60) * 1000;
 
 /// Compute the inflation of a period.
 ///
-/// Use `U94F34` here, because `2^94 > MAX_RING * 10^9`.
+/// Use `U94F34` here, because `2^94 > TOTAL_SUPPLY * 10^9`.
 pub fn in_period(unminted: Balance, period: Moment, elapsed: Moment) -> Option<Balance> {
 	let unminted_per_millisecs = U94F34::from_num(unminted) / MILLISECS_PER_YEAR;
 	let x = (unminted_per_millisecs * period).floor().to_num();
@@ -58,7 +58,7 @@ pub fn in_period(unminted: Balance, period: Moment, elapsed: Moment) -> Option<B
 // x * (1 - (99 / 100) ^ sqrt(years));
 // ```
 //
-// Use `I95F33` here, because `2^94 > MAX_RING * 10^9`.
+// Use `I95F33` here, because `2^94 > TOTAL_SUPPLY * 10^9`.
 fn inflate(x: Balance, years: u8) -> Option<Balance> {
 	let sqrt = transcendental::sqrt::<I95F33, I95F33>(years.into()).ok()?;
 	let ninety_nine = I95F33::from_num(99_u8) / 100_i128;
