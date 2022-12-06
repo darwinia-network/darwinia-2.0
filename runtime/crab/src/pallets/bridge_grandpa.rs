@@ -20,7 +20,6 @@ pub use pallet_bridge_grandpa::Instance1 as WithDarwiniaGrandpa;
 
 // darwinia
 use crate::*;
-use pallet_bridge_grandpa::Config;
 
 frame_support::parameter_types! {
 	// This is a pretty unscientific cap.
@@ -31,7 +30,7 @@ frame_support::parameter_types! {
 	pub const DarwiniaHeadersToKeep: u32 = 500;
 }
 
-impl Config<WithDarwiniaGrandpa> for Runtime {
+impl pallet_bridge_grandpa::Config<WithDarwiniaGrandpa> for Runtime {
 	type BridgedChain = bp_darwinia::DarwiniaLike;
 	type HeadersToKeep = DarwiniaHeadersToKeep;
 	type MaxBridgedAuthorities = ();
