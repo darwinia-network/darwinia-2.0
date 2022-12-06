@@ -50,10 +50,6 @@ frame_support::parameter_types! {
 	pub const TreasuryPalletId: frame_support::PalletId = frame_support::PalletId(*b"da/trsry");
 	pub const FeeMarketLockId: frame_support::traits::LockIdentifier = *b"da/feecr";
 
-	pub const MinimumRelayFee: Balance = 15 * UNIT;
-	pub const CollateralPerOrder: Balance = 50 * UNIT;
-	pub const Slot: BlockNumber = 600;
-
 	pub const DutyRelayersRewardRatio: sp_runtime::Permill = sp_runtime::Permill::from_percent(60);
 	pub const MessageRelayersRewardRatio: sp_runtime::Permill = sp_runtime::Permill::from_percent(80);
 	pub const ConfirmRelayersRewardRatio: sp_runtime::Permill = sp_runtime::Permill::from_percent(20);
@@ -62,16 +58,16 @@ frame_support::parameter_types! {
 
 impl pallet_fee_market::Config<WithCrabFeeMarket> for Runtime {
 	type AssignedRelayerSlashRatio = AssignedRelayerSlashRatio;
-	type CollateralPerOrder = CollateralPerOrder;
+	type CollateralPerOrder = ConstU128<{ 50 * UNIT }>;
 	type ConfirmRelayersRewardRatio = ConfirmRelayersRewardRatio;
 	type Currency = Balances;
 	type DutyRelayersRewardRatio = DutyRelayersRewardRatio;
 	type LockId = FeeMarketLockId;
 	type MessageRelayersRewardRatio = MessageRelayersRewardRatio;
-	type MinimumRelayFee = MinimumRelayFee;
+	type MinimumRelayFee = ConstU128<{ 15 * UNIT }>;
 	type RuntimeEvent = RuntimeEvent;
 	type Slasher = FeeMarketSlasher;
-	type Slot = Slot;
+	type Slot = ConstU32<600>;
 	type TreasuryPalletId = TreasuryPalletId;
 	type WeightInfo = ();
 }
