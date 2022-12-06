@@ -176,9 +176,9 @@ pub fn config() -> ChainSpec {
 				parachain_info: pangolin_runtime::ParachainInfoConfig { parachain_id: 2105.into() },
 
 				// Monetary stuff.
-				assets: Default::default(),
 				balances: Default::default(),
 				transaction_payment: Default::default(),
+				assets: Default::default(),
 				migrate: Default::default(),
 
 				// Consensus stuff.
@@ -253,11 +253,11 @@ fn testnet_genesis(
 		parachain_info: pangolin_runtime::ParachainInfoConfig { parachain_id: id },
 
 		// Monetary stuff.
-		assets: Default::default(),
 		balances: pangolin_runtime::BalancesConfig {
 			balances: endowed_accounts.iter().cloned().map(|k| (k, 100_000_000 * UNIT)).collect(),
 		},
 		transaction_payment: Default::default(),
+		assets: Default::default(),
 		migrate: Default::default(),
 
 		// Consensus stuff.

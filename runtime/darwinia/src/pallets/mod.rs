@@ -35,19 +35,19 @@ mod timestamp;
 mod parachain_info_;
 
 // Monetary stuff.
-mod assets;
-pub use assets::*;
-
 mod balances;
 
 mod transaction_payment;
 
-mod migrate;
+mod assets;
 
+mod deposit;
+
+mod migrate;
 // Consensus stuff.
 mod authorship;
 
-mod collator_selection;
+mod staking;
 
 mod session;
 pub use session::*;
