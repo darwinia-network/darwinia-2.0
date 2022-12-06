@@ -29,6 +29,7 @@ use pangolin_runtime::*;
 // frontier
 use fp_evm::GenesisAccount;
 // substrate
+use sc_chain_spec::Properties;
 use sc_service::ChainType;
 use sp_core::H160;
 

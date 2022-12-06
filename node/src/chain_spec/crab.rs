@@ -29,6 +29,7 @@ use dc_primitives::*;
 // frontier
 use fp_evm::GenesisAccount;
 // substrate
+use sc_chain_spec::Properties;
 use sc_service::ChainType;
 use sp_core::H160;
 
@@ -131,12 +132,6 @@ pub fn local_config() -> ChainSpec {
 }
 
 pub fn genesis_config() -> ChainSpec {
-	// Give your base currency a unit name and decimal places
-	let mut properties = sc_chain_spec::Properties::new();
-	properties.insert("tokenSymbol".into(), "CRAB".into());
-	properties.insert("tokenDecimals".into(), 18.into());
-	properties.insert("ss58Format".into(), 42.into());
-
 	// TODO: update this before final release
 	ChainSpec::from_genesis(
 		// Name
