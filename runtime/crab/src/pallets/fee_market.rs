@@ -24,7 +24,7 @@ use crate::*;
 pub struct FeeMarketSlasher;
 
 impl<T: pallet_fee_market::Config<I>, I: 'static> pallet_fee_market::Slasher<T, I>
-for FeeMarketSlasher
+	for FeeMarketSlasher
 {
 	fn calc_amount(
 		locked_collateral: pallet_fee_market::BalanceOf<T, I>,
