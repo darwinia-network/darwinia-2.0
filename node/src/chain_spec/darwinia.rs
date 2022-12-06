@@ -28,36 +28,36 @@ use std::{
 use cumulus_primitives_core::ParaId;
 // darwinia
 use super::*;
-use darwinia_runtime::{AuraId, DarwiniaPrecompiles, EvmConfig, Runtime};
+use darwinia_runtime::*;
 use dc_primitives::*;
 // frontier
 use fp_evm::GenesisAccount;
 // substrate
+use sc_chain_spec::Properties;
 use sc_service::ChainType;
 use sp_core::H160;
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
-pub type ChainSpec = sc_service::GenericChainSpec<darwinia_runtime::GenesisConfig, Extensions>;
+pub type ChainSpec = sc_service::GenericChainSpec<GenesisConfig, Extensions>;
 
-/// Generate the session keys from individual elements.
-///
-/// The input must be a tuple of individual keys (a single arg for now since we have just one key).
-pub fn session_keys(keys: AuraId) -> darwinia_runtime::SessionKeys {
-	darwinia_runtime::SessionKeys { aura: keys }
+fn properties() -> Properties {
+	super::properties("RING")
+}
+
+// TODO: maybe a more general one
+// Generate the session keys from individual elements.
+//
+// The input must be a tuple of individual keys (a single arg for now since we have just one key).
+fn session_keys(keys: AuraId) -> SessionKeys {
+	SessionKeys { aura: keys }
 }
 
 pub fn development_config() -> ChainSpec {
-	// Give your base currency a unit name and decimal places
-	let mut properties = sc_chain_spec::Properties::new();
-	properties.insert("tokenSymbol".into(), "RING".into());
-	properties.insert("tokenDecimals".into(), 18.into());
-	properties.insert("ss58Format".into(), 18.into());
-
 	ChainSpec::from_genesis(
 		// Name
 		"Darwinia2 Development",
 		// ID
-		"darwinia-dev",
+		"darwinia2-development",
 		ChainType::Development,
 		move || {
 			testnet_genesis(
@@ -94,41 +94,179 @@ pub fn development_config() -> ChainSpec {
 		None,
 		None,
 		None,
-		Some(properties),
+		Some(properties()),
 		Extensions {
 			relay_chain: "rococo-local".into(), // You MUST set this to the correct network!
 			para_id: 2046,
 		},
 	)
 }
+
+pub fn local_config() -> ChainSpec {
+	ChainSpec::from_genesis(
+		// Name
+		"Darwinia2 Local",
+		// ID
+		"darwinia2-local",
+		ChainType::Local,
+		move || {
+			testnet_genesis(
+				// Initial collators.
+				vec![
+					// Bind the `Alice` to `Alith` to make `--alice` available for testnet.
+					(
+						array_bytes::hex_n_into_unchecked(ALITH),
+						get_collator_keys_from_seed("Alice"),
+					),
+					// Bind the `Bob` to `Balthar` to make `--bob` available for testnet.
+					(
+						array_bytes::hex_n_into_unchecked(BALTATHAR),
+						get_collator_keys_from_seed("Bob"),
+					),
+					// Bind the `Charlie` to `CHARLETH` to make `--charlie` available for testnet.
+					(
+						array_bytes::hex_n_into_unchecked(CHARLETH),
+						get_collator_keys_from_seed("Charlie"),
+					),
+				],
+				vec![
+					array_bytes::hex_n_into_unchecked(ALITH),
+					array_bytes::hex_n_into_unchecked(BALTATHAR),
+					array_bytes::hex_n_into_unchecked(CHARLETH),
+					array_bytes::hex_n_into_unchecked(DOROTHY),
+					array_bytes::hex_n_into_unchecked(ETHAN),
+					array_bytes::hex_n_into_unchecked(FAITH),
+				],
+				2046.into(),
+			)
+		},
+		Vec::new(),
+		None,
+		None,
+		None,
+		Some(properties()),
+		Extensions {
+			relay_chain: "rococo-local".into(), // You MUST set this to the correct network!
+			para_id: 2046,
+		},
+	)
+}
+
+pub fn genesis_config() -> ChainSpec {
+	// TODO: update this before final release
+	ChainSpec::from_genesis(
+		// Name
+		"Darwinia2",
+		// ID
+		"darwinia2",
+		ChainType::Live,
+		move || {
+			GenesisConfig {
+				// System stuff.
+				system: SystemConfig {
+					code: WASM_BINARY
+						.expect("WASM binary was not build, please build it!")
+						.to_vec(),
+				},
+				parachain_system: Default::default(),
+				parachain_info: ParachainInfoConfig { parachain_id: 2046.into() },
+
+				// Monetary stuff.
+				balances: Default::default(),
+				transaction_payment: Default::default(),
+				assets: Default::default(),
+
+				// Consensus stuff.
+				staking: StakingConfig {
+					now: SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis(),
+					elapsed_time: 0,
+					collator_count: 3,
+					collators: Vec::new(),
+				},
+				session: SessionConfig {
+					keys: vec![(
+						array_bytes::hex_n_into_unchecked(ALITH),
+						array_bytes::hex_n_into_unchecked(ALITH),
+						session_keys(get_collator_keys_from_seed("Alice")),
+					)],
+				},
+				aura: Default::default(),
+				aura_ext: Default::default(),
+
+				// Governance stuff.
+				democracy: Default::default(),
+				council: Default::default(),
+				technical_committee: Default::default(),
+				phragmen_election: Default::default(),
+				technical_membership: Default::default(),
+				treasury: Default::default(),
+
+				// Utility stuff.
+				sudo: Default::default(),
+				vesting: Default::default(),
+
+				// XCM stuff.
+				polkadot_xcm: PolkadotXcmConfig { safe_xcm_version: Some(SAFE_XCM_VERSION) },
+
+				// EVM stuff.
+				ethereum: Default::default(),
+				evm: Default::default(),
+				base_fee: Default::default(),
+
+				// S2S stuff
+				bridge_crab_grandpa: Default::default(),
+				bridge_crab_messages: Default::default(),
+				crab_fee_market: Default::default(),
+			}
+		},
+		// Bootnodes
+		Vec::new(),
+		// Telemetry
+		None,
+		// Protocol ID
+		Some("darwinia"),
+		// Fork ID
+		None,
+		// Properties
+		Some(properties()),
+		// Extensions
+		Extensions {
+			relay_chain: "polkadot".into(), // You MUST set this to the correct network!
+			para_id: 2046,
+		},
+	)
+}
+
+pub fn config() -> ChainSpec {
+	unimplemented!("TODO")
+}
+
 fn testnet_genesis(
 	collators: Vec<(AccountId, AuraId)>,
 	endowed_accounts: Vec<AccountId>,
 	id: ParaId,
-) -> darwinia_runtime::GenesisConfig {
-	darwinia_runtime::GenesisConfig {
+) -> GenesisConfig {
+	GenesisConfig {
 		// System stuff.
-		system: darwinia_runtime::SystemConfig {
-			code: darwinia_runtime::WASM_BINARY.unwrap().to_vec(),
-		},
+		system: SystemConfig { code: WASM_BINARY.unwrap().to_vec() },
 		parachain_system: Default::default(),
-		parachain_info: darwinia_runtime::ParachainInfoConfig { parachain_id: id },
+		parachain_info: ParachainInfoConfig { parachain_id: id },
 
 		// Monetary stuff.
-		balances: darwinia_runtime::BalancesConfig {
+		balances: BalancesConfig {
 			balances: endowed_accounts.iter().cloned().map(|k| (k, 100_000_000 * UNIT)).collect(),
 		},
 		transaction_payment: Default::default(),
 		assets: Default::default(),
 
 		// Consensus stuff.
-		staking: darwinia_runtime::StakingConfig {
+		staking: StakingConfig {
 			now: SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis(),
 			elapsed_time: 0,
 			collator_count: collators.len() as _,
 			collators: collators.iter().map(|(a, _)| (a.to_owned(), UNIT)).collect(),
 		},
-		session: darwinia_runtime::SessionConfig {
+		session: SessionConfig {
 			keys: collators
 				.into_iter()
 				.map(|(acc, aura)| {
@@ -156,9 +294,7 @@ fn testnet_genesis(
 		vesting: Default::default(),
 
 		// XCM stuff.
-		polkadot_xcm: darwinia_runtime::PolkadotXcmConfig {
-			safe_xcm_version: Some(SAFE_XCM_VERSION),
-		},
+		polkadot_xcm: PolkadotXcmConfig { safe_xcm_version: Some(SAFE_XCM_VERSION) },
 
 		// EVM stuff.
 		ethereum: Default::default(),
@@ -211,101 +347,4 @@ fn testnet_genesis(
 		bridge_crab_messages: Default::default(),
 		crab_fee_market: Default::default(),
 	}
-}
-
-pub fn genesis_config() -> ChainSpec {
-	unimplemented!("TODO")
-}
-
-pub fn config() -> ChainSpec {
-	// Give your base currency a unit name and decimal places
-	let mut properties = sc_chain_spec::Properties::new();
-	properties.insert("tokenSymbol".into(), "RING".into());
-	properties.insert("tokenDecimals".into(), 18.into());
-	properties.insert("ss58Format".into(), 18.into());
-
-	// TODO: update this before final release
-	ChainSpec::from_genesis(
-		// Name
-		"Darwinia2",
-		// ID
-		"darwinia",
-		ChainType::Live,
-		move || {
-			darwinia_runtime::GenesisConfig {
-				// System stuff.
-				system: darwinia_runtime::SystemConfig {
-					code: darwinia_runtime::WASM_BINARY
-						.expect("WASM binary was not build, please build it!")
-						.to_vec(),
-				},
-				parachain_system: Default::default(),
-				parachain_info: darwinia_runtime::ParachainInfoConfig { parachain_id: 2046.into() },
-
-				// Monetary stuff.
-				balances: Default::default(),
-				transaction_payment: Default::default(),
-				assets: Default::default(),
-
-				// Consensus stuff.
-				staking: darwinia_runtime::StakingConfig {
-					now: SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis(),
-					elapsed_time: 0,
-					collator_count: 3,
-					collators: Vec::new(),
-				},
-				session: darwinia_runtime::SessionConfig {
-					keys: vec![(
-						array_bytes::hex_n_into_unchecked(ALITH),
-						array_bytes::hex_n_into_unchecked(ALITH),
-						session_keys(get_collator_keys_from_seed("Alice")),
-					)],
-				},
-				aura: Default::default(),
-				aura_ext: Default::default(),
-
-				// Governance stuff.
-				democracy: Default::default(),
-				council: Default::default(),
-				technical_committee: Default::default(),
-				phragmen_election: Default::default(),
-				technical_membership: Default::default(),
-				treasury: Default::default(),
-
-				// Utility stuff.
-				sudo: Default::default(),
-				vesting: Default::default(),
-
-				// XCM stuff.
-				polkadot_xcm: darwinia_runtime::PolkadotXcmConfig {
-					safe_xcm_version: Some(SAFE_XCM_VERSION),
-				},
-
-				// EVM stuff.
-				ethereum: Default::default(),
-				evm: Default::default(),
-				base_fee: Default::default(),
-
-				// S2S stuff
-				bridge_crab_grandpa: Default::default(),
-				bridge_crab_messages: Default::default(),
-				crab_fee_market: Default::default(),
-			}
-		},
-		// Bootnodes
-		Vec::new(),
-		// Telemetry
-		None,
-		// Protocol ID
-		Some("darwinia"),
-		// Fork ID
-		None,
-		// Properties
-		Some(properties),
-		// Extensions
-		Extensions {
-			relay_chain: "polkadot".into(), // You MUST set this to the correct network!
-			para_id: 2046,
-		},
-	)
 }
