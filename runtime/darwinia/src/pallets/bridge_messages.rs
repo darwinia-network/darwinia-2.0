@@ -32,7 +32,6 @@ impl bp_messages::source_chain::SenderOrigin<AccountId> for RuntimeOrigin {
 }
 
 frame_support::parameter_types! {
-	pub const MaxMessagesToPruneAtOnce: bp_messages::MessageNonce = 8;
 	pub const BridgedChainId: bp_runtime::ChainId = bp_runtime::CRAB_CHAIN_ID;
 	pub const MaxUnconfirmedMessagesAtInboundLane: bp_messages::MessageNonce =
 		bp_darwinia::MAX_UNCONFIRMED_MESSAGES_IN_CONFIRMATION_TX;
@@ -48,7 +47,7 @@ impl pallet_bridge_messages::Config<WithCrabMessages> for Runtime {
 	type InboundPayload = bm_crab::FromCrabMessagePayload;
 	type InboundRelayer = bp_crab::AccountId;
 	type LaneMessageVerifier = bm_crab::ToCrabMessageVerifier<Self>;
-	type MaxMessagesToPruneAtOnce = MaxMessagesToPruneAtOnce;
+	type MaxMessagesToPruneAtOnce = ConstU64<8>;
 	type MaxUnconfirmedMessagesAtInboundLane = MaxUnconfirmedMessagesAtInboundLane;
 	type MaxUnrewardedRelayerEntriesAtInboundLane = MaxUnrewardedRelayerEntriesAtInboundLane;
 	type MaximalOutboundPayloadSize = bm_crab::ToCrabMaximalOutboundPayloadSize;
