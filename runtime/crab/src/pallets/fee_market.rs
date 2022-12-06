@@ -20,8 +20,6 @@ pub use pallet_fee_market::Instance1 as WithDarwiniaFeeMarket;
 
 // darwinia
 use crate::*;
-// substrate
-use sp_runtime::traits::UniqueSaturatedInto;
 
 pub struct FeeMarketSlasher;
 impl<T: pallet_fee_market::Config<I>, I: 'static> pallet_fee_market::Slasher<T, I>
@@ -31,6 +29,9 @@ impl<T: pallet_fee_market::Config<I>, I: 'static> pallet_fee_market::Slasher<T, 
 		locked_collateral: pallet_fee_market::BalanceOf<T, I>,
 		timeout: T::BlockNumber,
 	) -> pallet_fee_market::BalanceOf<T, I> {
+		// substrate
+		use sp_runtime::traits::UniqueSaturatedInto;
+
 		let slash_each_block = 2 * UNIT;
 		let slash_value =
 			sp_runtime::traits::UniqueSaturatedInto::<Balance>::unique_saturated_into(timeout)
