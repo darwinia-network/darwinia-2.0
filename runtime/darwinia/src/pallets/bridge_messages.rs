@@ -52,10 +52,13 @@ impl pallet_bridge_messages::Config<WithCrabMessages> for Runtime {
 	type MaxUnconfirmedMessagesAtInboundLane = MaxUnconfirmedMessagesAtInboundLane;
 	type MaxUnrewardedRelayerEntriesAtInboundLane = MaxUnrewardedRelayerEntriesAtInboundLane;
 	type MaximalOutboundPayloadSize = bm_crab::ToCrabMaximalOutboundPayloadSize;
-	type MessageDeliveryAndDispatchPayment = pallet_fee_market::s2s::FeeMarketPayment<Self, WithCrabFeeMarket, Balances>;
+	type MessageDeliveryAndDispatchPayment =
+		pallet_fee_market::s2s::FeeMarketPayment<Self, WithCrabFeeMarket, Balances>;
 	type MessageDispatch = bm_crab::FromCrabMessageDispatch;
-	type OnDeliveryConfirmed = pallet_fee_market::s2s::FeeMarketMessageConfirmedHandler<Self, WithCrabFeeMarket>;
-	type OnMessageAccepted = pallet_fee_market::s2s::FeeMarketMessageAcceptedHandler<Self, WithCrabFeeMarket>;
+	type OnDeliveryConfirmed =
+		pallet_fee_market::s2s::FeeMarketMessageConfirmedHandler<Self, WithCrabFeeMarket>;
+	type OnMessageAccepted =
+		pallet_fee_market::s2s::FeeMarketMessageAcceptedHandler<Self, WithCrabFeeMarket>;
 	type OutboundMessageFee = bp_darwinia::Balance;
 	type OutboundPayload = bm_crab::ToCrabMessagePayload;
 	type Parameter = bm_crab::DarwiniaToCrabParameter;
