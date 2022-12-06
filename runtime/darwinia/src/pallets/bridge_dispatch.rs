@@ -31,7 +31,8 @@ impl bp_message_dispatch::CallValidate<AccountId, RuntimeOrigin, RuntimeCall> fo
 			RuntimeCall::MessageTransact(darwinia_message_transact::Call::message_transact {
 				transaction: tx,
 			}) => {
-				let total_payment = darwinia_message_transact::total_payment::<Runtime>((&**tx).into());
+				let total_payment =
+					darwinia_message_transact::total_payment::<Runtime>((&**tx).into());
 				let relayer =
 					pallet_evm::Pallet::<Runtime>::account_basic(&H160(relayer_account.0)).0;
 
@@ -51,8 +52,11 @@ impl bp_message_dispatch::CallValidate<AccountId, RuntimeOrigin, RuntimeCall> fo
 			RuntimeCall::MessageTransact(darwinia_message_transact::Call::message_transact {
 				transaction: tx,
 			}) => match origin.caller {
-				OriginCaller::MessageTransact(darwinia_message_transact::LcmpEthOrigin::MessageTransact(id)) => {
-					let total_payment = darwinia_message_transact::total_payment::<Runtime>((&**tx).into());
+				OriginCaller::MessageTransact(
+					darwinia_message_transact::LcmpEthOrigin::MessageTransact(id),
+				) => {
+					let total_payment =
+						darwinia_message_transact::total_payment::<Runtime>((&**tx).into());
 					pallet_balances::Pallet::<Runtime>::transfer(
 						frame_system::RawOrigin::Signed(*relayer_account).into(),
 						id.into(),
