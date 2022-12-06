@@ -15,7 +15,7 @@ dependencies = [
 [[package]]
 name = "account"
 version = "0.1.1"
-source = "git+https://github.com/darwinia-network/moonbeam?branch=polkadot-v0.9.30#9d31c6120bb0f317053da9cac7fe7cd2a44f844c"
+source = "git+https://github.com/darwinia-network/moonbeam.git?branch=polkadot-v0.9.30#9d31c6120bb0f317053da9cac7fe7cd2a44f844c"
 dependencies = [
  "blake2-rfc",
  "hex",
@@ -2385,6 +2385,37 @@ dependencies = [
  "scale-info",
  "sp-core",
  "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "darwinia-precompile-deposit"
+version = "6.0.0"
+dependencies = [
+ "darwinia-deposit",
+ "fp-evm",
+ "frame-support",
+ "frame-system",
+ "pallet-evm",
+ "precompile-utils",
+ "sp-core",
+ "sp-std",
+]
+
+[[package]]
+name = "darwinia-precompile-staking"
+version = "6.0.0"
+dependencies = [
+ "darwinia-deposit",
+ "darwinia-staking",
+ "dc-types",
+ "fp-evm",
+ "frame-support",
+ "frame-system",
+ "pallet-evm",
+ "precompile-utils",
+ "sp-core",
  "sp-runtime",
  "sp-std",
 ]
@@ -8894,7 +8925,7 @@ checksum = "5b40af805b3121feab8a3c29f04d8ad262fa8e0561883e7653e024ae4479e6de"
 [[package]]
 name = "precompile-utils"
 version = "0.1.0"
-source = "git+https://github.com/darwinia-network/moonbeam?branch=polkadot-v0.9.30#9d31c6120bb0f317053da9cac7fe7cd2a44f844c"
+source = "git+https://github.com/darwinia-network/moonbeam.git?branch=polkadot-v0.9.30#9d31c6120bb0f317053da9cac7fe7cd2a44f844c"
 dependencies = [
  "affix",
  "evm",
@@ -8920,7 +8951,7 @@ dependencies = [
 [[package]]
 name = "precompile-utils-macro"
 version = "0.1.0"
-source = "git+https://github.com/darwinia-network/moonbeam?branch=polkadot-v0.9.30#9d31c6120bb0f317053da9cac7fe7cd2a44f844c"
+source = "git+https://github.com/darwinia-network/moonbeam.git?branch=polkadot-v0.9.30#9d31c6120bb0f317053da9cac7fe7cd2a44f844c"
 dependencies = [
  "case",
  "num_enum",
@@ -13784,7 +13815,7 @@ dependencies = [
 [[package]]
 name = "xcm-primitives"
 version = "0.1.0"
-source = "git+https://github.com/darwinia-network/moonbeam?branch=polkadot-v0.9.30#9d31c6120bb0f317053da9cac7fe7cd2a44f844c"
+source = "git+https://github.com/darwinia-network/moonbeam.git?branch=polkadot-v0.9.30#9d31c6120bb0f317053da9cac7fe7cd2a44f844c"
 dependencies = [
  "ethereum",
  "ethereum-types",
