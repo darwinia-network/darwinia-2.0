@@ -19,7 +19,11 @@
 #![allow(clippy::derive_partial_eq_without_eq)]
 
 // std
-use std::{collections::BTreeMap, str::FromStr};
+use std::{
+	collections::BTreeMap,
+	str::FromStr,
+	time::{SystemTime, UNIX_EPOCH},
+};
 // cumulus
 use cumulus_primitives_core::ParaId;
 // darwinia
@@ -153,9 +157,11 @@ pub fn genesis_config() -> ChainSpec {
 				account_migration: Default::default(),
 
 				// Consensus stuff.
-				collator_selection: CollatorSelectionConfig {
-					invulnerables: vec![array_bytes::hex_n_into_unchecked(ALITH)],
-					..Default::default()
+				staking: StakingConfig {
+					now: SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis(),
+					elapsed_time: 0,
+					collator_count: 3,
+					collators: Vec::new(),
 				},
 				session: SessionConfig {
 					keys: vec![(
@@ -164,8 +170,6 @@ pub fn genesis_config() -> ChainSpec {
 						session_keys(get_collator_keys_from_seed("Alice")),
 					)],
 				},
-				// no need to pass anything to aura, in fact it will panic if we do. Session will
-				// take care of this.
 				aura: Default::default(),
 				aura_ext: Default::default(),
 
@@ -207,7 +211,7 @@ pub fn config() -> ChainSpec {
 }
 
 fn testnet_genesis(
-	invulnerables: Vec<(AccountId, AuraId)>,
+	collators: Vec<(AccountId, AuraId)>,
 	endowed_accounts: Vec<AccountId>,
 	id: ParaId,
 ) -> GenesisConfig {
@@ -226,13 +230,14 @@ fn testnet_genesis(
 		account_migration: Default::default(),
 
 		// Consensus stuff.
-		collator_selection: CollatorSelectionConfig {
-			invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
-			candidacy_bond: UNIT,
-			..Default::default()
+		staking: StakingConfig {
+			now: SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis(),
+			elapsed_time: 0,
+			collator_count: collators.len() as _,
+			collators: collators.iter().map(|(a, _)| (a.to_owned(), UNIT)).collect(),
 		},
 		session: SessionConfig {
-			keys: invulnerables
+			keys: collators
 				.into_iter()
 				.map(|(acc, aura)| {
 					(
