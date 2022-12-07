@@ -94,6 +94,11 @@ pub mod pallet {
 	pub type Accounts<T: Config> =
 		StorageMap<_, Identity, AccountId32, AccountInfo<Index, AccountData<Balance>>>;
 
+	// TODO: identity storages
+	// TODO: proxy storages
+	// TODO: staking storages
+	// TODO: vesting storages
+
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		/// Migrate all the account data under the `from` to `to`.
