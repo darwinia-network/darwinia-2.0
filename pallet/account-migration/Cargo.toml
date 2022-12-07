@@ -15,7 +15,7 @@ codec      = { default-features = false, package = "parity-scale-codec", version
 scale-info = { default-features = false, version = "2.3.0", features = ["derive"] }
 
 # darwinia
-dc-primitives = { path = "../../core/primitives" }
+dc-primitives = { default-features = false, path = "../../core/primitives" }
 
 # substrate
 frame-support   = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }

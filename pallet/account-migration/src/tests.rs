@@ -48,7 +48,7 @@ fn sr25519_signable_message_should_work() {
 fn verify_sr25519_signature_should_work() {
 	Keyring::iter().enumerate().for_each(|(i, from)| {
 		let to = [i as _; 20];
-		let message = sr25519_signable_message(b"Darwinia2", &to);
+		let message = sr25519_signable_message(b"Darwinia2", &to.into());
 		let signature = from.sign(&message);
 
 		assert!(verify_sr25519_signature(from.public().as_ref(), &message, &signature));

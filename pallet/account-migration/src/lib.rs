@@ -49,7 +49,7 @@
 mod tests;
 
 // darwinia
-use dc_primitives::{Balance, Index};
+use dc_primitives::{AccountId as AccountId20, Balance, Index};
 // substrate
 use frame_support::{log, pallet_prelude::*};
 use frame_system::{pallet_prelude::*, AccountInfo};
@@ -58,7 +58,6 @@ use sp_core::sr25519::{Public, Signature};
 use sp_io::hashing;
 use sp_runtime::traits::Verify;
 
-type AccountId20 = [u8; 20];
 type AccountId32 = [u8; 32];
 type Message = [u8; 32];
 
@@ -158,7 +157,7 @@ pub mod pallet {
 pub use pallet::*;
 
 fn sr25519_signable_message(spec_name: &[u8], account_id_20: &AccountId20) -> Message {
-	hashing::blake2_256(&[spec_name, b"::account-migration", account_id_20].concat())
+	hashing::blake2_256(&[spec_name, b"::account-migration", &account_id_20.0].concat())
 }
 
 fn verify_sr25519_signature(
