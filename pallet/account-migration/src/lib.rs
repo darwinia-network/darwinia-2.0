@@ -45,10 +45,13 @@
 
 // TODO: update weight
 
+#[cfg(test)]
+mod tests;
+
 // darwinia
 use dc_primitives::{Balance, Index};
 // substrate
-use frame_support::{log, migration, pallet_prelude::*};
+use frame_support::{log, pallet_prelude::*};
 use frame_system::{pallet_prelude::*, AccountInfo};
 use pallet_balances::AccountData;
 use sp_core::sr25519::{Public, Signature};
@@ -100,7 +103,7 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			from: AccountId32,
 			to: AccountId20,
-			signature: Signature,
+			_signature: Signature,
 		) -> DispatchResult {
 			ensure_none(origin)?;
 
@@ -130,15 +133,14 @@ pub mod pallet {
 				return InvalidTransaction::Call.into();
 			};
 
-			// Make sure the `to` is not existed on chain.
+			if !<Accounts<T>>::contains_key(from) {
+				return InvalidTransaction::Custom(E_ACCOUNT_NOT_FOUND).into();
+			}
 			if <frame_system::Account<T>>::contains_key(to) {
 				return InvalidTransaction::Custom(E_ACCOUNT_ALREADY_EXISTED).into();
 			}
 
-			let Some(account) = <Accounts<T>>::take(from) else {
-				return InvalidTransaction::Custom(E_ACCOUNT_NOT_FOUND).into();
-			};
-			let message = Self::signable_message(to);
+			let message = sr25519_signable_message(T::Version::get().spec_name.as_ref(), to);
 
 			if verify_sr25519_signature(from, &message, signature) {
 				ValidTransaction::with_tag_prefix("account-migration")
@@ -152,19 +154,12 @@ pub mod pallet {
 			}
 		}
 	}
-	impl<T> Pallet<T>
-	where
-		T: Config,
-	{
-		fn signable_message(account_id_20: &AccountId20) -> Message {
-			hashing::blake2_256(
-				&[T::Version::get().spec_name.as_ref(), b"::account-migration", account_id_20]
-					.concat(),
-			)
-		}
-	}
 }
 pub use pallet::*;
+
+fn sr25519_signable_message(spec_name: &[u8], account_id_20: &AccountId20) -> Message {
+	hashing::blake2_256(&[spec_name, b"::account-migration", account_id_20].concat())
+}
 
 fn verify_sr25519_signature(
 	public_key: &AccountId32,

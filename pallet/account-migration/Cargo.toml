@@ -24,11 +24,9 @@ pallet-balances = { default-features = false, git = "https://github.com/parityte
 sp-core         = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
 sp-io           = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
 sp-runtime      = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
-sp-std          = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
 
 [dev-dependencies]
-# substrate
-pallet-timestamp = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
+sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
 
 [features]
 default = ["std"]
@@ -47,5 +45,4 @@ std = [
 	"sp-core/std",
 	"sp-runtime/std",
 	"sp-io/std",
-	"sp-std/std",
 ]
