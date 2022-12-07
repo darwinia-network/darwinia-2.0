@@ -21,7 +21,7 @@ use crate::*;
 
 /// List of the assets existed in this runtime.
 pub enum AssetIds {
-	KTON = 1026,
+	Kton = 1026,
 }
 
 impl pallet_assets::Config for Runtime {
