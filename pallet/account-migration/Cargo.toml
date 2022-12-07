@@ -15,19 +15,17 @@ codec      = { default-features = false, package = "parity-scale-codec", version
 scale-info = { default-features = false, version = "2.3.0", features = ["derive"] }
 
 # darwinia
-dc-primitives = { default-features = false, path = "../../core/primitives"}
+dc-primitives = { default-features = false, path = "../../core/primitives" }
 
 # frontier
-fp-ethereum = { default-features = false, git = "https://github.com/paritytech/frontier", branch = "polkadot-v0.9.30" }
-fp-evm      = { default-features = false, git = "https://github.com/paritytech/frontier", branch = "polkadot-v0.9.30" }
-pallet-evm  = { default-features = false, git = "https://github.com/paritytech/frontier", branch = "polkadot-v0.9.30" }
+pallet-evm = { default-features = false, git = "https://github.com/paritytech/frontier", branch = "polkadot-v0.9.30" }
 
 # substrate
 frame-support = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
 frame-system  = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
 sp-core       = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
-sp-runtime    = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
 sp-io         = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
+sp-runtime    = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
 sp-std        = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
 
 [dev-dependencies]
@@ -46,8 +44,6 @@ std = [
 	"dc-primitives/std",
 
 	# frontier
-	"fp-evm/std",
-	"fp-ethereum/std",
 	"pallet-evm/std",
 
 	# paritytech

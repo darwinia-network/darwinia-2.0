@@ -2297,8 +2297,6 @@ name = "darwinia-account-migration"
 version = "6.0.0"
 dependencies = [
  "dc-primitives",
- "fp-ethereum",
- "fp-evm",
  "frame-support",
  "frame-system",
  "pallet-balances",
