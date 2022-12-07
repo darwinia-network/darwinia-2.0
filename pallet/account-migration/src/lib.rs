@@ -78,7 +78,7 @@ pub mod pallet {
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event {
-		/// An account has migrated.
+		/// An account has been migrated.
 		Migrated { from: H256, to: H160 },
 	}
 
