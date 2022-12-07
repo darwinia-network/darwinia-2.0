@@ -46,9 +46,12 @@ const CHARLETH: &str = "0x798d4Ba9baf0064Ec19eB4F0a1a45785ae9D6DFc";
 const DOROTHY: &str = "0x773539d4Ac0e786233D90A233654ccEE26a613D9";
 const ETHAN: &str = "0xFf64d3F6efE2317EE2807d223a0Bdc4c0c49dfDB";
 const FAITH: &str = "0xC0F0f4ab324C46e55D02D0033343B4Be8A55532d";
+const SUDO: &str = "0x2748def2f9c3cfbbb963002935bc6d2e1c36ce2e";
 
 /// The default XCM version to set in genesis config.
 const SAFE_XCM_VERSION: u32 = xcm::prelude::XCM_VERSION;
+
+const PROTOCOL_ID: &str = "dar";
 
 /// The extensions for the [`ChainSpec`].
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, ChainSpecGroup, ChainSpecExtension)]
@@ -66,12 +69,12 @@ impl Extensions {
 	}
 }
 
-fn properties(token_symbol: &str) -> Properties {
+fn properties(token_symbol: &str, ss58_format: u16) -> Properties {
 	let mut properties = Properties::new();
 
 	properties.insert("tokenSymbol".into(), token_symbol.into());
 	properties.insert("tokenDecimals".into(), 18.into());
-	properties.insert("ss58Format".into(), 18.into());
+	properties.insert("ss58Format".into(), ss58_format.into());
 
 	properties
 }
