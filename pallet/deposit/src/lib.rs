@@ -150,9 +150,15 @@ pub mod pallet {
 		pub fn lock(origin: OriginFor<T>, amount: Balance, months: u8) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
-			ensure!(amount >= T::MinLockingAmount::get(), <Error<T>>::LockAtLeastSome);
-			ensure!(months > 0, <Error<T>>::LockAtLeastOneMonth);
-			ensure!(months <= 36, <Error<T>>::LockAtMostThirtySixMonths);
+			if amount < T::MinLockingAmount::get() {
+				Err(<Error<T>>::LockAtLeastSome)?;
+			}
+			if months == 0 {
+				Err(<Error<T>>::LockAtLeastOneMonth)?;
+			}
+			if months > 36 {
+				Err(<Error<T>>::LockAtMostThirtySixMonths)?;
+			}
 			if <Deposits<T>>::decode_len(&who).unwrap_or_default() as u32 >= T::MaxDeposits::get() {
 				Err(<Error<T>>::ExceedMaxDeposits)?;
 			}
