@@ -41,17 +41,14 @@
 //! ```
 
 #![cfg_attr(not(feature = "std"), no_std)]
-// #![deny(missing_docs)]
+#![deny(missing_docs)]
 
-#[cfg(test)]
-mod mock;
-#[cfg(test)]
-mod test;
+// TODO: update weight
 
 // darwinia
 use dc_primitives::{Balance, Index};
 // substrate
-use frame_support::{log, pallet_prelude::*};
+use frame_support::{log, migration, pallet_prelude::*};
 use frame_system::{pallet_prelude::*, AccountInfo};
 use pallet_balances::AccountData;
 use sp_core::sr25519::{Public, Signature};
@@ -70,21 +67,18 @@ pub mod pallet {
 	pub struct Pallet<T>(PhantomData<T>);
 
 	#[pallet::config]
-	pub trait Config: frame_system::Config<AccountId = AccountId20> {
+	pub trait Config:
+		frame_system::Config<
+		AccountId = AccountId20,
+		Index = Index,
+		AccountData = AccountData<Balance>,
+	>
+	{
 		/// Override the [`frame_system::Config::RuntimeEvent`].
 		type RuntimeEvent: From<Event> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 	}
 
-	#[pallet::error]
-	pub enum Error<T> {
-		/// The migration destination was already taken by someone.
-		AccountAlreadyExisted,
-		/// The migration source was not exist.
-		AccountNotFound,
-		/// Invalid signature.
-		InvalidSignature,
-	}
-
+	#[allow(missing_docs)]
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event {
@@ -92,6 +86,7 @@ pub mod pallet {
 		Migrated { from: AccountId32, to: AccountId20 },
 	}
 
+	/// [`frame_system::Account`] data.
 	#[pallet::storage]
 	#[pallet::getter(fn account_of)]
 	pub type Accounts<T: Config> =
@@ -99,7 +94,6 @@ pub mod pallet {
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-		// TODO: update weight
 		/// Migrate all the account data under the `from` to `to`.
 		#[pallet::weight(0)]
 		pub fn migrate(
@@ -110,13 +104,10 @@ pub mod pallet {
 		) -> DispatchResult {
 			ensure_none(origin)?;
 
-			// Make sure the `to` is not existed on chain.
-			if <frame_system::Account<T>>::contains_key(to) {
-				Err(<Error<T>>::AccountAlreadyExisted)?;
-			}
+			let account = <Accounts<T>>::take(from)
+				.ok_or("[pallet::account-migration] already checked in `pre_dispatch`; qed")?;
 
-			let account = <Accounts<T>>::take(from).ok_or(<Error<T>>::AccountNotFound)?;
-			let message = Self::signable_message(&to);
+			<frame_system::Account<T>>::insert(to, account);
 
 			Self::deposit_event(Event::Migrated { from, to });
 
