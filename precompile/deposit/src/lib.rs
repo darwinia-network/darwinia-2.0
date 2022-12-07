@@ -18,7 +18,12 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-// std
+#[cfg(test)]
+mod mock;
+#[cfg(test)]
+mod tests;
+
+// core
 use core::marker::PhantomData;
 // moonbeam
 use precompile_utils::prelude::*;
@@ -31,6 +36,7 @@ use sp_core::{H160, U256};
 
 /// AccountId of the runtime.
 type AccountIdOf<R> = <R as frame_system::pallet::Config>::AccountId;
+
 pub struct Deposit<Runtime>(PhantomData<Runtime>);
 
 #[precompile_utils::precompile]

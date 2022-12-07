@@ -179,8 +179,6 @@ pub mod pallet {
 					Break(b) => b,
 				};
 
-				println!("bear: --- id {:?}", id);
-
 				ds.try_insert(
 					id as _,
 					Deposit {
