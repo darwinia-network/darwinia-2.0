@@ -18,20 +18,12 @@
 
 // darwinia
 use crate::mock::{
-	efflux,
 	Account::{Alice, Bob, Precompile},
 	ExtBuilder, PCall, PrecompilesValue, Staking, System, TestPrecompiles, TestRuntime,
 };
-use darwinia_deposit::MILLISECS_PER_MONTH;
-use darwinia_staking::Ledger;
-use dc_types::UNIT;
 use sp_runtime::Perbill;
 // moonbeam
-use precompile_utils::{
-	prelude::{RuntimeHelper, UnboundedBytes},
-	testing::{PrecompileTesterExt, PrecompilesModifierTester},
-	EvmDataWriter,
-};
+use precompile_utils::{testing::PrecompileTesterExt, EvmDataWriter};
 // substrate
 use sp_core::{H160, U256};
 
@@ -52,20 +44,20 @@ fn selectors() {
 #[test]
 fn stake_and_unstake() {
 	let alice: H160 = Alice.into();
-	ExtBuilder::default().with_balances(vec![(alice, 3 * UNIT)]).build().execute_with(|| {
+	ExtBuilder::default().with_balances(vec![(alice, 300)]).build().execute_with(|| {
 		// stake
 		precompiles()
 			.prepare_test(
 				alice,
 				Precompile,
 				PCall::stake {
-					ring_amount: (2 * UNIT).into(),
+					ring_amount: 200.into(),
 					kton_amount: U256::zero(),
 					deposits: vec![],
 				},
 			)
 			.execute_returns(EvmDataWriter::new().write(true).build());
-		assert_eq!(Staking::ledger_of(alice).unwrap().staked_ring, 2 * UNIT);
+		assert_eq!(Staking::ledger_of(alice).unwrap().staked_ring, 200);
 
 		// unstake
 		precompiles()
@@ -73,7 +65,7 @@ fn stake_and_unstake() {
 				alice,
 				Precompile,
 				PCall::unstake {
-					ring_amount: (2 * UNIT).into(),
+					ring_amount: 200.into(),
 					kton_amount: U256::zero(),
 					deposits: vec![],
 				},
@@ -86,14 +78,14 @@ fn stake_and_unstake() {
 #[test]
 fn claim() {
 	let alice: H160 = Alice.into();
-	ExtBuilder::default().with_balances(vec![(alice, 3 * UNIT)]).build().execute_with(|| {
+	ExtBuilder::default().with_balances(vec![(alice, 300)]).build().execute_with(|| {
 		// stake
 		precompiles()
 			.prepare_test(
 				alice,
 				Precompile,
 				PCall::stake {
-					ring_amount: (2 * UNIT).into(),
+					ring_amount: 200.into(),
 					kton_amount: U256::zero(),
 					deposits: vec![],
 				},
@@ -106,7 +98,7 @@ fn claim() {
 				alice,
 				Precompile,
 				PCall::unstake {
-					ring_amount: (2 * UNIT).into(),
+					ring_amount: 200.into(),
 					kton_amount: U256::zero(),
 					deposits: vec![],
 				},
@@ -126,17 +118,15 @@ fn claim() {
 fn nominate() {
 	let alice: H160 = Alice.into();
 	let bob: H160 = Bob.into();
-	ExtBuilder::default()
-		.with_balances(vec![(alice, 3 * UNIT), (bob, 3 * UNIT)])
-		.build()
-		.execute_with(|| {
+	ExtBuilder::default().with_balances(vec![(alice, 300), (bob, 300)]).build().execute_with(
+		|| {
 			// alice stake first as collator
 			precompiles()
 				.prepare_test(
 					alice,
 					Precompile,
 					PCall::stake {
-						ring_amount: (2 * UNIT).into(),
+						ring_amount: 200.into(),
 						kton_amount: U256::zero(),
 						deposits: vec![],
 					},
@@ -155,7 +145,7 @@ fn nominate() {
 					bob,
 					Precompile,
 					PCall::stake {
-						ring_amount: (2 * UNIT).into(),
+						ring_amount: 200.into(),
 						kton_amount: U256::zero(),
 						deposits: vec![],
 					},
@@ -179,5 +169,6 @@ fn nominate() {
 				.prepare_test(bob, Precompile, PCall::chill {})
 				.execute_returns(EvmDataWriter::new().write(true).build());
 			assert!(Staking::nominator_of(bob).is_none());
-		});
+		},
+	);
 }

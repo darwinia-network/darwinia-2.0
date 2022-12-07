@@ -17,32 +17,30 @@ pallet-evm = { default-features = false, git = "https://github.com/paritytech/fr
 # darwinia
 darwinia-staking = { default-features = false, path = "../../pallet/staking"}
 darwinia-deposit = { default-features = false, path = "../../pallet/deposit"}
-dc-types = { path = "../../core/types"}
 
 # moonbeam
 precompile-utils = { default-features = false, git = "https://github.com/darwinia-network/moonbeam.git", branch = "polkadot-v0.9.30" }
 
 # substrate
 frame-support = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
+frame-system  = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
+sp-core       = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
+sp-runtime    = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
 sp-std        = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
-frame-system        = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
-sp-core        = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
-sp-runtime        = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
 
 [dev-dependencies]
-dc-types = { path = "../../core/types" }
-scale-info = { version = "2.3", features = ["derive"] }
+# crates.io
 codec      = { package = "parity-scale-codec", version = "3.2" }
+scale-info = { version = "2.3", features = ["derive"] }
 
+# moonbeam
 precompile-utils = { git = "https://github.com/darwinia-network/moonbeam.git", branch = "polkadot-v0.9.30", features = ["testing"] }
 
 # substrate
 frame-system     = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
 pallet-balances  = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
 pallet-timestamp = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
-sp-core          = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
 sp-io            = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
-sp-runtime       = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
 
 
 [features]
@@ -61,8 +59,8 @@ std = [
 
 	# substrate
 	"frame-support/std",
-	"sp-std/std",
 	"frame-system/std",
 	"sp-core/std",
 	"sp-runtime/std",
+	"sp-std/std",
 ]

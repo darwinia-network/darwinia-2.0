@@ -28,7 +28,6 @@ use core::marker::PhantomData;
 // darwinia
 use darwinia_deposit::DepositId;
 use darwinia_staking::Stake;
-use dc_types::Balance;
 // moonbeam
 use precompile_utils::prelude::*;
 // substrate

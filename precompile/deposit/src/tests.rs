@@ -20,16 +20,11 @@
 use crate::mock::{
 	efflux,
 	Account::{Alice, Precompile},
-	Deposit, ExtBuilder, PCall, PrecompilesValue, System, TestPrecompiles, TestRuntime,
+	Deposit, ExtBuilder, PCall, PrecompilesValue, TestPrecompiles, TestRuntime,
 };
 use darwinia_deposit::MILLISECS_PER_MONTH;
-use dc_types::UNIT;
 // moonbeam
-use precompile_utils::{
-	prelude::{RuntimeHelper, UnboundedBytes},
-	testing::{PrecompileTesterExt, PrecompilesModifierTester},
-	EvmDataWriter,
-};
+use precompile_utils::{testing::PrecompileTesterExt, EvmDataWriter};
 // substrate
 use sp_core::H160;
 
@@ -46,10 +41,10 @@ fn selectors() {
 #[test]
 fn lock_and_claim() {
 	let alice: H160 = Alice.into();
-	ExtBuilder::default().with_balances(vec![(alice, 3 * UNIT)]).build().execute_with(|| {
+	ExtBuilder::default().with_balances(vec![(alice, 300)]).build().execute_with(|| {
 		// lock
 		precompiles()
-			.prepare_test(alice, Precompile, PCall::lock { amount: (2 * UNIT).into(), months: 1 })
+			.prepare_test(alice, Precompile, PCall::lock { amount: 200.into(), months: 1 })
 			.execute_returns(EvmDataWriter::new().write(true).build());
 		assert!(Deposit::deposit_of(&alice).is_some());
 

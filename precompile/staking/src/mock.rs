@@ -20,41 +20,20 @@
 use codec::{Decode, Encode, MaxEncodedLen};
 // darwinia
 use crate::*;
-use dc_types::{AssetId, Balance, Moment, UNIT};
 // frontier
 use fp_evm::{Precompile, PrecompileSet};
-use pallet_evm::IdentityAddressMapping;
 // substrate
-use frame_support::{pallet_prelude::Weight, traits::Everything};
+use frame_support::pallet_prelude::Weight;
 use sp_core::{ConstU32, H160, H256, U256};
-use sp_runtime::traits::BlakeTwo256;
 
-pub type AccountId = H160;
+pub(crate) type Balance = u128;
+pub(crate) type AccountId = H160;
 
-#[derive(
-	Eq,
-	PartialEq,
-	Ord,
-	PartialOrd,
-	Clone,
-	Encode,
-	Decode,
-	Debug,
-	MaxEncodedLen,
-	scale_info::TypeInfo,
-)]
+#[derive(Clone, Encode, Decode, Debug, MaxEncodedLen, scale_info::TypeInfo)]
 pub enum Account {
 	Alice,
 	Bob,
-	Charlie,
-	Bogus,
 	Precompile,
-}
-
-impl Default for Account {
-	fn default() -> Self {
-		Self::Bogus
-	}
 }
 
 impl Into<H160> for Account {
@@ -62,8 +41,6 @@ impl Into<H160> for Account {
 		match self {
 			Account::Alice => H160::repeat_byte(0xAA),
 			Account::Bob => H160::repeat_byte(0xBB),
-			Account::Charlie => H160::repeat_byte(0xCC),
-			Account::Bogus => H160::repeat_byte(0xDD),
 			Account::Precompile => H160::from_low_u64_be(1),
 		}
 	}
@@ -82,7 +59,7 @@ impl frame_system::Config for TestRuntime {
 	type BlockWeights = ();
 	type DbWeight = ();
 	type Hash = H256;
-	type Hashing = BlakeTwo256;
+	type Hashing = sp_runtime::traits::BlakeTwo256;
 	type Header = sp_runtime::testing::Header;
 	type Index = u64;
 	type Lookup = sp_runtime::traits::IdentityLookup<Self::AccountId>;
@@ -113,7 +90,7 @@ impl pallet_balances::Config for TestRuntime {
 
 impl pallet_timestamp::Config for TestRuntime {
 	type MinimumPeriod = ();
-	type Moment = Moment;
+	type Moment = u128;
 	type OnTimestampSet = ();
 	type WeightInfo = ();
 }
@@ -122,7 +99,7 @@ pub enum KtonMinting {}
 impl darwinia_deposit::Minting for KtonMinting {
 	type AccountId = AccountId;
 
-	fn mint(beneficiary: &Self::AccountId, amount: Balance) -> sp_runtime::DispatchResult {
+	fn mint(_beneficiary: &Self::AccountId, _amount: Balance) -> sp_runtime::DispatchResult {
 		Ok(())
 	}
 }
@@ -130,7 +107,7 @@ impl darwinia_deposit::Minting for KtonMinting {
 impl darwinia_deposit::Config for TestRuntime {
 	type Kton = KtonMinting;
 	type MaxDeposits = frame_support::traits::ConstU32<16>;
-	type MinLockingAmount = frame_support::traits::ConstU128<UNIT>;
+	type MinLockingAmount = frame_support::traits::ConstU128<100>;
 	type Ring = Balances;
 	type RuntimeEvent = RuntimeEvent;
 	type UnixTime = Timestamp;
@@ -172,21 +149,17 @@ fn addr(a: u64) -> H160 {
 pub type PCall = StakingCall<TestRuntime>;
 
 frame_support::parameter_types! {
-	pub const TransactionByteFee: u64 = 1;
-	pub const ChainId: u64 = 42;
 	pub const BlockGasLimit: U256 = U256::MAX;
 	pub const WeightPerGas: Weight = Weight::from_ref_time(20_000);
 	pub PrecompilesValue: TestPrecompiles<TestRuntime> = TestPrecompiles::<_>::new();
 }
 
-// pub type PCall = DepositCall<TestRuntime>;
-
 impl pallet_evm::Config for TestRuntime {
-	type AddressMapping = IdentityAddressMapping;
+	type AddressMapping = pallet_evm::IdentityAddressMapping;
 	type BlockGasLimit = BlockGasLimit;
 	type BlockHashMapping = pallet_evm::SubstrateBlockHashMapping<Self>;
 	type CallOrigin = pallet_evm::EnsureAddressRoot<AccountId>;
-	type ChainId = ChainId;
+	type ChainId = frame_support::traits::ConstU64<42>;
 	type Currency = Balances;
 	type FeeCalculator = ();
 	type FindAuthor = ();
@@ -233,11 +206,11 @@ impl darwinia_staking::Stake for KtonStaking {
 	type AccountId = AccountId;
 	type Item = Balance;
 
-	fn stake(who: &Self::AccountId, item: Self::Item) -> sp_runtime::DispatchResult {
+	fn stake(_who: &Self::AccountId, _item: Self::Item) -> sp_runtime::DispatchResult {
 		Ok(())
 	}
 
-	fn unstake(who: &Self::AccountId, item: Self::Item) -> sp_runtime::DispatchResult {
+	fn unstake(_who: &Self::AccountId, _item: Self::Item) -> sp_runtime::DispatchResult {
 		Ok(())
 	}
 }
@@ -270,10 +243,6 @@ frame_support::construct_runtime!(
 		Staking: darwinia_staking,
 	}
 );
-
-pub fn efflux(milli_secs: Moment) {
-	Timestamp::set_timestamp(Timestamp::now() + milli_secs);
-}
 
 #[derive(Default)]
 pub(crate) struct ExtBuilder {

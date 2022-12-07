@@ -2421,7 +2421,6 @@ name = "darwinia-precompile-deposit"
 version = "6.0.0"
 dependencies = [
  "darwinia-deposit",
- "dc-types",
  "fp-evm",
  "frame-support",
  "frame-system",
@@ -2443,7 +2442,6 @@ version = "6.0.0"
 dependencies = [
  "darwinia-deposit",
  "darwinia-staking",
- "dc-types",
  "fp-evm",
  "frame-support",
  "frame-system",
