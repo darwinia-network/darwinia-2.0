@@ -32,6 +32,7 @@
 //! origin SR25519 key.
 //!
 //! This pallet will store all the account data from Darwinia1 and Darwinia Parachain.
+//! This pallet's genesis will be write into the chain spec JSON directly.
 //! The data will be processed off-chain(ly).
 //! After the verification, simply perform a take & put operation.
 //!
@@ -47,17 +48,19 @@ mod mock;
 #[cfg(test)]
 mod test;
 
+// darwinia
+use dc_primitives::{Balance, Index};
 // substrate
-use frame_support::pallet_prelude::*;
-use frame_system::pallet_prelude::*;
-use sp_core::{
-	crypto::ByteArray,
-	sr25519::{Public, Signature},
-	H160, H256,
-};
-use sp_io::hashing::blake2_256;
+use frame_support::{log, pallet_prelude::*};
+use frame_system::{pallet_prelude::*, AccountInfo};
+use pallet_balances::AccountData;
+use sp_core::sr25519::{Public, Signature};
+use sp_io::hashing;
 use sp_runtime::traits::Verify;
-use sp_std::prelude::*;
+
+type AccountId20 = [u8; 20];
+type AccountId32 = [u8; 32];
+type Message = [u8; 32];
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -67,45 +70,53 @@ pub mod pallet {
 	pub struct Pallet<T>(PhantomData<T>);
 
 	#[pallet::config]
-	pub trait Config: frame_system::Config + pallet_evm::Config {
+	pub trait Config: frame_system::Config<AccountId = AccountId20> {
 		/// Override the [`frame_system::Config::RuntimeEvent`].
 		type RuntimeEvent: From<Event> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 	}
 
 	#[pallet::error]
-	pub enum Error<T> {}
+	pub enum Error<T> {
+		/// The migration destination was already taken by someone.
+		AccountAlreadyExisted,
+		/// The migration source was not exist.
+		AccountNotFound,
+		/// Invalid signature.
+		InvalidSignature,
+	}
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event {
 		/// An account has been migrated.
-		Migrated { from: H256, to: H160 },
+		Migrated { from: AccountId32, to: AccountId20 },
 	}
 
-	#[pallet::genesis_config]
-	#[cfg_attr(feature = "std", derive(Default))]
-	pub struct GenesisConfig {}
-	#[pallet::genesis_build]
-	impl<T: Config> GenesisBuild<T> for GenesisConfig {
-		fn build(&self) {}
-	}
+	#[pallet::storage]
+	#[pallet::getter(fn account_of)]
+	pub type Accounts<T: Config> =
+		StorageMap<_, Identity, AccountId32, AccountInfo<Index, AccountData<Balance>>>;
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-		// since signature and chain_id verification is done in `validate_unsigned`
-		// we can skip doing it here again.
 		// TODO: update weight
+		/// Migrate all the account data under the `from` to `to`.
 		#[pallet::weight(0)]
 		pub fn migrate(
 			origin: OriginFor<T>,
-			_chain_id: u64,
-			from: H256,
-			to: H160,
-			_sig: Signature,
+			from: AccountId32,
+			to: AccountId20,
+			signature: Signature,
 		) -> DispatchResult {
 			ensure_none(origin)?;
 
-			// TODO
+			// Make sure the `to` is not existed on chain.
+			if <frame_system::Account<T>>::contains_key(to) {
+				Err(<Error<T>>::AccountAlreadyExisted)?;
+			}
+
+			let account = <Accounts<T>>::take(from).ok_or(<Error<T>>::AccountNotFound)?;
+			let message = Self::signable_message(&to);
 
 			Self::deposit_event(Event::Migrated { from, to });
 
@@ -117,55 +128,65 @@ pub mod pallet {
 		type Call = Call<T>;
 
 		fn validate_unsigned(_source: TransactionSource, call: &Self::Call) -> TransactionValidity {
-			let Call::migrate { chain_id, from, to, sig } = call else {
+			// The migration destination was already taken by someone.
+			const E_ACCOUNT_ALREADY_EXISTED: u8 = 0;
+			// The migration source was not exist.
+			const E_ACCOUNT_NOT_FOUND: u8 = 1;
+			// Invalid signature.
+			const E_INVALID_SIGNATURE: u8 = 1;
+
+			let Call::migrate { from, to, signature } = call else {
 				return InvalidTransaction::Call.into();
 			};
 
-			if *chain_id != <T as pallet_evm::Config>::ChainId::get() {
-				return InvalidTransaction::BadProof.into();
+			// Make sure the `to` is not existed on chain.
+			if <frame_system::Account<T>>::contains_key(to) {
+				return InvalidTransaction::Custom(E_ACCOUNT_ALREADY_EXISTED).into();
 			}
-			// Check if exist
-			// if !Balances::<T>::contains_key(from) {
-			// 	return InvalidTransaction::BadSigner.into();
-			// }
 
-			let message = ClaimMessage::new(<T as pallet_evm::Config>::ChainId::get(), from, to);
-			if let Ok(signer) = Public::from_slice(from.as_ref()) {
-				let is_valid = sig.verify(&blake2_256(&message.raw_bytes())[..], &signer);
+			let Some(account) = <Accounts<T>>::take(from) else {
+				return InvalidTransaction::Custom(E_ACCOUNT_NOT_FOUND).into();
+			};
+			let message = Self::signable_message(to);
 
-				if is_valid {
-					return ValidTransaction::with_tag_prefix("MigrateClaim")
-						.priority(TransactionPriority::max_value())
-						.propagate(true)
-						.build();
-				}
+			if verify_sr25519_signature(from, &message, signature) {
+				ValidTransaction::with_tag_prefix("account-migration")
+					.and_provides(from)
+					.priority(100)
+					.longevity(TransactionLongevity::max_value())
+					.propagate(true)
+					.build()
+			} else {
+				InvalidTransaction::Custom(E_INVALID_SIGNATURE).into()
 			}
-			InvalidTransaction::BadSigner.into()
+		}
+	}
+	impl<T> Pallet<T>
+	where
+		T: Config,
+	{
+		fn signable_message(account_id_20: &AccountId20) -> Message {
+			hashing::blake2_256(
+				&[T::Version::get().spec_name.as_ref(), b"::account-migration", account_id_20]
+					.concat(),
+			)
 		}
 	}
 }
 pub use pallet::*;
 
-/// ClaimMessage is the metadata that needs to be signed when the user invokes claim dispatch.
-///
-/// It consists of three parts, namely the chain_id, the H256 account for darwinia 1.0, and
-/// the H160 account for darwinia 2.0.
-pub struct ClaimMessage<'m> {
-	pub chain_id: u64,
-	pub from: &'m H256,
-	pub to: &'m H160,
-}
+fn verify_sr25519_signature(
+	public_key: &AccountId32,
+	message: &Message,
+	signature: &Signature,
+) -> bool {
+	// Actually, `&[u8]` is `[u8; 32]` here.
+	// But for better safety.
+	let Ok(public_key) = &Public::try_from(public_key.as_slice()) else {
+		log::error!("[pallet::account-migration] `public_key` must be valid; qed");
 
-impl<'m> ClaimMessage<'m> {
-	fn new(chain_id: u64, from: &'m H256, to: &'m H160) -> Self {
-		Self { chain_id, from, to }
-	}
+		return false;
+	};
 
-	fn raw_bytes(&self) -> Vec<u8> {
-		let mut result = Vec::new();
-		result.extend_from_slice(&self.chain_id.to_be_bytes());
-		result.extend_from_slice(self.from.as_ref());
-		result.extend_from_slice(self.to.as_ref());
-		result
-	}
+	signature.verify(message.as_slice(), public_key)
 }

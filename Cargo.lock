@@ -2296,10 +2296,10 @@ dependencies = [
 name = "darwinia-account-migration"
 version = "6.0.0"
 dependencies = [
+ "dc-primitives",
  "frame-support",
  "frame-system",
  "pallet-balances",
- "pallet-evm",
  "pallet-timestamp",
  "parity-scale-codec",
  "scale-info",
