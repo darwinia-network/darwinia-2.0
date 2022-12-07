@@ -47,9 +47,6 @@ impl Into<H160> for Account {
 	}
 }
 
-frame_support::parameter_types! {
-	pub const BlockHashCount: u64 = 250;
-}
 impl frame_system::Config for TestRuntime {
 	type AccountData = pallet_balances::AccountData<Balance>;
 	type AccountId = AccountId;

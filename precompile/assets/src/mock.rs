@@ -16,60 +16,30 @@
 // You should have received a copy of the GNU General Public License
 // along with Darwinia. If not, see <https://www.gnu.org/licenses/>.
 
-//! Test utilities
-
 // crates.io
 use codec::{Decode, Encode, MaxEncodedLen};
 // frontier
 use fp_evm::{Precompile, PrecompileSet};
-use pallet_evm::IdentityAddressMapping;
 // parity
-use frame_support::{
-	pallet_prelude::Weight,
-	traits::{ConstU32, Everything},
-};
-use frame_system::EnsureRoot;
+use frame_support::pallet_prelude::Weight;
 use sp_core::{H160, H256, U256};
-use sp_runtime::{
-	testing::Header,
-	traits::{BlakeTwo256, IdentityLookup},
-};
 use sp_std::{marker::PhantomData, prelude::*};
 // darwinia
 use crate::*;
 
-pub type Block = frame_system::mocking::MockBlock<TestRuntime>;
 pub type Balance = u128;
 pub type AssetId = u64;
+pub type InternalCall = ERC20AssetsCall<TestRuntime, AssetIdConverter>;
 pub type AccountId = H160;
-pub type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<TestRuntime>;
 
 pub const TEST_ID: AssetId = 1026;
 
-#[derive(
-	Eq,
-	PartialEq,
-	Ord,
-	PartialOrd,
-	Clone,
-	Encode,
-	Decode,
-	Debug,
-	MaxEncodedLen,
-	scale_info::TypeInfo,
-)]
+#[derive(Clone, Encode, Decode, Debug, MaxEncodedLen, scale_info::TypeInfo)]
 pub enum Account {
 	Alice,
 	Bob,
 	Charlie,
-	Bogus,
 	Precompile,
-}
-
-impl Default for Account {
-	fn default() -> Self {
-		Self::Bogus
-	}
 }
 
 impl Into<H160> for Account {
@@ -78,7 +48,6 @@ impl Into<H160> for Account {
 			Account::Alice => H160::repeat_byte(0xAA),
 			Account::Bob => H160::repeat_byte(0xBB),
 			Account::Charlie => H160::repeat_byte(0xCC),
-			Account::Bogus => H160::repeat_byte(0xDD),
 			Account::Precompile => H160::from_low_u64_be(TEST_ID),
 		}
 	}
@@ -91,24 +60,21 @@ impl From<Account> for H256 {
 	}
 }
 
-frame_support::parameter_types! {
-	pub const BlockHashCount: u64 = 250;
-}
 impl frame_system::Config for TestRuntime {
 	type AccountData = pallet_balances::AccountData<Balance>;
 	type AccountId = AccountId;
-	type BaseCallFilter = Everything;
+	type BaseCallFilter = frame_support::traits::Everything;
 	type BlockHashCount = ();
 	type BlockLength = ();
 	type BlockNumber = u64;
 	type BlockWeights = ();
 	type DbWeight = ();
 	type Hash = H256;
-	type Hashing = BlakeTwo256;
-	type Header = Header;
+	type Hashing = sp_runtime::traits::BlakeTwo256;
+	type Header = sp_runtime::testing::Header;
 	type Index = u64;
-	type Lookup = IdentityLookup<Self::AccountId>;
-	type MaxConsumers = ConstU32<16>;
+	type Lookup = sp_runtime::traits::IdentityLookup<Self::AccountId>;
+	type MaxConsumers = frame_support::traits::ConstU32<16>;
 	type OnKilledAccount = ();
 	type OnNewAccount = ();
 	type OnSetCode = ();
@@ -121,27 +87,20 @@ impl frame_system::Config for TestRuntime {
 	type Version = ();
 }
 
-frame_support::parameter_types! {
-	pub const MaxLocks: u32 = 10;
-	pub const ExistentialDeposit: u64 = 0;
-}
 impl pallet_balances::Config for TestRuntime {
 	type AccountStore = System;
 	type Balance = Balance;
 	type DustRemoval = ();
-	type ExistentialDeposit = ExistentialDeposit;
-	type MaxLocks = MaxLocks;
+	type ExistentialDeposit = frame_support::traits::ConstU128<0>;
+	type MaxLocks = ();
 	type MaxReserves = ();
 	type ReserveIdentifier = [u8; 8];
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = ();
 }
 
-frame_support::parameter_types! {
-	pub const MinimumPeriod: u64 = 6000 / 2;
-}
 impl pallet_timestamp::Config for TestRuntime {
-	type MinimumPeriod = MinimumPeriod;
+	type MinimumPeriod = ();
 	type Moment = u64;
 	type OnTimestampSet = ();
 	type WeightInfo = ();
@@ -189,21 +148,17 @@ impl AccountToAssetId<AccountId, AssetId> for AssetIdConverter {
 }
 
 frame_support::parameter_types! {
-	pub const TransactionByteFee: u64 = 1;
-	pub const ChainId: u64 = 42;
 	pub const BlockGasLimit: U256 = U256::MAX;
 	pub const WeightPerGas: Weight = Weight::from_ref_time(20_000);
 	pub PrecompilesValue: TestPrecompiles<TestRuntime> = TestPrecompiles::<_>::new();
 }
 
-pub type InternalCall = ERC20AssetsCall<TestRuntime, AssetIdConverter>;
-
 impl pallet_evm::Config for TestRuntime {
-	type AddressMapping = IdentityAddressMapping;
+	type AddressMapping = pallet_evm::IdentityAddressMapping;
 	type BlockGasLimit = BlockGasLimit;
 	type BlockHashMapping = pallet_evm::SubstrateBlockHashMapping<Self>;
 	type CallOrigin = pallet_evm::EnsureAddressRoot<AccountId>;
-	type ChainId = ChainId;
+	type ChainId = frame_support::traits::ConstU64<42>;
 	type Currency = Balances;
 	type FeeCalculator = ();
 	type FindAuthor = ();
@@ -217,43 +172,34 @@ impl pallet_evm::Config for TestRuntime {
 	type WithdrawOrigin = pallet_evm::EnsureAddressNever<AccountId>;
 }
 
-frame_support::parameter_types! {
-	pub const AssetDeposit: Balance = 0;
-	pub const ApprovalDeposit: Balance = 0;
-	pub const AssetsStringLimit: u32 = 50;
-	pub const MetadataDepositBase: Balance = 0;
-	pub const MetadataDepositPerByte: Balance = 0;
-	pub const AssetAccountDeposit: Balance = 0;
-}
-
 impl pallet_assets::Config for TestRuntime {
-	type ApprovalDeposit = ApprovalDeposit;
-	type AssetAccountDeposit = AssetAccountDeposit;
-	type AssetDeposit = AssetDeposit;
+	type ApprovalDeposit = ();
+	type AssetAccountDeposit = ();
+	type AssetDeposit = ();
 	type AssetId = AssetId;
 	type Balance = Balance;
 	type Currency = Balances;
 	type Extra = ();
-	type ForceOrigin = EnsureRoot<AccountId>;
+	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
 	type Freezer = ();
-	type MetadataDepositBase = MetadataDepositBase;
-	type MetadataDepositPerByte = MetadataDepositPerByte;
+	type MetadataDepositBase = ();
+	type MetadataDepositPerByte = ();
 	type RuntimeEvent = RuntimeEvent;
-	type StringLimit = AssetsStringLimit;
+	type StringLimit = frame_support::traits::ConstU32<50>;
 	type WeightInfo = ();
 }
 
 frame_support::construct_runtime! {
 	pub enum TestRuntime where
-		Block = Block,
-		NodeBlock = Block,
-		UncheckedExtrinsic = UncheckedExtrinsic,
+	Block = frame_system::mocking::MockBlock<TestRuntime>,
+	NodeBlock = frame_system::mocking::MockBlock<TestRuntime>,
+	UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<TestRuntime>,
 	{
-		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-		Timestamp: pallet_timestamp::{Pallet, Call, Storage},
-		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
-		EVM: pallet_evm::{Pallet, Call, Storage, Config, Event<T>},
-		Assets: pallet_assets::{Pallet, Call, Storage, Event<T>}
+		System: frame_system,
+		Timestamp: pallet_timestamp,
+		Balances: pallet_balances,
+		EVM: pallet_evm,
+		Assets: pallet_assets
 	}
 }
 
