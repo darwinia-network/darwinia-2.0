@@ -18,6 +18,11 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
+#[cfg(test)]
+mod mock;
+#[cfg(test)]
+mod tests;
+
 // std
 use core::marker::PhantomData;
 // darwinia
@@ -31,7 +36,7 @@ use frame_support::{
 	dispatch::{Dispatchable, GetDispatchInfo, PostDispatchInfo},
 	traits::OriginTrait,
 };
-use sp_core::H160;
+use sp_core::{H160, U256};
 use sp_runtime::Perbill;
 
 /// AccountId of the runtime.
@@ -56,8 +61,8 @@ where
 	#[precompile::public("stake(uint256,uint256,uint8[])")]
 	fn stake(
 		handle: &mut impl PrecompileHandle,
-		ring_amount: Balance,
-		kton_amount: Balance,
+		ring_amount: U256,
+		kton_amount: U256,
 		deposits: Vec<DepositId>,
 	) -> EvmResult<bool> {
 		let origin: AccountIdOf<Runtime> = handle.context().caller.into();
@@ -66,7 +71,11 @@ where
 		RuntimeHelper::<Runtime>::try_dispatch(
 			handle,
 			Some(origin).into(),
-			darwinia_staking::Call::<Runtime>::stake { ring_amount, kton_amount, deposits },
+			darwinia_staking::Call::<Runtime>::stake {
+				ring_amount: ring_amount.as_u128(),
+				kton_amount: kton_amount.as_u128(),
+				deposits,
+			},
 		)?;
 		Ok(true)
 	}
@@ -74,8 +83,8 @@ where
 	#[precompile::public("unstake(uint256,uint256,uint8[])")]
 	fn unstake(
 		handle: &mut impl PrecompileHandle,
-		ring_amount: Balance,
-		kton_amount: Balance,
+		ring_amount: U256,
+		kton_amount: U256,
 		deposits: Vec<DepositId>,
 	) -> EvmResult<bool> {
 		let origin: AccountIdOf<Runtime> = handle.context().caller.into();
@@ -84,7 +93,11 @@ where
 		RuntimeHelper::<Runtime>::try_dispatch(
 			handle,
 			Some(origin).into(),
-			darwinia_staking::Call::<Runtime>::unstake { ring_amount, kton_amount, deposits },
+			darwinia_staking::Call::<Runtime>::unstake {
+				ring_amount: ring_amount.as_u128(),
+				kton_amount: kton_amount.as_u128(),
+				deposits,
+			},
 		)?;
 		Ok(true)
 	}
