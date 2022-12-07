@@ -1,6 +1,6 @@
 [package]
 authors     = ["Darwinia Network <hello@darwinia.network>"]
-description = "Darwinia 2.0 account migration."
+description = "Darwinia SR25519 to ECDSA account migration."
 edition     = "2021"
 homepage    = "https://darwinia.network"
 license     = "GPL-3.0"
