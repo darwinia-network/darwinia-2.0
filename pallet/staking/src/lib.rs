@@ -18,10 +18,10 @@
 
 //! # Darwinia parachain staking pallet
 //!
+//! ## Overview
+//! 
 //! This is a completely specialized stake pallet designed only for Darwinia parachain.
 //! So, this pallet will eliminate the generic parameters as much as possible.
-//!
-//! ## Overview
 //!
 //! ### Acceptable stakes:
 //! - RING: Darwinia's native token
