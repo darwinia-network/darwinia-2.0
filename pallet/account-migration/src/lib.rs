@@ -36,7 +36,7 @@
 //! The data will be processed off-chain(ly).
 //! After the verification, simply perform a take & put operation.
 //!
-//! ```
+//! ```nocompile
 //! user -> send extrinsic -> verify -> put(storages, ECDSA, take(storages, SR25519))
 //! ```
 
