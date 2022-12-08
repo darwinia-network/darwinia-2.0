@@ -163,8 +163,6 @@ pub fn genesis_config() -> ChainSpec {
 						session_keys(get_collator_keys_from_seed("Alice")),
 					)],
 				},
-				// no need to pass anything to aura, in fact it will panic if we do. Session will
-				// take care of this.
 				aura: Default::default(),
 				aura_ext: Default::default(),
 
