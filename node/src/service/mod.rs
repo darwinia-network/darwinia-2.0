@@ -623,3 +623,234 @@ pub async fn start_parachain_node(
 	)
 	.await
 }
+
+/// Start a dev node which can seal instantly.
+pub fn start_dev_node<RuntimeApi, Executor>(config: sc_service::Configuration, eth_rpc_config: &crate::cli::EthRpcConfig) -> Result<sc_service::TaskManager, ServiceError>
+	where
+		RuntimeApi: sp_api::ConstructRuntimeApi<Block, FullClient<RuntimeApi, Executor>> + Send + Sync + 'static,
+		RuntimeApi::RuntimeApi: RuntimeApiCollection<StateBackend = sc_client_api::StateBackendFor<FullBackend, Block>>,
+		RuntimeApi::RuntimeApi: sp_consensus_aura::AuraApi<Block, AuraId>,
+		Executor: 'static + sc_executor::NativeExecutionDispatch,
+{
+	use sc_client_api::HeaderBackend;
+
+	let sc_service::PartialComponents {
+		client,
+		backend,
+		mut task_manager,
+		import_queue,
+		keystore_container,
+		select_chain: maybe_select_chain,
+		transaction_pool,
+		other: (_, _),
+	} = new_partial::<RuntimeApi, Executor>(&config, eth_rpc_config)?;
+
+	let (network, system_rpc_tx, tx_handler_controller, start_network) =
+		sc_service::build_network(sc_service::BuildNetworkParams {
+			config: &config,
+			client: client.clone(),
+			transaction_pool: transaction_pool.clone(),
+			spawn_handle: task_manager.spawn_handle(),
+			import_queue,
+			block_announce_validator_builder: None,
+			warp_sync: None,
+		})?;
+
+	if config.offchain_worker.enabled {
+		let offchain_workers = Arc::new(sc_offchain::OffchainWorkers::new_with_options(
+			client.clone(),
+			sc_offchain::OffchainWorkerOptions {
+				enable_http_requests: false,
+			},
+		));
+
+		// Start the offchain workers to have
+		task_manager.spawn_handle().spawn(
+			"offchain-notifications",
+			None,
+			sc_offchain::notification_future(
+				config.role.is_authority(),
+				client.clone(),
+				offchain_workers,
+				task_manager.spawn_handle(),
+				network.clone(),
+			),
+		);
+	}
+
+	let role = config.role.clone();
+	let force_authoring = config.force_authoring;
+	let backoff_authoring_blocks: Option<()> = None;
+
+	let select_chain = maybe_select_chain.expect("In `dev` mode, `new_partial` will return some `select_chain`; qed");
+
+	let command_sink = if role.is_authority() {
+		let proposer_factory = sc_basic_authorship::ProposerFactory::new(
+			task_manager.spawn_handle(),
+			client.clone(),
+			transaction_pool.clone(),
+			None,
+			None,
+		);
+
+		if instant_sealing {
+			// Channel for the rpc handler to communicate with the authorship task.
+			let (command_sink, commands_stream) = futures::channel::mpsc::channel(1024);
+
+			let pool = transaction_pool.pool().clone();
+			let import_stream = pool.validated_pool().import_notification_stream().map(|_| {
+				sc_consensus_manual_seal::rpc::EngineCommand::SealNewBlock {
+					create_empty: false,
+					finalize: true,
+					parent_hash: None,
+					sender: None,
+				}
+			});
+
+			let client_for_cidp = client.clone();
+
+			let authorship_future =
+				sc_consensus_manual_seal::run_manual_seal(sc_consensus_manual_seal::ManualSealParams {
+					block_import: client.clone(),
+					env: proposer_factory,
+					client: client.clone(),
+					pool: transaction_pool.clone(),
+					commands_stream: futures::stream_select!(commands_stream, import_stream),
+					select_chain,
+					consensus_data_provider: None,
+					create_inherent_data_providers: move |block: Hash, _| {
+						let current_para_block = client_for_cidp
+							.number(block)
+							.expect("Header lookup should succeed")
+							.expect("Header passed in as parent should be present in backend.");
+						let client_for_xcm = client_for_cidp.clone();
+						async move {
+							let mocked_parachain = cumulus_primitives_parachain_inherent::MockValidationDataInherentDataProvider {
+								current_para_block,
+								relay_offset: 1000,
+								relay_blocks_per_para_block: 2,
+								para_blocks_per_relay_epoch: 0,
+								relay_randomness_config: (),
+								xcm_config: cumulus_primitives_parachain_inherent::MockXcmConfig::new(
+									&*client_for_xcm,
+									block,
+									Default::default(),
+									Default::default(),
+								),
+								raw_downward_messages: vec![],
+								raw_horizontal_messages: vec![],
+							};
+							Ok((sp_timestamp::InherentDataProvider::from_system_time(), mocked_parachain))
+						}
+					},
+				});
+			// we spawn the future on a background thread managed by service.
+			task_manager.spawn_essential_handle().spawn_blocking(
+				"instant-seal",
+				Some("block-authoring"),
+				authorship_future,
+			);
+			Some(command_sink)
+		} else {
+			// aura
+			let slot_duration = sc_consensus_aura::slot_duration(&*client)?;
+			let client_for_cidp = client.clone();
+
+			let aura = sc_consensus_aura::start_aura::<AuraPair, _, _, _, _, _, _, _, _, _, _>(StartAuraParams {
+				slot_duration: sc_consensus_aura::slot_duration(&*client)?,
+				client: client.clone(),
+				select_chain,
+				block_import: instant_finalize::InstantFinalizeBlockImport::new(client.clone()),
+				proposer_factory,
+				create_inherent_data_providers: move |block: Hash, ()| {
+					let current_para_block = client_for_cidp
+						.number(block)
+						.expect("Header lookup should succeed")
+						.expect("Header passed in as parent should be present in backend.");
+					let client_for_xcm = client_for_cidp.clone();
+
+					async move {
+						let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
+
+						let slot = sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
+							*timestamp,
+							slot_duration,
+						);
+
+						let mocked_parachain = cumulus_primitives_parachain_inherent::MockValidationDataInherentDataProvider {
+							current_para_block,
+							relay_offset: 1000,
+							relay_blocks_per_para_block: 2,
+							para_blocks_per_relay_epoch: 0,
+							relay_randomness_config: (),
+							xcm_config: cumulus_primitives_parachain_inherent::MockXcmConfig::new(
+								&*client_for_xcm,
+								block,
+								Default::default(),
+								Default::default(),
+							),
+							raw_downward_messages: vec![],
+							raw_horizontal_messages: vec![],
+						};
+
+						Ok((slot, timestamp, mocked_parachain))
+					}
+				},
+				force_authoring,
+				backoff_authoring_blocks,
+				keystore: keystore_container.sync_keystore(),
+				sync_oracle: network.clone(),
+				justification_sync_link: network.clone(),
+				// We got around 500ms for proposing
+				block_proposal_slot_portion: cumulus_client_consensus_aura::SlotProportion::new(1f32 / 24f32),
+				// And a maximum of 750ms if slots are skipped
+				max_block_proposal_slot_portion: Some(cumulus_client_consensus_aura::SlotProportion::new(1f32 / 16f32)),
+				telemetry: None,
+			})?;
+
+			// the AURA authoring task is considered essential, i.e. if it
+			// fails we take down the service with it.
+			task_manager
+				.spawn_essential_handle()
+				.spawn_blocking("aura", Some("block-authoring"), aura);
+
+			None
+		}
+	} else {
+		None
+	};
+
+	let rpc_extensions_builder = {
+		let client = client.clone();
+		let transaction_pool = transaction_pool.clone();
+
+		move |deny_unsafe, _| {
+			let deps = crate::rpc::FullDeps {
+				client: client.clone(),
+				pool: transaction_pool.clone(),
+				deny_unsafe,
+				command_sink: command_sink.clone(),
+			};
+
+			crate::rpc::create_full(deps).map_err(Into::into)
+		}
+	};
+
+	sc_service::spawn_tasks(sc_service::SpawnTasksParams {
+		rpc_builder: Box::new(rpc_extensions_builder),
+		client,
+		transaction_pool,
+		task_manager: &mut task_manager,
+		config,
+		keystore: keystore_container.sync_keystore(),
+		backend,
+		network,
+		system_rpc_tx,
+		tx_handler_controller,
+		telemetry: None,
+	})?;
+
+	start_network.start_network();
+
+	Ok(task_manager)
+}
