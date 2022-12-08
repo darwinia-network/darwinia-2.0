@@ -51,7 +51,9 @@ use frame_support::{
 	traits::{Currency, OnUnbalanced, UnixTime},
 	EqNoBound, PalletId, PartialEqNoBound,
 };
-use frame_system::{pallet_prelude::*, RawOrigin};
+use frame_system::pallet_prelude::*;
+#[cfg(feature = "std")]
+use frame_system::RawOrigin;
 use sp_runtime::{
 	traits::{AccountIdConversion, Convert},
 	Perbill, Perquintill,

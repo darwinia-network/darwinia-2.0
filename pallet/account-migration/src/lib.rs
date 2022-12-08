@@ -56,9 +56,8 @@ use frame_system::{pallet_prelude::*, AccountInfo};
 use pallet_balances::AccountData;
 use sp_core::sr25519::{Public, Signature};
 use sp_io::hashing;
-use sp_runtime::traits::Verify;
+use sp_runtime::{traits::Verify, AccountId32};
 
-type AccountId32 = [u8; 32];
 type Message = [u8; 32];
 
 #[frame_support::pallet]
@@ -111,7 +110,7 @@ pub mod pallet {
 		) -> DispatchResult {
 			ensure_none(origin)?;
 
-			let account = <Accounts<T>>::take(from)
+			let account = <Accounts<T>>::take(&from)
 				.ok_or("[pallet::account-migration] already checked in `pre_dispatch`; qed")?;
 
 			<frame_system::Account<T>>::insert(to, account);
@@ -131,7 +130,7 @@ pub mod pallet {
 			// The migration source was not exist.
 			const E_ACCOUNT_NOT_FOUND: u8 = 1;
 			// Invalid signature.
-			const E_INVALID_SIGNATURE: u8 = 1;
+			const E_INVALID_SIGNATURE: u8 = 2;
 
 			let Call::migrate { from, to, signature } = call else {
 				return InvalidTransaction::Call.into();
@@ -172,7 +171,7 @@ fn verify_sr25519_signature(
 ) -> bool {
 	// Actually, `&[u8]` is `[u8; 32]` here.
 	// But for better safety.
-	let Ok(public_key) = &Public::try_from(public_key.as_slice()) else {
+	let Ok(public_key) = &Public::try_from(public_key.as_ref()) else {
 		log::error!("[pallet::account-migration] `public_key` must be valid; qed");
 
 		return false;
