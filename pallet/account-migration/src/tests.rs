@@ -51,6 +51,6 @@ fn verify_sr25519_signature_should_work() {
 		let message = sr25519_signable_message(b"Darwinia2", &to.into());
 		let signature = from.sign(&message);
 
-		assert!(verify_sr25519_signature(from.public().as_ref(), &message, &signature));
+		assert!(verify_sr25519_signature(&from.public().0.into(), &message, &signature));
 	});
 }
