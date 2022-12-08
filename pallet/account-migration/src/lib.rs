@@ -147,7 +147,7 @@ pub mod pallet {
 			}
 
 			let message = sr25519_signable_message(
-				&T::ChainId::get().to_le_bytes(),
+				T::ChainId::get(),
 				T::Version::get().spec_name.as_ref(),
 				to,
 			);
@@ -168,13 +168,15 @@ pub mod pallet {
 pub use pallet::*;
 
 fn sr25519_signable_message(
-	chain_id: &[u8],
+	chain_id: u64,
 	spec_name: &[u8],
 	account_id_20: &AccountId20,
 ) -> Message {
 	hashing::blake2_256(
 		&[
-			&hashing::blake2_256(&[chain_id, spec_name, b"::account-migration"].concat()),
+			&hashing::blake2_256(
+				&[&chain_id.to_le_bytes(), spec_name, b"::account-migration"].concat(),
+			),
 			account_id_20.0.as_slice(),
 		]
 		.concat(),

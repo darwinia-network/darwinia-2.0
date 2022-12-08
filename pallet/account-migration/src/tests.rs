@@ -41,11 +41,7 @@ fn sr25519_signable_message_should_work() {
 		])
 		.for_each(|((chain_id, spec_name), message)| {
 			assert_eq!(
-				sr25519_signable_message(
-					&(*chain_id).to_le_bytes(),
-					spec_name,
-					&Default::default()
-				),
+				sr25519_signable_message(*chain_id, spec_name, &Default::default()),
 				message
 			);
 		});
@@ -55,7 +51,7 @@ fn sr25519_signable_message_should_work() {
 fn verify_sr25519_signature_should_work() {
 	Keyring::iter().enumerate().for_each(|(i, from)| {
 		let to = [i as _; 20];
-		let message = sr25519_signable_message(b"46", b"Darwinia2", &to.into());
+		let message = sr25519_signable_message(46, b"Darwinia2", &to.into());
 		let signature = from.sign(&message);
 
 		assert!(verify_sr25519_signature(&from.public().0.into(), &message, &signature));
