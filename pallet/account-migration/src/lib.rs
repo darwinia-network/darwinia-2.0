@@ -77,7 +77,7 @@ pub mod pallet {
 	{
 		/// Override the [`frame_system::Config::RuntimeEvent`].
 		type RuntimeEvent: From<Event> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
-		/// Chain's ID, which is using for constructing the message. (follow EIP-712 SPEC)
+		/// Chain's ID, which is used for constructing the message. (follow EIP-712 SPEC)
 		#[pallet::constant]
 		type ChainId: Get<u64>;
 	}
