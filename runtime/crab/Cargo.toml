@@ -169,6 +169,7 @@ std = [
 	"pallet-bridge-dispatch/std",
 	"pallet-bridge-grandpa/std",
 	"pallet-bridge-messages/std",
+	"pallet-bridge-parachains/std",
 	"pallet-fee-market/std",
 
 	# frontier
@@ -257,6 +258,7 @@ runtime-benchmarks = [
 	"bridge-runtime-common/runtime-benchmarks",
 	"pallet-bridge-grandpa/runtime-benchmarks",
 	"pallet-bridge-messages/runtime-benchmarks",
+	"pallet-bridge-parachains/runtime-benchmarks",
 	"pallet-fee-market/runtime-benchmarks",
 
 	# frontier
