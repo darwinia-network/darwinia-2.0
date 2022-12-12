@@ -21,9 +21,7 @@ pub use pallet_bridge_grandpa::Instance1 as WithPolkadotGrandpa;
 // darwinia
 use crate::*;
 
-frame_support::parameter_types! {
-	pub const PolkadotHeadersToKeep: u32 = 500;
-}
+pub type PolkadotHeadersToKeep = ConstU32<500>;
 
 impl pallet_bridge_grandpa::Config<WithPolkadotGrandpa> for Runtime {
 	type BridgedChain = bp_darwinia::DarwiniaLike;
