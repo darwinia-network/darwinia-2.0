@@ -6526,6 +6526,7 @@ dependencies = [
  "bp-parachains",
  "bp-polkadot-core",
  "bp-runtime",
+ "frame-benchmarking",
  "frame-support",
  "frame-system",
  "pallet-bridge-grandpa",
