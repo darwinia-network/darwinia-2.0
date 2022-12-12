@@ -317,6 +317,7 @@ frame_support::construct_runtime! {
 
 		// S2S stuff.
 		BridgeKusamaGrandpa: pallet_bridge_grandpa::<Instance1> = 35,
+		BridgeKusamaParachain: pallet_bridge_parachains::<Instance1> = 42,
 		BridgeCrabMessages: pallet_bridge_messages::<Instance1> = 36,
 		BridgeCrabDispatch: pallet_bridge_dispatch::<Instance1> = 37,
 		CrabFeeMarket: pallet_fee_market::<Instance1> = 38
