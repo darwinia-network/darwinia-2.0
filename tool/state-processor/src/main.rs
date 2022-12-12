@@ -157,13 +157,17 @@ where
 fn pallet_key(pallet: &[u8]) -> String {
 	let prefix = subhasher::twox128(pallet);
 
-	array_bytes::bytes2hex("0x", &prefix)
+	array_bytes::bytes2hex("0x", prefix)
 }
 
 fn item_key(pallet: &[u8], item: &[u8]) -> String {
 	let k = substorager::storage_key(pallet, item);
 
 	array_bytes::bytes2hex("0x", &k.0)
+}
+
+fn full_key(pallet: &[u8], item: &[u8], hash: &str) -> String {
+	format!("{}{hash}", item_key(pallet, item))
 }
 
 fn encode_value<V>(v: V) -> String
@@ -182,13 +186,12 @@ where
 	Ok(D::decode(&mut &*v)?)
 }
 
-// twox128(pallet) + twox128(item) + blake2_256_concat(item_key) -> blake2_256_concat(item_key)
-fn get_blake2_128_concat_suffix(full_key: &str, item_key: &str) -> String {
+// twox128(pallet) + twox128(item) + *(item_key) -> *(item_key)
+fn get_hashed_key(full_key: &str, item_key: &str) -> String {
 	full_key.trim_start_matches(item_key).into()
 }
 
-// twox128(pallet) + twox128(item) + blake2_256_concat(account_id_32) -> account_id_32
-#[allow(unused)]
-fn get_concat_suffix(full_key: &str, _: &str) -> String {
-	format!("0x{}", &full_key[full_key.len() - 64..])
+// twox128(pallet) + twox128(item) + *_concat(account_id_32) -> account_id_32
+fn get_last_64(key: &str) -> String {
+	format!("0x{}", &key[key.len() - 64..])
 }
