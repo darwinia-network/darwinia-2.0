@@ -158,7 +158,7 @@ impl TargetHeaderChain<ToDarwiniaMessagePayload, <Self as ChainWithMessages>::Ac
 		source::verify_messages_delivery_proof::<
 			WithDarwiniaMessageBridge,
 			Runtime,
-			WithDarwiniaGrandpa,
+			WithPolkadotGrandpa,
 		>(proof)
 	}
 }
@@ -170,7 +170,7 @@ impl SourceHeaderChain<<Self as ChainWithMessages>::Balance> for Darwinia {
 		proof: Self::MessagesProof,
 		messages_count: u32,
 	) -> Result<ProvedMessages<Message<<Self as ChainWithMessages>::Balance>>, Self::Error> {
-		target::verify_messages_proof::<WithDarwiniaMessageBridge, Runtime, WithDarwiniaGrandpa>(
+		target::verify_messages_proof::<WithDarwiniaMessageBridge, Runtime, WithPolkadotGrandpa>(
 			proof,
 			messages_count,
 		)

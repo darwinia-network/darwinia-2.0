@@ -149,7 +149,7 @@ impl TargetHeaderChain<ToCrabMessagePayload, <Self as ChainWithMessages>::Accoun
 	fn verify_messages_delivery_proof(
 		proof: Self::MessagesDeliveryProof,
 	) -> Result<(LaneId, InboundLaneData<bp_crab::AccountId>), Self::Error> {
-		source::verify_messages_delivery_proof::<WithCrabMessageBridge, Runtime, WithCrabGrandpa>(
+		source::verify_messages_delivery_proof::<WithCrabMessageBridge, Runtime, WithKusamaGrandpa>(
 			proof,
 		)
 	}
@@ -162,7 +162,7 @@ impl SourceHeaderChain<<Self as ChainWithMessages>::Balance> for Crab {
 		proof: Self::MessagesProof,
 		messages_count: u32,
 	) -> Result<ProvedMessages<Message<<Self as ChainWithMessages>::Balance>>, Self::Error> {
-		target::verify_messages_proof::<WithCrabMessageBridge, Runtime, WithCrabGrandpa>(
+		target::verify_messages_proof::<WithCrabMessageBridge, Runtime, WithKusamaGrandpa>(
 			proof,
 			messages_count,
 		)

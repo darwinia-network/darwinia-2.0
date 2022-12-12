@@ -193,7 +193,7 @@ pub fn genesis_config() -> ChainSpec {
 				base_fee: Default::default(),
 
 				// S2S stuff.
-				bridge_crab_grandpa: Default::default(),
+				bridge_kusama_grandpa: Default::default(),
 				bridge_crab_messages: Default::default(),
 				crab_fee_market: Default::default(),
 			}
@@ -320,7 +320,7 @@ fn testnet_genesis(
 		base_fee: Default::default(),
 
 		// S2S stuff.
-		bridge_crab_grandpa: Default::default(),
+		bridge_kusama_grandpa: Default::default(),
 		bridge_crab_messages: Default::default(),
 		crab_fee_market: Default::default(),
 	}

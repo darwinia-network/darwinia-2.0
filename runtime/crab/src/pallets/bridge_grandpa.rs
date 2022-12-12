@@ -16,12 +16,12 @@
 // You should have received a copy of the GNU General Public License
 // along with Darwinia. If not, see <https://www.gnu.org/licenses/>.
 
-pub use pallet_bridge_grandpa::Instance1 as WithDarwiniaGrandpa;
+pub use pallet_bridge_grandpa::Instance1 as WithPolkadotGrandpa;
 
 // darwinia
 use crate::*;
 
-impl pallet_bridge_grandpa::Config<WithDarwiniaGrandpa> for Runtime {
+impl pallet_bridge_grandpa::Config<WithPolkadotGrandpa> for Runtime {
 	type BridgedChain = bp_darwinia::DarwiniaLike;
 	type HeadersToKeep = ConstU32<500>;
 	type MaxBridgedAuthorities = ();
