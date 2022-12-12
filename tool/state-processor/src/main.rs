@@ -63,10 +63,11 @@ impl Processor {
 	}
 
 	fn process(mut self) -> Result<()> {
-		log::info!("bear: --- state process system.");
 		self.process_system();
-		log::info!("bear: --- state frontier's storage.");
+
+		// Frontier storages
 		self.process_ethereum();
+		self.process_evm();
 
 		self.save()
 	}
@@ -207,6 +208,10 @@ where
 // twox128(pallet) + twox128(item) + blake2_256_concat(item_key) -> blake2_256_concat(item_key)
 fn get_blake2_128_concat_suffix(full_key: &str, item_key: &str) -> String {
 	full_key.trim_start_matches(item_key).into()
+}
+
+fn untouched_key(full_key: &str, _item_key: &str) -> String {
+	full_key.into()
 }
 
 // twox128(pallet) + twox128(item) + blake2_256_concat(account_id_32) -> account_id_32
