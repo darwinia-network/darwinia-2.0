@@ -16,7 +16,6 @@ pretty_env_logger  = { version = "0.4" }
 serde              = { version = "1.0" }
 serde_json         = { version = "1.0" }
 sp-core            = { version = "7.0.0" }
-# ethereum-types = "0.14.1"
 # hack-ink
 subhasher   = { git = "https://github.com/hack-ink/subalfred" }
 subspector  = { git = "https://github.com/hack-ink/subalfred" }

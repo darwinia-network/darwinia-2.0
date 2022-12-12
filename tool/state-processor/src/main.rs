@@ -56,8 +56,8 @@ struct Processor {
 impl Processor {
 	fn new() -> Result<Self> {
 		Ok(Self {
-			solo_state: State::from_file("test-data/pangolin.json")?,
-			para_state: State::from_file("test-data/darwinia-parachain.json")?,
+			solo_state: State::from_file("test-data/solo.json")?,
+			para_state: State::from_file("test-data/para.json")?,
 			shell_chain_spec: from_file("test-data/shell.json")?,
 		})
 	}

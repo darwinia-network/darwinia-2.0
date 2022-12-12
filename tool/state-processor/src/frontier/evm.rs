@@ -35,6 +35,7 @@ impl Processor {
 		let mut account_storages = Map::default();
 
 		let state = &mut self.shell_chain_spec.genesis.raw.top;
+
 		log::info!("set AccountCodes");
 		self.solo_state.take::<Vec<u8>, _>(
 			b"EVM",
