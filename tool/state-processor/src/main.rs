@@ -17,7 +17,7 @@
 // along with Darwinia. If not, see <https://www.gnu.org/licenses/>.
 
 mod balances;
-mod ethereum;
+mod frontier;
 mod system;
 
 mod type_registry;
@@ -65,6 +65,8 @@ impl Processor {
 	fn process(mut self) -> Result<()> {
 		log::info!("bear: --- state process system.");
 		self.process_system();
+		log::info!("bear: --- state frontier's storage.");
+		self.process_ethereum();
 
 		self.save()
 	}
