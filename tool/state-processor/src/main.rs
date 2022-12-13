@@ -1,8 +1,9 @@
 mod balances;
+mod identity;
 mod system;
+mod types;
 
-mod type_registry;
-use type_registry::*;
+use types::*;
 
 // std
 use std::{
