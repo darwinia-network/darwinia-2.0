@@ -1,0 +1,22 @@
+ INFO  state_processor > load data from "test-data/pangolin.json"
+ INFO  state_processor > load data from "test-data/darwinia-parachain.json"
+ INFO  state_processor > load data from "test-data/shell.json"
+ INFO  state_processor::system > take solo and remaining balances
+ INFO  state_processor::system > take solo and para balance locks
+ INFO  state_processor::balances > take solo balance locks
+ INFO  state_processor::balances > adjust solo balance lock decimals
+ INFO  state_processor::system   > take para balances
+ INFO  state_processor::system   > adjust solo balance decimals
+ INFO  state_processor::system   > merge solo and remaining balances
+ INFO  state_processor::system   > build accounts
+ INFO  state_processor::system   > calculate ring total issuance
+ INFO  state_processor::system   > check solo remaining locks
+ INFO  state_processor::system   > set `Balances::TotalIssuance`
+ INFO  state_processor::system   > update ring misc frozen and fee frozen
+ INFO  state_processor::system   > set `System::Account`
+ INFO  state_processor::system   > set `Balances::Locks`
+ INFO  state_processor::identity > identities: {"94eeee7474f0b40fa8fc72d20690562e27bb10f078d2de104192ad2d0cbfb4eec4eef42381f53739": Registration { judgements: BoundedVec([], 20), deposit: 10000000000, info: IdentityInfo { additional: BoundedVec([], 100), display: Data::Raw(BoundedVec([84, 33, 110, 121], 32)), legal: Data::None, web: Data::None, riot: Data::None, email: Data::Raw(BoundedVec([103, 114, 97, 118, 105, 116, 105, 110, 121, 46, 108, 105, 117, 64, 105, 116, 101, 114, 105, 110, 103, 46, 105, 111], 32)), pgp_fingerprint: None, image: Data::None, twitter: Data::None } }, "e693529a64a21988645c144248e24ffebdf59362d57f23d7c446c80370f70d9d979faececcc7dd36": Registration { judgements: BoundedVec([], 20), deposit: 10000000000, info: IdentityInfo { additional: BoundedVec([], 100), display: Data::Raw(BoundedVec([74, 97, 121, 74, 97, 121, 49, 48, 50, 52], 32)), legal: Data::Raw(BoundedVec([74, 97, 121, 32, 76, 97, 117], 32)), web: Data::None, riot: Data::None, email: Data::Raw(BoundedVec([108, 121, 103, 109, 49, 48, 54, 50, 64, 103, 109, 97, 105, 108, 46, 99, 111, 109], 32)), pgp_fingerprint: None, image: Data::None, twitter: Data::None } }}
+ INFO  state_processor::identity > registrars: {}
+ INFO  state_processor::identity > super_of: {"31a0ec13263cb677b1a945416bdf8e8bdecddc29ace6217df47f8b64a5246ebae2ead5325fb8cac10756106a0cea911f": (a8fc72d20690562e27bb10f078d2de104192ad2d0cbfb4eec4eef42381f53739 (5FtGtquU...), Data::Raw(BoundedVec([84, 101, 115, 116], 32))), "cd6bb59123fa7ac82cbfccd5b8865a535499f7a7e82c27a0fad0ab919f2ea493c956ed4edb59e779d92c921b85412e3e": (645c144248e24ffebdf59362d57f23d7c446c80370f70d9d979faececcc7dd36 (5ELHztNr...), Data::Raw(BoundedVec([49], 32))), "2c0a804e53d3629a29e2223e34527e4acefcd961fb19d74dafdb69ef4b6faff839b31922a8c6d45b7b018b08b0d34f65": (645c144248e24ffebdf59362d57f23d7c446c80370f70d9d979faececcc7dd36 (5ELHztNr...), Data::Raw(BoundedVec([50], 32))), "99efa6a07765ab6ee379697fe5932b9e2ebdadf750fb11a59e5667f95e4da095507508ce68f49c72fe6557e6a5b2a63b": (645c144248e24ffebdf59362d57f23d7c446c80370f70d9d979faececcc7dd36 (5ELHztNr...), Data::Raw(BoundedVec([51], 32))), "938b271858ef27d2cadd50766c754c50aea1ce423dfd9fa7cd0454c9d7063a3441225c0fb54c4c4a61d53f1e4a30f607": (645c144248e24ffebdf59362d57f23d7c446c80370f70d9d979faececcc7dd36 (5ELHztNr...), Data::Raw(BoundedVec([52], 32))), "13549e1f40ef119db316a1ca0dd85f6e4574f288c910faa61b2470385b803138b4ecc115e2c14c61244b50605200f2e5": (a8fc72d20690562e27bb10f078d2de104192ad2d0cbfb4eec4eef42381f53739 (5FtGtquU...), Data::Raw(BoundedVec([84, 101, 115, 116, 77, 117, 108, 116, 105, 115, 105, 103], 32)))}
+ INFO  state_processor::identity > sub_of: {"94eeee7474f0b40fa8fc72d20690562e27bb10f078d2de104192ad2d0cbfb4eec4eef42381f53739": (4000000000, BoundedVec([decddc29ace6217df47f8b64a5246ebae2ead5325fb8cac10756106a0cea911f (5H6qe7mv...), 4574f288c910faa61b2470385b803138b4ecc115e2c14c61244b50605200f2e5 (5DdmuG3K...)], 100)), "e693529a64a21988645c144248e24ffebdf59362d57f23d7c446c80370f70d9d979faececcc7dd36": (8000000000, BoundedVec([5499f7a7e82c27a0fad0ab919f2ea493c956ed4edb59e779d92c921b85412e3e (5Dydcm1o...), cefcd961fb19d74dafdb69ef4b6faff839b31922a8c6d45b7b018b08b0d34f65 (5Gk6qHTq...), 2ebdadf750fb11a59e5667f95e4da095507508ce68f49c72fe6557e6a5b2a63b (5D7zQXZk...), aea1ce423dfd9fa7cd0454c9d7063a3441225c0fb54c4c4a61d53f1e4a30f607 (5G1gFmXN...)], 100))}
+ INFO  state_processor           > save processed chain spec
