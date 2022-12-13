@@ -25,6 +25,8 @@ sp-core         = { default-features = false, git = "https://github.com/parityte
 sp-io           = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
 sp-runtime      = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
 
+pallet-identity = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
+
 [dev-dependencies]
 sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
 
@@ -45,4 +47,6 @@ std = [
 	"sp-core/std",
 	"sp-runtime/std",
 	"sp-io/std",
+
+	"pallet-identity/std",
 ]

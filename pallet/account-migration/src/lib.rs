@@ -54,11 +54,15 @@ use dc_primitives::{AccountId as AccountId20, Balance, Index};
 use frame_support::{log, pallet_prelude::*};
 use frame_system::{pallet_prelude::*, AccountInfo};
 use pallet_balances::AccountData;
+use pallet_identity::{RegistrarInfo, Registration};
 use sp_core::sr25519::{Public, Signature};
 use sp_io::hashing;
 use sp_runtime::{traits::Verify, AccountId32};
 
 type Message = [u8; 32];
+
+const MAX_REGISTRARS: u32 = 100;
+const MAX_ADDITIONAL_FIELDS: u32 = 100;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -96,7 +100,26 @@ pub mod pallet {
 	pub type Accounts<T: Config> =
 		StorageMap<_, Identity, AccountId32, AccountInfo<Index, AccountData<Balance>>>;
 
-	// TODO: identity storages
+	/// pallet-identity
+	#[pallet::storage]
+	#[pallet::getter(fn identity)]
+	pub(super) type IdentityOf<T: Config> = StorageMap<
+		_,
+		Twox64Concat,
+		AccountId32,
+		Registration<Balance, ConstU32<MAX_REGISTRARS>, ConstU32<MAX_ADDITIONAL_FIELDS>>,
+		OptionQuery,
+	>;
+
+	/// TODO: Add comment
+	#[pallet::storage]
+	#[pallet::getter(fn registrars)]
+	pub(super) type Registrars<T: Config> = StorageValue<
+		_,
+		BoundedVec<Option<RegistrarInfo<Balance, AccountId32>>, ConstU32<MAX_REGISTRARS>>,
+		ValueQuery,
+	>;
+
 	// TODO: proxy storages
 	// TODO: staking storages
 	// TODO: vesting storages
