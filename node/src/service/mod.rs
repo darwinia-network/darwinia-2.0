@@ -696,9 +696,6 @@ where
 
 	let force_authoring = config.force_authoring;
 	let backoff_authoring_blocks: Option<()> = None;
-	let prometheus_registry = config.prometheus_registry().cloned();
-	let overrides = frontier_service::overrides_handle(client.clone());
-
 	let proposer_factory = sc_basic_authorship::ProposerFactory::new(
 		task_manager.spawn_handle(),
 		client.clone(),
@@ -707,7 +704,6 @@ where
 		None,
 	);
 
-	// aura
 	let slot_duration = sc_consensus_aura::slot_duration(&*client)?;
 	let client_for_cidp = client.clone();
 
