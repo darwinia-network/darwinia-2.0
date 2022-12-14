@@ -571,6 +571,19 @@ pub fn run() -> Result<()> {
 					if config.role.is_authority() { "yes" } else { "no" }
 				);
 
+				if chain_spec.is_dev() {
+					return if chain_spec.is_crab() {
+						crate::service::start_dev_node::<CrabRuntimeApi, CrabRuntimeExecutor>(config, &eth_rpc_config)
+							.map_err(Into::into)
+					} else if chain_spec.is_pangolin() {
+						crate::service::start_dev_node::<PangolinRuntimeApi, PangolinRuntimeExecutor>(config, &eth_rpc_config)
+							.map_err(Into::into)
+					} else {
+						crate::service::start_dev_node::<DarwiniaRuntimeApi, DarwiniaRuntimeExecutor>(config, &eth_rpc_config)
+							.map_err(Into::into)
+					}
+				}
+
 				crate::service::start_parachain_node(
 					config,
 					polkadot_config,
