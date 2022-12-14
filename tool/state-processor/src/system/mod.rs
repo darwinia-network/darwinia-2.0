@@ -106,41 +106,19 @@ impl Processor {
 				data: AccountData {
 					free: v.ring,
 					reserved: v.ring_reserved,
-					free_kton_or_misc_frozen: 0,
-					reserved_kton_or_fee_frozen: 0,
+					free_kton_or_misc_frozen: Default::default(),
+					reserved_kton_or_fee_frozen: Default::default(),
 				},
 			};
 
 			if is_evm_address(&k) {
 				state.insert(full_key(b"System", b"Account", &k), encode_value(a));
 
-				// TODO: migrate kton balances.
-
-				if !v.ring_locks.is_empty() || !v.kton_locks.is_empty() {
-					log::error!("EVM account({}) should not have locks", get_last_64(&k));
-				}
+			// TODO: migrate kton balances.
 			} else {
 				a.nonce = 0;
 
-				// https://github.com/paritytech/substrate/blob/polkadot-v0.9.16/frame/balances/src/lib.rs#L945-L952
-				// Update ring misc frozen and fee frozen.
-				for l in v.ring_locks.iter() {
-					if l.reasons == Reasons::All || l.reasons == Reasons::Misc {
-						a.data.free_kton_or_misc_frozen =
-							a.data.free_kton_or_misc_frozen.max(l.amount);
-					}
-					if l.reasons == Reasons::All || l.reasons == Reasons::Fee {
-						a.data.reserved_kton_or_fee_frozen =
-							a.data.reserved_kton_or_fee_frozen.max(l.amount);
-					}
-				}
-
 				state.insert(full_key(b"AccountMigration", b"Accounts", &k), encode_value(a));
-
-				// Skip empty locks.
-				if !v.ring_locks.is_empty() {
-					state.insert(full_key(b"Balances", b"Locks", &k), encode_value(v.ring_locks));
-				}
 			}
 		});
 

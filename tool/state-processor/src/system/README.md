@@ -6,8 +6,7 @@
 - process balances
   - take solo balances total issuances and locks
   - prune solo balance locks
-    - prune staking, phragmen election, democracy, fee market locks
-    - keep vesting locks
+    - prune staking, phragmen election, democracy, vesting, relay  authority, fee market locks
     - check if there are any other locks
   - adjust solo balances items' decimals
   - take para balances total issuances and locks
@@ -15,7 +14,6 @@
 - use all previous data to build the new accounts and calculate total issuances
   - merge solo and para account infos
     - how to deal with the account references? - TODO
-- check if there are any remaining locks
 - set `Balances::TotalIssuance`
   - compare the calculated one with the storage one
   - remove para backing account - TODO
@@ -24,17 +22,13 @@
 - set KTON total issuances - TODO
   - compare the calculated one with the storage one
   - check remaining sum - TODO
-- update ring misc frozen and fee frozen
 - set accounts
   - if is EVM address
     - insert to `System::Account`
-    - there should not be any locks
   - if is Substrate address
-    - should we reset the nonce? - TODO
+    - reset the nonce
     - insert to `AccountMigration::Accounts`
     - calculate misc frozen and fee frozen
-    - set `Balances::Locks`
-      - do not insert if locks is empty
 
 - some remaining accounts, bridge endpoint accounts - TODO
 - special accounts - TODO
