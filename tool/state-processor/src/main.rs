@@ -1,5 +1,6 @@
 mod balances;
 mod system;
+mod vesting;
 
 mod type_registry;
 use type_registry::*;
@@ -45,6 +46,7 @@ impl Processor {
 
 	fn process(mut self) -> Result<()> {
 		self.process_system();
+		self.process_vesting();
 
 		self.save()
 	}
@@ -108,7 +110,23 @@ impl State {
 		self
 	}
 
-	fn take<D, F>(
+	fn take_value<D>(&mut self, pallet: &[u8], item: &[u8], value: &mut D) -> &mut Self
+	where
+		D: Decode,
+	{
+		let key = item_key(pallet, item);
+
+		if let Some(v) = self.0.remove(&key) {
+			match decode(&v) {
+				Ok(v) => *value = v,
+				Err(e) => log::warn!("failed to decode `{key}:{v}`, due to `{e}`"),
+			}
+		}
+
+		self
+	}
+
+	fn take_map<D, F>(
 		&mut self,
 		pallet: &[u8],
 		item: &[u8],
@@ -119,6 +137,7 @@ impl State {
 		D: Decode,
 		F: Fn(&str, &str) -> String,
 	{
+		let len = buffer.len();
 		let item_key = item_key(pallet, item);
 
 		self.0.retain(|full_key, v| {
@@ -135,6 +154,14 @@ impl State {
 				true
 			}
 		});
+
+		if buffer.len() == len {
+			log::info!(
+				"no new item inserted for {}::{}",
+				String::from_utf8_lossy(pallet),
+				String::from_utf8_lossy(item)
+			);
+		}
 
 		self
 	}
@@ -184,6 +211,11 @@ where
 	let v = array_bytes::hex2bytes(hex).map_err(|e| anyhow::anyhow!("{e:?}"))?;
 
 	Ok(D::decode(&mut &*v)?)
+}
+
+// twox128(pallet) + twox128(item) -> twox128(pallet) + twox128(item)
+fn get_identity_key(key: &str, _: &str) -> String {
+	key.into()
 }
 
 // twox128(pallet) + twox128(item) + *(item_key) -> *(item_key)

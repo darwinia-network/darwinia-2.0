@@ -1,26 +1,55 @@
 // darwinia
 use crate::*;
 
+type Locks = Vec<BalanceLock>;
+
 impl Processor {
-	pub fn process_balances(&mut self) -> &mut Self {
-		let mut ring_locks = Map::default();
-		let mut kton_locks = Map::default();
+	pub fn process_balances(&mut self) -> (u128, u128, Map<Locks>, Map<Locks>, u128) {
+		let mut solo_ring_total_issuance = u128::default();
+		let mut solo_kton_total_issuance = u128::default();
+		let mut solo_ring_locks = <Map<Locks>>::default();
+		let mut solo_kton_locks = <Map<Locks>>::default();
+		let mut para_ring_locks = <Map<Locks>>::default();
+		let mut para_ring_total_issuance = u128::default();
 
-		log::info!("take balance locks");
+		log::info!("take solo balances total issuances and locks");
 		self.solo_state
-			.take::<Vec<BalanceLock>, _>(b"Balances", b"Locks", &mut ring_locks, get_hashed_key)
-			.take::<Vec<BalanceLock>, _>(b"Kton", b"Locks", &mut kton_locks, get_hashed_key);
+			.take_value(b"Balances", b"TotalIssuance", &mut solo_ring_total_issuance)
+			.take_value(b"Kton", b"TotalIssuance", &mut solo_kton_total_issuance)
+			.take_map(b"Balances", b"Locks", &mut solo_ring_locks, get_hashed_key)
+			.take_map(b"Kton", b"Locks", &mut solo_kton_locks, get_hashed_key);
 
-		log::info!("prune ring locks");
-		prune(ring_locks);
-		log::info!("prune kton locks");
-		prune(kton_locks);
+		log::info!("prune solo balance locks");
+		prune(&mut solo_ring_locks);
+		prune(&mut solo_kton_locks);
 
-		self
+		log::info!("adjust solo balances items' decimals");
+		solo_ring_total_issuance *= GWEI;
+		solo_kton_total_issuance *= GWEI;
+		solo_ring_locks.iter_mut().for_each(|(_, v)| v.iter_mut().for_each(|l| l.amount *= GWEI));
+		solo_kton_locks.iter_mut().for_each(|(_, v)| v.iter_mut().for_each(|l| l.amount *= GWEI));
+
+		log::info!("take para balances total issuances and locks");
+		self.para_state
+			.take_value(b"Balances", b"TotalIssuance", &mut para_ring_total_issuance)
+			.take_map(b"Balances", b"Locks", &mut para_ring_locks, get_hashed_key);
+
+		log::info!("check para locks, there should not be any locks on parachain");
+		para_ring_locks
+			.into_iter()
+			.for_each(|(k, _)| log::error!("found para locks of account({})", get_last_64(&k)));
+
+		(
+			solo_ring_total_issuance,
+			solo_kton_total_issuance,
+			solo_ring_locks,
+			solo_kton_locks,
+			para_ring_total_issuance,
+		)
 	}
 }
 
-fn prune(locks: Map<Vec<BalanceLock>>) {
+fn prune(locks: &mut Map<Locks>) {
 	// https://github.dev/darwinia-network/darwinia-common/blob/6a9392cfb9fe2c99b1c2b47d0c36125d61991bb7/frame/staking/src/primitives.rs#L39
 	const STAKING: [u8; 8] = *b"da/staki";
 	// https://github.dev/darwinia-network/darwinia/blob/2d1c1436594b2c397d450e317c35eb16c71105d6/runtime/crab/src/pallets/elections_phragmen.rs#L8
@@ -36,15 +65,22 @@ fn prune(locks: Map<Vec<BalanceLock>>) {
 	// https://github.dev/darwinia-network/darwinia/blob/2d1c1436594b2c397d450e317c35eb16c71105d6/runtime/darwinia/src/pallets/fee_market.rs#L37
 	const FEE_MARKET_2: [u8; 8] = *b"da/feedp";
 
-	locks.into_iter().for_each(|(k, v)| {
-		v.into_iter().for_each(|l| match l.id {
-			STAKING | PHRAGMEN_ELECTION | DEMOCRACY | VESTING | FEE_MARKET_0 | FEE_MARKET_1
-			| FEE_MARKET_2 => (),
-			id => log::error!(
-				"Encountered unknown lock id({}) of account({})",
-				String::from_utf8_lossy(&id),
-				get_last_64(&k)
-			),
-		})
+	locks.retain(|k, v| {
+		v.retain(|l| match l.id {
+			STAKING | PHRAGMEN_ELECTION | DEMOCRACY | FEE_MARKET_0 | FEE_MARKET_1
+			| FEE_MARKET_2 => false,
+			VESTING => true,
+			id => {
+				log::error!(
+					"pruned unknown lock id({}) of account({})",
+					String::from_utf8_lossy(&id),
+					get_last_64(k)
+				);
+
+				false
+			},
+		});
+
+		!v.is_empty()
 	});
 }
