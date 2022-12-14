@@ -193,7 +193,8 @@ pub fn genesis_config() -> ChainSpec {
 				base_fee: Default::default(),
 
 				// S2S stuff.
-				bridge_crab_grandpa: Default::default(),
+				bridge_kusama_grandpa: Default::default(),
+				bridge_kusama_parachain: Default::default(),
 				bridge_crab_messages: Default::default(),
 				crab_fee_market: Default::default(),
 			}
@@ -230,7 +231,16 @@ fn testnet_genesis(
 			balances: endowed_accounts.iter().cloned().map(|k| (k, 100_000_000 * UNIT)).collect(),
 		},
 		transaction_payment: Default::default(),
-		assets: Default::default(),
+		assets: AssetsConfig {
+			assets: vec![(AssetIds::Kton as _, array_bytes::hex_n_into_unchecked(ALITH), true, 1)],
+			metadata: vec![(
+				AssetIds::Kton as _,
+				b"Darwinia Commitment Token".to_vec(),
+				b"KTON".to_vec(),
+				18,
+			)],
+			..Default::default()
+		},
 
 		// Consensus stuff.
 		staking: StakingConfig {
@@ -316,7 +326,8 @@ fn testnet_genesis(
 		base_fee: Default::default(),
 
 		// S2S stuff.
-		bridge_crab_grandpa: Default::default(),
+		bridge_kusama_grandpa: Default::default(),
+		bridge_kusama_parachain: Default::default(),
 		bridge_crab_messages: Default::default(),
 		crab_fee_market: Default::default(),
 	}

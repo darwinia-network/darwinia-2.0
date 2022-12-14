@@ -16,28 +16,21 @@
 // You should have received a copy of the GNU General Public License
 // along with Darwinia. If not, see <https://www.gnu.org/licenses/>.
 
+pub use pallet_bridge_parachains::Instance1 as WithKusamaParachainsInstance;
+
 // darwinia
 use crate::*;
 
-// We allow root only to execute privileged collator selection operations.
-pub type CollatorSelectionUpdateOrigin = EnsureRoot<AccountId>;
 frame_support::parameter_types! {
-	pub const PotId: PalletId = PalletId(*b"PotStake");
-	pub const ExecutiveBody: BodyId = BodyId::Executive;
+	pub const ParasPalletName: &'static str = bp_polkadot_core::parachains::PARAS_PALLET_NAME;
 }
 
-impl pallet_collator_selection::Config for Runtime {
-	type Currency = Balances;
-	// should be a multiple of session or things will get inconsistent
-	type KickThreshold = Period;
-	type MaxCandidates = ConstU32<1000>;
-	type MaxInvulnerables = ConstU32<100>;
-	type MinCandidates = ConstU32<5>;
-	type PotId = PotId;
+impl pallet_bridge_parachains::Config<WithKusamaParachainsInstance> for Runtime {
+	type BridgesGrandpaPalletInstance = WithKusamaGrandpa;
+	type HeadsToKeep = KusamaHeadersToKeep;
+	type MaxParaHeadSize = ConstU32<1024>;
+	type ParasPalletName = ParasPalletName;
 	type RuntimeEvent = RuntimeEvent;
-	type UpdateOrigin = CollatorSelectionUpdateOrigin;
-	type ValidatorId = <Self as frame_system::Config>::AccountId;
-	type ValidatorIdOf = pallet_collator_selection::IdentityCollator;
-	type ValidatorRegistration = Session;
-	type WeightInfo = weights::pallet_collator_selection::WeightInfo<Self>;
+	type TrackedParachains = frame_support::traits::Everything;
+	type WeightInfo = ();
 }

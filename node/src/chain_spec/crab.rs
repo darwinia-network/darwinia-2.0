@@ -19,7 +19,11 @@
 #![allow(clippy::derive_partial_eq_without_eq)]
 
 // std
-use std::{collections::BTreeMap, str::FromStr};
+use std::{
+	collections::BTreeMap,
+	str::FromStr,
+	time::{SystemTime, UNIX_EPOCH},
+};
 // cumulus
 use cumulus_primitives_core::ParaId;
 // darwinia
@@ -152,9 +156,11 @@ pub fn genesis_config() -> ChainSpec {
 				assets: Default::default(),
 
 				// Consensus stuff.
-				collator_selection: CollatorSelectionConfig {
-					invulnerables: vec![array_bytes::hex_n_into_unchecked(ALITH)],
-					..Default::default()
+				staking: StakingConfig {
+					now: SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis(),
+					elapsed_time: 0,
+					collator_count: 3,
+					collators: Vec::new(),
 				},
 				session: SessionConfig {
 					keys: vec![(
@@ -187,7 +193,8 @@ pub fn genesis_config() -> ChainSpec {
 				base_fee: Default::default(),
 
 				// S2S stuff.
-				bridge_darwinia_grandpa: Default::default(),
+				bridge_polkadot_grandpa: Default::default(),
+				bridge_polkadot_parachain: Default::default(),
 				bridge_darwinia_messages: Default::default(),
 				darwinia_fee_market: Default::default(),
 			}
@@ -209,7 +216,7 @@ pub fn config() -> ChainSpec {
 }
 
 fn testnet_genesis(
-	invulnerables: Vec<(AccountId, AuraId)>,
+	collators: Vec<(AccountId, AuraId)>,
 	endowed_accounts: Vec<AccountId>,
 	id: ParaId,
 ) -> GenesisConfig {
@@ -224,16 +231,26 @@ fn testnet_genesis(
 			balances: endowed_accounts.iter().cloned().map(|k| (k, 100_000_000 * UNIT)).collect(),
 		},
 		transaction_payment: Default::default(),
-		assets: Default::default(),
-
-		// Consensus stuff.
-		collator_selection: CollatorSelectionConfig {
-			invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
-			candidacy_bond: UNIT,
+		assets: AssetsConfig {
+			assets: vec![(AssetIds::CKton as _, array_bytes::hex_n_into_unchecked(ALITH), true, 1)],
+			metadata: vec![(
+				AssetIds::CKton as _,
+				b"Crab Commitment Token".to_vec(),
+				b"CKTON".to_vec(),
+				18,
+			)],
 			..Default::default()
 		},
+
+		// Consensus stuff.
+		staking: StakingConfig {
+			now: SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis(),
+			elapsed_time: 0,
+			collator_count: collators.len() as _,
+			collators: collators.iter().map(|(a, _)| (a.to_owned(), UNIT)).collect(),
+		},
 		session: SessionConfig {
-			keys: invulnerables
+			keys: collators
 				.into_iter()
 				.map(|(acc, aura)| {
 					(
@@ -309,7 +326,8 @@ fn testnet_genesis(
 		base_fee: Default::default(),
 
 		// S2S stuff.
-		bridge_darwinia_grandpa: Default::default(),
+		bridge_polkadot_grandpa: Default::default(),
+		bridge_polkadot_parachain: Default::default(),
 		bridge_darwinia_messages: Default::default(),
 		darwinia_fee_market: Default::default(),
 	}

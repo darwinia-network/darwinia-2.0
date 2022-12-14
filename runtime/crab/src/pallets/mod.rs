@@ -40,13 +40,16 @@ mod balances;
 mod transaction_payment;
 
 mod assets;
+pub use assets::*;
+
+mod deposit;
 
 mod migrate;
 
 // Consensus stuff.
 mod authorship;
 
-mod collator_selection;
+mod staking;
 
 mod session;
 pub use session::*;
@@ -113,6 +116,9 @@ pub use bridge_grandpa::*;
 
 mod bridge_messages;
 pub use bridge_messages::*;
+
+mod bridge_parachains;
+pub use bridge_parachains::*;
 
 mod fee_market;
 pub use fee_market::*;

@@ -21,8 +21,8 @@ use crate::*;
 
 fast_runtime_or_not!(MinStakingDuration, ConstU32<MINUTES>, ConstU32<{ 14 * DAYS }>);
 
-pub enum RingStaking {}
-impl darwinia_staking::Stake for RingStaking {
+pub enum PRingStaking {}
+impl darwinia_staking::Stake for PRingStaking {
 	type AccountId = AccountId;
 	type Item = Balance;
 
@@ -44,15 +44,15 @@ impl darwinia_staking::Stake for RingStaking {
 		)
 	}
 }
-pub enum KtonStaking {}
-impl darwinia_staking::Stake for KtonStaking {
+pub enum PKtonStaking {}
+impl darwinia_staking::Stake for PKtonStaking {
 	type AccountId = AccountId;
 	type Item = Balance;
 
 	fn stake(who: &Self::AccountId, item: Self::Item) -> sp_runtime::DispatchResult {
 		Assets::transfer(
 			RuntimeOrigin::signed(*who),
-			AssetIds::Kton as AssetId,
+			AssetIds::PKton as AssetId,
 			darwinia_staking::account_id(),
 			item,
 		)
@@ -61,7 +61,7 @@ impl darwinia_staking::Stake for KtonStaking {
 	fn unstake(who: &Self::AccountId, item: Self::Item) -> sp_runtime::DispatchResult {
 		Assets::transfer(
 			RuntimeOrigin::signed(darwinia_staking::account_id()),
-			AssetIds::Kton as AssetId,
+			AssetIds::PKton as AssetId,
 			*who,
 			item,
 		)
@@ -74,13 +74,13 @@ frame_support::parameter_types! {
 
 impl darwinia_staking::Config for Runtime {
 	type Deposit = Deposit;
-	type Kton = KtonStaking;
+	type Kton = PKtonStaking;
 	type MaxDeposits = ConstU32<16>;
 	type MaxUnstakings = ConstU32<16>;
 	type MinStakingDuration = MinStakingDuration;
 	type PayoutFraction = PayoutFraction;
 	type RewardRemainder = Treasury;
-	type Ring = RingStaking;
+	type Ring = PRingStaking;
 	type RingCurrency = Balances;
 	type RuntimeEvent = RuntimeEvent;
 	type UnixTime = Timestamp;
