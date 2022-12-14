@@ -558,9 +558,6 @@ pub fn run() -> Result<()> {
 						.map_err(|e| format!("{:?}", e))?;
 				let genesis_state = format!("0x{:?}", HexDisplay::from(&block.header().encode()));
 				let tokio_handle = config.tokio_handle.clone();
-				let polkadot_config =
-					SubstrateCli::create_configuration(&polkadot_cli, &polkadot_cli, tokio_handle)
-						.map_err(|err| format!("Relay chain argument error: {}", err))?;
 				let eth_rpc_config = cli.eth_args.build_eth_rpc_config();
 
 				log::info!("Parachain id: {:?}", id);
@@ -583,6 +580,10 @@ pub fn run() -> Result<()> {
 							.map_err(Into::into)
 					}
 				}
+
+				let polkadot_config =
+					SubstrateCli::create_configuration(&polkadot_cli, &polkadot_cli, tokio_handle)
+						.map_err(|err| format!("Relay chain argument error: {}", err))?;
 
 				crate::service::start_parachain_node(
 					config,
