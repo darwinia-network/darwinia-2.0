@@ -4,9 +4,9 @@ use crate::*;
 type Locks = Vec<BalanceLock>;
 
 impl Processor {
-	pub fn process_balances(&mut self) -> (u128, u128, Map<Locks>, Map<Locks>, u128) {
+	pub fn process_balances(&mut self) -> (u128, u128) {
 		let mut solo_ring_total_issuance = u128::default();
-		let mut solo_kton_total_issuance = u128::default();
+		let mut kton_total_issuance = u128::default();
 		let mut solo_ring_locks = <Map<Locks>>::default();
 		let mut solo_kton_locks = <Map<Locks>>::default();
 		let mut para_ring_locks = <Map<Locks>>::default();
@@ -15,7 +15,7 @@ impl Processor {
 		log::info!("take solo balances total issuances and locks");
 		self.solo_state
 			.take_value(b"Balances", b"TotalIssuance", &mut solo_ring_total_issuance)
-			.take_value(b"Kton", b"TotalIssuance", &mut solo_kton_total_issuance)
+			.take_value(b"Kton", b"TotalIssuance", &mut kton_total_issuance)
 			.take_map(b"Balances", b"Locks", &mut solo_ring_locks, get_hashed_key)
 			.take_map(b"Kton", b"Locks", &mut solo_kton_locks, get_hashed_key);
 
@@ -25,27 +25,24 @@ impl Processor {
 
 		log::info!("adjust solo balances items' decimals");
 		solo_ring_total_issuance *= GWEI;
-		solo_kton_total_issuance *= GWEI;
-		solo_ring_locks.iter_mut().for_each(|(_, v)| v.iter_mut().for_each(|l| l.amount *= GWEI));
-		solo_kton_locks.iter_mut().for_each(|(_, v)| v.iter_mut().for_each(|l| l.amount *= GWEI));
+		kton_total_issuance *= GWEI;
+		// solo_ring_locks.iter_mut().for_each(|(_, v)| v.iter_mut().for_each(|l| l.amount *=
+		// GWEI)); solo_kton_locks.iter_mut().for_each(|(_, v)| v.iter_mut().for_each(|l| l.amount
+		// *= GWEI));
 
 		log::info!("take para balances total issuances and locks");
 		self.para_state
 			.take_value(b"Balances", b"TotalIssuance", &mut para_ring_total_issuance)
 			.take_map(b"Balances", b"Locks", &mut para_ring_locks, get_hashed_key);
 
-		log::info!("check para locks, there should not be any locks on parachain");
-		para_ring_locks
-			.into_iter()
-			.for_each(|(k, _)| log::error!("found para locks of account({})", get_last_64(&k)));
+		log::info!("check solo ring locks, there should not be any `solo_ring_locks`");
+		check_locks(solo_ring_locks);
+		log::info!("check solo kton locks, there should not be any `solo_kton_locks`");
+		check_locks(solo_kton_locks);
+		log::info!("check para locks, there should not be any `para_ring_locks`");
+		check_locks(para_ring_locks);
 
-		(
-			solo_ring_total_issuance,
-			solo_kton_total_issuance,
-			solo_ring_locks,
-			solo_kton_locks,
-			para_ring_total_issuance,
-		)
+		(solo_ring_total_issuance + para_ring_total_issuance, kton_total_issuance)
 	}
 }
 
@@ -58,6 +55,7 @@ fn prune(locks: &mut Map<Locks>) {
 	const DEMOCRACY: [u8; 8] = *b"democrac";
 	// https://github.dev/paritytech/substrate/blob/19162e43be45817b44c7d48e50d03f074f60fbf4/frame/vesting/src/lib.rs#L86
 	const VESTING: [u8; 8] = *b"vesting ";
+	const RELAY_AUTHORITY: [u8; 8] = *b"ethrauth";
 	// https://github.dev/darwinia-network/darwinia/blob/2d1c1436594b2c397d450e317c35eb16c71105d6/runtime/crab/src/pallets/fee_market.rs#L35
 	const FEE_MARKET_0: [u8; 8] = *b"da/feelf";
 	// https://github.dev/darwinia-network/darwinia/blob/2d1c1436594b2c397d450e317c35eb16c71105d6/runtime/crab/src/pallets/fee_market.rs#L36
@@ -67,9 +65,8 @@ fn prune(locks: &mut Map<Locks>) {
 
 	locks.retain(|k, v| {
 		v.retain(|l| match l.id {
-			STAKING | PHRAGMEN_ELECTION | DEMOCRACY | FEE_MARKET_0 | FEE_MARKET_1
-			| FEE_MARKET_2 => false,
-			VESTING => true,
+			STAKING | PHRAGMEN_ELECTION | DEMOCRACY | VESTING | RELAY_AUTHORITY | FEE_MARKET_0
+			| FEE_MARKET_1 | FEE_MARKET_2 => false,
 			id => {
 				log::error!(
 					"pruned unknown lock id({}) of account({})",
@@ -83,4 +80,10 @@ fn prune(locks: &mut Map<Locks>) {
 
 		!v.is_empty()
 	});
+}
+
+fn check_locks(locks: Map<Locks>) {
+	locks
+		.into_iter()
+		.for_each(|(k, _)| log::error!("found unexpected locks of account({})", get_last_64(&k)));
 }

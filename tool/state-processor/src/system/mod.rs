@@ -24,13 +24,7 @@ impl Processor {
 	pub fn process_system(&mut self) -> &mut Self {
 		let solo_account_infos = self.process_solo_account_infos();
 		let para_account_infos = self.process_para_account_infos();
-		let (
-			solo_ring_total_issuance,
-			solo_kton_total_issuance,
-			mut solo_ring_locks,
-			mut solo_kton_locks,
-			para_ring_total_issuance,
-		) = self.process_balances();
+		let (ring_total_issuance_storage, kton_total_issuance_storage) = self.process_balances();
 		let mut accounts = Map::default();
 		let mut ring_total_issuance = u128::default();
 		let mut kton_total_issuance = u128::default();
@@ -38,9 +32,6 @@ impl Processor {
 		log::info!("build accounts");
 		log::info!("calculate total issuance");
 		solo_account_infos.into_iter().for_each(|(k, v)| {
-			let ring_locks = solo_ring_locks.remove(&k).unwrap_or_default();
-			let kton_locks = solo_kton_locks.remove(&k).unwrap_or_default();
-
 			accounts.insert(
 				k.clone(),
 				AccountAll {
@@ -54,10 +45,10 @@ impl Processor {
 					// ---
 					ring: v.data.free,
 					ring_reserved: v.data.reserved,
-					ring_locks,
+					ring_locks: Default::default(),
 					kton: v.data.free_kton_or_misc_frozen,
 					kton_reserved: v.data.reserved_kton_or_fee_frozen,
-					kton_locks,
+					kton_locks: Default::default(),
 				},
 			);
 
@@ -92,26 +83,15 @@ impl Processor {
 			ring_total_issuance += v.data.reserved;
 		});
 
-		log::info!("check solo remaining locks");
-		solo_ring_locks
-			.into_iter()
-			.for_each(|(k, _)| log::error!("ring_locks' owner({k}) dropped"));
-		solo_kton_locks
-			.into_iter()
-			.for_each(|(k, _)| log::error!("kton_locks' owner({k}) dropped"));
-
 		let state = &mut self.shell_chain_spec.genesis.raw.top;
 
 		log::info!("set `Balances::TotalIssuance`");
-		log::info!("ring_total_issuance: {ring_total_issuance}");
-		log::info!(
-			"solo_ring_total_issuance + para_ring_total_issuance: {}",
-			solo_ring_total_issuance + para_ring_total_issuance
-		);
+		log::info!("ring_total_issuance({ring_total_issuance})");
+		log::info!("ring_total_issuance_storage({ring_total_issuance_storage})");
 		state.insert(item_key(b"Balances", b"TotalIssuance"), encode_value(ring_total_issuance));
 
-		log::info!("kton_total_issuance: {kton_total_issuance}");
-		log::info!("solo_kton_total_issuance: {solo_kton_total_issuance}");
+		log::info!("kton_total_issuance({kton_total_issuance})");
+		log::info!("kton_total_issuance_storage({kton_total_issuance_storage})");
 		// TODO: set KTON total issuance
 
 		log::info!("update ring misc frozen and fee frozen");
