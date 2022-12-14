@@ -25,6 +25,7 @@ impl Processor {
 		let solo_account_infos = self.process_solo_account_infos();
 		let para_account_infos = self.process_para_account_infos();
 		let (ring_total_issuance_storage, kton_total_issuance_storage) = self.process_balances();
+		let state = &mut self.shell_chain_spec.genesis.raw.top;
 		let mut accounts = Map::default();
 		let mut ring_total_issuance = u128::default();
 		let mut kton_total_issuance = u128::default();
@@ -82,8 +83,6 @@ impl Processor {
 			ring_total_issuance += v.data.free;
 			ring_total_issuance += v.data.reserved;
 		});
-
-		let state = &mut self.shell_chain_spec.genesis.raw.top;
 
 		log::info!("set `Balances::TotalIssuance`");
 		log::info!("ring_total_issuance({ring_total_issuance})");

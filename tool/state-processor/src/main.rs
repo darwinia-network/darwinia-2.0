@@ -110,6 +110,28 @@ impl State {
 		self
 	}
 
+	fn take_raw<F>(
+		&mut self,
+		prefix: &str,
+		buffer: &mut Map<String>,
+		preprocess_key: F,
+	) -> &mut Self
+	where
+		F: Fn(&str, &str) -> String,
+	{
+		self.0.retain(|k, v| {
+			if k.starts_with(prefix) {
+				buffer.insert(preprocess_key(k, prefix), v.to_owned());
+
+				false
+			} else {
+				true
+			}
+		});
+
+		self
+	}
+
 	fn take_value<D>(&mut self, pallet: &[u8], item: &[u8], value: &mut D) -> &mut Self
 	where
 		D: Decode,
@@ -226,4 +248,21 @@ fn get_hashed_key(full_key: &str, item_key: &str) -> String {
 // twox128(pallet) + twox128(item) + *_concat(account_id_32) -> account_id_32
 fn get_last_64(key: &str) -> String {
 	format!("0x{}", &key[key.len() - 64..])
+}
+
+fn replace_first_match(key: &str, from: &str, to: &str) -> String {
+	key.replacen(from, to, 1)
+}
+
+// Might improve this
+fn insert_raw(map: &mut Map<String>, pairs: Map<String>) -> &mut Map<String> {
+	pairs.into_iter().for_each(|(k, v)| {
+		if map.contains_key(&k) {
+			log::error!("key({k}) has already existed, overriding");
+		}
+
+		map.insert(k, v);
+	});
+
+	map
 }
