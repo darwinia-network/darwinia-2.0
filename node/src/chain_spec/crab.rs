@@ -193,7 +193,8 @@ pub fn genesis_config() -> ChainSpec {
 				base_fee: Default::default(),
 
 				// S2S stuff.
-				bridge_darwinia_grandpa: Default::default(),
+				bridge_polkadot_grandpa: Default::default(),
+				bridge_polkadot_parachain: Default::default(),
 				bridge_darwinia_messages: Default::default(),
 				darwinia_fee_market: Default::default(),
 			}
@@ -325,7 +326,8 @@ fn testnet_genesis(
 		base_fee: Default::default(),
 
 		// S2S stuff.
-		bridge_darwinia_grandpa: Default::default(),
+		bridge_polkadot_grandpa: Default::default(),
+		bridge_polkadot_parachain: Default::default(),
 		bridge_darwinia_messages: Default::default(),
 		darwinia_fee_market: Default::default(),
 	}

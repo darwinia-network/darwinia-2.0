@@ -87,6 +87,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6a913633b0c922e6b745072795f50d90ebea78ba31a57e2ac8c2fc7b50950949"
 
 [[package]]
+name = "array-bytes"
+version = "6.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "22f72e9d6fac4bc80778ea470b20197b88d28c292bb7d60c3fb099280003cd19"
+
+[[package]]
 name = "arrayref"
 version = "0.3.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2178,7 +2184,7 @@ name = "sp-core"
 version = "6.0.0"
 source = "git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.30#a3ed0119c45cdd0d571ad34e5b3ee7518c8cef8d"
 dependencies = [
- "array-bytes",
+ "array-bytes 4.1.0",
  "base58",
  "bitflags",
  "blake2",
@@ -2225,7 +2231,7 @@ version = "7.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "88c78530907dbf7949af928d0ce88b485067389201b6d9b468074b1924f209f0"
 dependencies = [
- "array-bytes",
+ "array-bytes 4.1.0",
  "base58",
  "bitflags",
  "blake2",
@@ -2718,7 +2724,7 @@ name = "state-processor"
 version = "0.0.0"
 dependencies = [
  "anyhow",
- "array-bytes",
+ "array-bytes 6.0.0",
  "frame-support",
  "fxhash",
  "log",
@@ -2779,7 +2785,7 @@ name = "substorager"
 version = "0.9.0-rc16"
 source = "git+https://github.com/hack-ink/subalfred#de1ed2b16b0b2c3ceeb61b1f9168401bc0ace51d"
 dependencies = [
- "array-bytes",
+ "array-bytes 4.1.0",
  "subhasher",
 ]
 

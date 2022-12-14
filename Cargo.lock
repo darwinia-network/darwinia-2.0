@@ -1368,6 +1368,7 @@ dependencies = [
  "pallet-bridge-dispatch",
  "pallet-bridge-grandpa",
  "pallet-bridge-messages",
+ "pallet-bridge-parachains",
  "pallet-collective",
  "pallet-democracy",
  "pallet-elections-phragmen",
@@ -1988,12 +1989,14 @@ dependencies = [
  "frame-system",
  "pallet-balances",
  "pallet-identity",
+ "pallet-vesting",
  "parity-scale-codec",
  "scale-info",
  "sp-core",
  "sp-io",
  "sp-keyring",
  "sp-runtime",
+ "sp-std",
 ]
 
 [[package]]
@@ -2207,6 +2210,7 @@ dependencies = [
  "pallet-bridge-dispatch",
  "pallet-bridge-grandpa",
  "pallet-bridge-messages",
+ "pallet-bridge-parachains",
  "pallet-collective",
  "pallet-democracy",
  "pallet-elections-phragmen",
@@ -5936,6 +5940,7 @@ dependencies = [
  "bp-parachains",
  "bp-polkadot-core",
  "bp-runtime",
+ "frame-benchmarking",
  "frame-support",
  "frame-system",
  "pallet-bridge-grandpa",
