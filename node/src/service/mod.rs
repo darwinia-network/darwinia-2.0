@@ -65,7 +65,7 @@ impl IdentifyVariant for Box<dyn sc_service::ChainSpec> {
 	}
 
 	fn is_dev(&self) -> bool {
-		self.id().ends_with("dev")
+		self.id().ends_with("development")
 	}
 }
 
