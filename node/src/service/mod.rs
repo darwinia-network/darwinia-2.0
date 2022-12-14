@@ -644,10 +644,6 @@ where
 {
 	use sc_client_api::HeaderBackend;
 
-	if !config.role.is_authority() {
-		return Err(("Not Authority. You could add --alice for development").into());
-	}
-
 	let sc_service::PartialComponents {
 		client,
 		backend,
@@ -710,79 +706,82 @@ where
 
 	let slot_duration = sc_consensus_aura::slot_duration(&*client)?;
 	let client_for_cidp = client.clone();
+	if config.role.is_authority() {
+		let aura = sc_consensus_aura::start_aura::<
+			sp_consensus_aura::sr25519::AuthorityPair,
+			_,
+			_,
+			_,
+			_,
+			_,
+			_,
+			_,
+			_,
+			_,
+			_,
+		>(sc_consensus_aura::StartAuraParams {
+			slot_duration: sc_consensus_aura::slot_duration(&*client)?,
+			client: client.clone(),
+			select_chain,
+			block_import: instant_finalize::InstantFinalizeBlockImport::new(client.clone()),
+			proposer_factory,
+			create_inherent_data_providers: move |block: Hash, ()| {
+				let current_para_block = client_for_cidp
+					.number(block)
+					.expect("Header lookup should succeed")
+					.expect("Header passed in as parent should be present in backend.");
+				let client_for_xcm = client_for_cidp.clone();
 
-	let aura = sc_consensus_aura::start_aura::<
-		sp_consensus_aura::sr25519::AuthorityPair,
-		_,
-		_,
-		_,
-		_,
-		_,
-		_,
-		_,
-		_,
-		_,
-		_,
-	>(sc_consensus_aura::StartAuraParams {
-		slot_duration: sc_consensus_aura::slot_duration(&*client)?,
-		client: client.clone(),
-		select_chain,
-		block_import: instant_finalize::InstantFinalizeBlockImport::new(client.clone()),
-		proposer_factory,
-		create_inherent_data_providers: move |block: Hash, ()| {
-			let current_para_block = client_for_cidp
-				.number(block)
-				.expect("Header lookup should succeed")
-				.expect("Header passed in as parent should be present in backend.");
-			let client_for_xcm = client_for_cidp.clone();
+				async move {
+					let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
 
-			async move {
-				let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
-
-				let slot = sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
+					let slot = sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
 						*timestamp,
 						slot_duration,
 					);
 
-				let mocked_parachain =
-					cumulus_primitives_parachain_inherent::MockValidationDataInherentDataProvider {
-						current_para_block,
-						relay_offset: 1000,
-						relay_blocks_per_para_block: 2,
-						para_blocks_per_relay_epoch: 0,
-						relay_randomness_config: (),
-						xcm_config: cumulus_primitives_parachain_inherent::MockXcmConfig::new(
-							&*client_for_xcm,
-							block,
-							Default::default(),
-							Default::default(),
-						),
-						raw_downward_messages: vec![],
-						raw_horizontal_messages: vec![],
-					};
+					let mocked_parachain =
+						cumulus_primitives_parachain_inherent::MockValidationDataInherentDataProvider {
+							current_para_block,
+							relay_offset: 1000,
+							relay_blocks_per_para_block: 2,
+							para_blocks_per_relay_epoch: 0,
+							relay_randomness_config: (),
+							xcm_config: cumulus_primitives_parachain_inherent::MockXcmConfig::new(
+								&*client_for_xcm,
+								block,
+								Default::default(),
+								Default::default(),
+							),
+							raw_downward_messages: vec![],
+							raw_horizontal_messages: vec![],
+						};
 
-				Ok((slot, timestamp, mocked_parachain))
-			}
-		},
-		force_authoring,
-		backoff_authoring_blocks,
-		keystore: keystore_container.sync_keystore(),
-		sync_oracle: network.clone(),
-		justification_sync_link: network.clone(),
-		// We got around 500ms for proposing
-		block_proposal_slot_portion: cumulus_client_consensus_aura::SlotProportion::new(
-			1f32 / 24f32,
-		),
-		// And a maximum of 750ms if slots are skipped
-		max_block_proposal_slot_portion: Some(cumulus_client_consensus_aura::SlotProportion::new(
-			1f32 / 16f32,
-		)),
-		telemetry: None,
-	})?;
+					Ok((slot, timestamp, mocked_parachain))
+				}
+			},
+			force_authoring,
+			backoff_authoring_blocks,
+			keystore: keystore_container.sync_keystore(),
+			sync_oracle: network.clone(),
+			justification_sync_link: network.clone(),
+			// We got around 500ms for proposing
+			block_proposal_slot_portion: cumulus_client_consensus_aura::SlotProportion::new(
+				1f32 / 24f32,
+			),
+			// And a maximum of 750ms if slots are skipped
+			max_block_proposal_slot_portion: Some(
+				cumulus_client_consensus_aura::SlotProportion::new(1f32 / 16f32),
+			),
+			telemetry: None,
+		})?;
 
-	// the AURA authoring task is considered essential, i.e. if it
-	// fails we take down the service with it.
-	task_manager.spawn_essential_handle().spawn_blocking("aura", Some("block-authoring"), aura);
+		// the AURA authoring task is considered essential, i.e. if it
+		// fails we take down the service with it.
+		task_manager.spawn_essential_handle().spawn_blocking("aura", Some("block-authoring"), aura);
+	} else {
+		log::warn!("You could add --alice or --bob to make dev chain seal instantly.");
+	}
 
 	let prometheus_registry = config.prometheus_registry().cloned();
 	let overrides = frontier_service::overrides_handle(client.clone());
