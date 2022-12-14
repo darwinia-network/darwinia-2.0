@@ -644,6 +644,10 @@ where
 {
 	use sc_client_api::HeaderBackend;
 
+	if !config.role.is_authority() {
+		return Err(("Not Authority. You could add --alice for development").into());
+	}
+
 	let sc_service::PartialComponents {
 		client,
 		backend,
