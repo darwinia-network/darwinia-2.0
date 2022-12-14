@@ -21,6 +21,8 @@
 pub mod executors;
 pub use executors::*;
 
+mod instant_finalize;
+
 pub use crab_runtime::RuntimeApi as CrabRuntimeApi;
 pub use darwinia_runtime::RuntimeApi as DarwiniaRuntimeApi;
 pub use pangolin_runtime::RuntimeApi as PangolinRuntimeApi;
@@ -640,7 +642,6 @@ where
 	RuntimeApi::RuntimeApi: sp_consensus_aura::AuraApi<Block, AuraId>,
 	Executor: 'static + sc_executor::NativeExecutionDispatch,
 {
-	use futures::stream::StreamExt;
 	use sc_client_api::HeaderBackend;
 
 	let sc_service::PartialComponents {
@@ -693,82 +694,95 @@ where
 		);
 	}
 
-	let role = config.role.clone();
+	let force_authoring = config.force_authoring;
+	let backoff_authoring_blocks: Option<()> = None;
+	let prometheus_registry = config.prometheus_registry().cloned();
+	let overrides = frontier_service::overrides_handle(client.clone());
 
-	let command_sink = if role.is_authority() {
-		let proposer_factory = sc_basic_authorship::ProposerFactory::new(
-			task_manager.spawn_handle(),
-			client.clone(),
-			transaction_pool.clone(),
-			None,
-			None,
-		);
+	let proposer_factory = sc_basic_authorship::ProposerFactory::new(
+		task_manager.spawn_handle(),
+		client.clone(),
+		transaction_pool.clone(),
+		None,
+		None,
+	);
 
-		// Channel for the rpc handler to communicate with the authorship task.
-		let (command_sink, commands_stream) = futures::channel::mpsc::channel(1024);
+	// aura
+	let slot_duration = sc_consensus_aura::slot_duration(&*client)?;
+	let client_for_cidp = client.clone();
 
-		let pool = transaction_pool.pool().clone();
-		let import_stream = pool.validated_pool().import_notification_stream().map(|_| {
-			sc_consensus_manual_seal::rpc::EngineCommand::SealNewBlock {
-				create_empty: false,
-				finalize: true,
-				parent_hash: None,
-				sender: None,
+	let aura = sc_consensus_aura::start_aura::<
+		sp_consensus_aura::sr25519::AuthorityPair,
+		_,
+		_,
+		_,
+		_,
+		_,
+		_,
+		_,
+		_,
+		_,
+		_,
+	>(sc_consensus_aura::StartAuraParams {
+		slot_duration: sc_consensus_aura::slot_duration(&*client)?,
+		client: client.clone(),
+		select_chain,
+		block_import: instant_finalize::InstantFinalizeBlockImport::new(client.clone()),
+		proposer_factory,
+		create_inherent_data_providers: move |block: Hash, ()| {
+			let current_para_block = client_for_cidp
+				.number(block)
+				.expect("Header lookup should succeed")
+				.expect("Header passed in as parent should be present in backend.");
+			let client_for_xcm = client_for_cidp.clone();
+
+			async move {
+				let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
+
+				let slot = sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
+						*timestamp,
+						slot_duration,
+					);
+
+				let mocked_parachain =
+					cumulus_primitives_parachain_inherent::MockValidationDataInherentDataProvider {
+						current_para_block,
+						relay_offset: 1000,
+						relay_blocks_per_para_block: 2,
+						para_blocks_per_relay_epoch: 0,
+						relay_randomness_config: (),
+						xcm_config: cumulus_primitives_parachain_inherent::MockXcmConfig::new(
+							&*client_for_xcm,
+							block,
+							Default::default(),
+							Default::default(),
+						),
+						raw_downward_messages: vec![],
+						raw_horizontal_messages: vec![],
+					};
+
+				Ok((slot, timestamp, mocked_parachain))
 			}
-		});
+		},
+		force_authoring,
+		backoff_authoring_blocks,
+		keystore: keystore_container.sync_keystore(),
+		sync_oracle: network.clone(),
+		justification_sync_link: network.clone(),
+		// We got around 500ms for proposing
+		block_proposal_slot_portion: cumulus_client_consensus_aura::SlotProportion::new(
+			1f32 / 24f32,
+		),
+		// And a maximum of 750ms if slots are skipped
+		max_block_proposal_slot_portion: Some(cumulus_client_consensus_aura::SlotProportion::new(
+			1f32 / 16f32,
+		)),
+		telemetry: None,
+	})?;
 
-		let client_for_cidp = client.clone();
-
-		let authorship_future = sc_consensus_manual_seal::run_manual_seal(
-			sc_consensus_manual_seal::ManualSealParams {
-				block_import: client.clone(),
-				env: proposer_factory,
-				client: client.clone(),
-				pool: transaction_pool.clone(),
-				commands_stream: futures::stream_select!(commands_stream, import_stream),
-				select_chain,
-				consensus_data_provider: None,
-				create_inherent_data_providers: move |block: Hash, _| {
-					let current_para_block = client_for_cidp
-						.number(block)
-						.expect("Header lookup should succeed")
-						.expect("Header passed in as parent should be present in backend.");
-					let client_for_xcm = client_for_cidp.clone();
-					async move {
-						let mocked_parachain =
-	cumulus_primitives_parachain_inherent::MockValidationDataInherentDataProvider {
-							current_para_block,
-							relay_offset: 1000,
-							relay_blocks_per_para_block: 2,
-							para_blocks_per_relay_epoch: 0,
-							relay_randomness_config: (),
-							xcm_config: cumulus_primitives_parachain_inherent::MockXcmConfig::new(
-								&*client_for_xcm,
-								block,
-								Default::default(),
-								Default::default(),
-							),
-							raw_downward_messages: vec![],
-							raw_horizontal_messages: vec![],
-						};
-						Ok((
-							sp_timestamp::InherentDataProvider::from_system_time(),
-							mocked_parachain,
-						))
-					}
-				},
-			},
-		);
-		// we spawn the future on a background thread managed by service.
-		task_manager.spawn_essential_handle().spawn_blocking(
-			"instant-seal",
-			Some("block-authoring"),
-			authorship_future,
-		);
-		Some(command_sink)
-	} else {
-		None
-	};
+	// the AURA authoring task is considered essential, i.e. if it
+	// fails we take down the service with it.
+	task_manager.spawn_essential_handle().spawn_blocking("aura", Some("block-authoring"), aura);
 
 	let prometheus_registry = config.prometheus_registry().cloned();
 	let overrides = frontier_service::overrides_handle(client.clone());
