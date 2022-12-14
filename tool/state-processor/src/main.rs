@@ -1,10 +1,10 @@
 mod balances;
 mod identity;
 mod system;
-// mod types;
 mod vesting;
 
-use types::*;
+mod type_registry;
+use type_registry::*;
 
 // std
 use std::{
@@ -267,16 +267,6 @@ fn get_hashed_key(full_key: &str, item_key: &str) -> String {
 	full_key.trim_start_matches(item_key).into()
 }
 
-<<<<<<< HEAD
-fn untouched_key(full_key: &str, _item_key: &str) -> String {
-	full_key.into()
-}
-
-// twox128(pallet) + twox128(item) + blake2_256_concat(account_id_32) -> account_id_32
-#[allow(unused)]
-fn get_concat_suffix(full_key: &str, _: &str) -> String {
-	format!("0x{}", &full_key[full_key.len() - 64..])
-=======
 // twox128(pallet) + twox128(item) + *_concat(account_id_32) -> account_id_32
 fn get_last_64(key: &str) -> String {
 	format!("0x{}", &key[key.len() - 64..])
@@ -284,5 +274,4 @@ fn get_last_64(key: &str) -> String {
 
 fn replace_first_match(key: &str, from: &str, to: &str) -> String {
 	key.replacen(from, to, 1)
->>>>>>> main
 }
