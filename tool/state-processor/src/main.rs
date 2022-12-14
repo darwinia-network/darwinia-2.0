@@ -53,8 +53,8 @@ impl Processor {
 	fn process(mut self) -> Result<()> {
 		self.process_system();
 		self.process_vesting();
-
 		self.process_identity();
+
 
 		self.save()
 	}
