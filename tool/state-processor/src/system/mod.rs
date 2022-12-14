@@ -25,7 +25,6 @@ impl Processor {
 		let solo_account_infos = self.process_solo_account_infos();
 		let para_account_infos = self.process_para_account_infos();
 		let (ring_total_issuance_storage, kton_total_issuance_storage) = self.process_balances();
-		let state = &mut self.shell_chain_spec.genesis.raw.top;
 		let mut accounts = Map::default();
 		let mut ring_total_issuance = u128::default();
 		let mut kton_total_issuance = u128::default();
@@ -87,7 +86,9 @@ impl Processor {
 		log::info!("set `Balances::TotalIssuance`");
 		log::info!("ring_total_issuance({ring_total_issuance})");
 		log::info!("ring_total_issuance_storage({ring_total_issuance_storage})");
-		state.insert(item_key(b"Balances", b"TotalIssuance"), encode_value(ring_total_issuance));
+		self.shell_state
+			.0
+			.insert(item_key(b"Balances", b"TotalIssuance"), encode_value(ring_total_issuance));
 
 		log::info!("kton_total_issuance({kton_total_issuance})");
 		log::info!("kton_total_issuance_storage({kton_total_issuance_storage})");
@@ -111,13 +112,15 @@ impl Processor {
 			};
 
 			if is_evm_address(&k) {
-				state.insert(full_key(b"System", b"Account", &k), encode_value(a));
+				self.shell_state.0.insert(full_key(b"System", b"Account", &k), encode_value(a));
 
 			// TODO: migrate kton balances.
 			} else {
 				a.nonce = 0;
 
-				state.insert(full_key(b"AccountMigration", b"Accounts", &k), encode_value(a));
+				self.shell_state
+					.0
+					.insert(full_key(b"AccountMigration", b"Accounts", &k), encode_value(a));
 			}
 		});
 
