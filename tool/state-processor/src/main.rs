@@ -1,5 +1,6 @@
 mod balances;
 mod system;
+mod vesting;
 
 mod type_registry;
 use type_registry::*;
@@ -9,6 +10,7 @@ use std::{
 	env,
 	fs::File,
 	io::{Read, Write},
+	mem,
 };
 // crates.io
 use anyhow::Result;
@@ -32,25 +34,32 @@ fn main() -> Result<()> {
 struct Processor {
 	solo_state: State,
 	para_state: State,
+	shell_state: State,
 	shell_chain_spec: ChainSpec,
 }
 impl Processor {
 	fn new() -> Result<Self> {
+		let mut shell_chain_spec = from_file::<ChainSpec>("test-data/shell.json")?;
+
 		Ok(Self {
 			solo_state: State::from_file("test-data/solo.json")?,
 			para_state: State::from_file("test-data/para.json")?,
-			shell_chain_spec: from_file("test-data/shell.json")?,
+			shell_state: State(mem::take(&mut shell_chain_spec.genesis.raw.top)),
+			shell_chain_spec,
 		})
 	}
 
 	fn process(mut self) -> Result<()> {
 		self.process_system();
+		self.process_vesting();
 
 		self.save()
 	}
 
-	fn save(self) -> Result<()> {
-		log::info!("save processed chain spec");
+	fn save(mut self) -> Result<()> {
+		log::info!("saving processed chain spec");
+
+		mem::swap(&mut self.shell_state.0, &mut self.shell_chain_spec.genesis.raw.top);
 
 		let mut f = File::create("test-data/processed.json")?;
 		let v = serde_json::to_vec(&self.shell_chain_spec)?;
@@ -108,7 +117,57 @@ impl State {
 		self
 	}
 
-	fn take<D, F>(
+	fn take_raw<F>(
+		&mut self,
+		prefix: &str,
+		buffer: &mut Map<String>,
+		preprocess_key: F,
+	) -> &mut Self
+	where
+		F: Fn(&str, &str) -> String,
+	{
+		self.0.retain(|k, v| {
+			if k.starts_with(prefix) {
+				buffer.insert(preprocess_key(k, prefix), v.to_owned());
+
+				false
+			} else {
+				true
+			}
+		});
+
+		self
+	}
+
+	fn insert_raw(&mut self, pairs: Map<String>) -> &mut Self {
+		pairs.into_iter().for_each(|(k, v)| {
+			if self.0.contains_key(&k) {
+				log::error!("key({k}) has already existed, overriding");
+			}
+
+			self.0.insert(k, v);
+		});
+
+		self
+	}
+
+	fn take_value<D>(&mut self, pallet: &[u8], item: &[u8], value: &mut D) -> &mut Self
+	where
+		D: Decode,
+	{
+		let key = item_key(pallet, item);
+
+		if let Some(v) = self.0.remove(&key) {
+			match decode(&v) {
+				Ok(v) => *value = v,
+				Err(e) => log::warn!("failed to decode `{key}:{v}`, due to `{e}`"),
+			}
+		}
+
+		self
+	}
+
+	fn take_map<D, F>(
 		&mut self,
 		pallet: &[u8],
 		item: &[u8],
@@ -119,6 +178,7 @@ impl State {
 		D: Decode,
 		F: Fn(&str, &str) -> String,
 	{
+		let len = buffer.len();
 		let item_key = item_key(pallet, item);
 
 		self.0.retain(|full_key, v| {
@@ -135,6 +195,14 @@ impl State {
 				true
 			}
 		});
+
+		if buffer.len() == len {
+			log::info!(
+				"no new item inserted for {}::{}",
+				String::from_utf8_lossy(pallet),
+				String::from_utf8_lossy(item)
+			);
+		}
 
 		self
 	}
@@ -157,13 +225,17 @@ where
 fn pallet_key(pallet: &[u8]) -> String {
 	let prefix = subhasher::twox128(pallet);
 
-	array_bytes::bytes2hex("0x", &prefix)
+	array_bytes::bytes2hex("0x", prefix)
 }
 
 fn item_key(pallet: &[u8], item: &[u8]) -> String {
 	let k = substorager::storage_key(pallet, item);
 
 	array_bytes::bytes2hex("0x", &k.0)
+}
+
+fn full_key(pallet: &[u8], item: &[u8], hash: &str) -> String {
+	format!("{}{hash}", item_key(pallet, item))
 }
 
 fn encode_value<V>(v: V) -> String
@@ -182,13 +254,21 @@ where
 	Ok(D::decode(&mut &*v)?)
 }
 
-// twox128(pallet) + twox128(item) + blake2_256_concat(item_key) -> blake2_256_concat(item_key)
-fn get_blake2_128_concat_suffix(full_key: &str, item_key: &str) -> String {
+// twox128(pallet) + twox128(item) -> twox128(pallet) + twox128(item)
+fn get_identity_key(key: &str, _: &str) -> String {
+	key.into()
+}
+
+// twox128(pallet) + twox128(item) + *(item_key) -> *(item_key)
+fn get_hashed_key(full_key: &str, item_key: &str) -> String {
 	full_key.trim_start_matches(item_key).into()
 }
 
-// twox128(pallet) + twox128(item) + blake2_256_concat(account_id_32) -> account_id_32
-#[allow(unused)]
-fn get_concat_suffix(full_key: &str, _: &str) -> String {
-	format!("0x{}", &full_key[full_key.len() - 64..])
+// twox128(pallet) + twox128(item) + *_concat(account_id_32) -> account_id_32
+fn get_last_64(key: &str) -> String {
+	format!("0x{}", &key[key.len() - 64..])
+}
+
+fn replace_first_match(key: &str, from: &str, to: &str) -> String {
+	key.replacen(from, to, 1)
 }
