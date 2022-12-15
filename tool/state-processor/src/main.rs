@@ -1,6 +1,6 @@
 mod balances;
-mod identity;
 mod evm;
+mod identity;
 mod system;
 mod vesting;
 
@@ -52,9 +52,8 @@ impl Processor {
 	}
 
 	fn process(mut self) -> Result<()> {
-		self.process_system().process_vesting().process_evm();
-		self.process_identity();
-		
+		self.process_system().process_vesting().process_evm().process_identity();
+
 		self.save()
 	}
 
