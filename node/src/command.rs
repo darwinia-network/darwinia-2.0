@@ -570,22 +570,31 @@ pub fn run() -> Result<()> {
 
 				if chain_spec.is_dev() {
 					return if chain_spec.is_crab() {
-						crate::service::start_dev_node::<CrabRuntimeApi, CrabRuntimeExecutor>(config, &eth_rpc_config)
-							.map_err(Into::into)
+						service::start_dev_node::<CrabRuntimeApi, CrabRuntimeExecutor>(
+							config,
+							&eth_rpc_config,
+						)
+						.map_err(Into::into)
 					} else if chain_spec.is_pangolin() {
-						crate::service::start_dev_node::<PangolinRuntimeApi, PangolinRuntimeExecutor>(config, &eth_rpc_config)
-							.map_err(Into::into)
+						service::start_dev_node::<PangolinRuntimeApi, PangolinRuntimeExecutor>(
+							config,
+							&eth_rpc_config,
+						)
+						.map_err(Into::into)
 					} else {
-						crate::service::start_dev_node::<DarwiniaRuntimeApi, DarwiniaRuntimeExecutor>(config, &eth_rpc_config)
-							.map_err(Into::into)
-					}
+						service::start_dev_node::<DarwiniaRuntimeApi, DarwiniaRuntimeExecutor>(
+							config,
+							&eth_rpc_config,
+						)
+						.map_err(Into::into)
+					};
 				}
 
 				let polkadot_config =
 					SubstrateCli::create_configuration(&polkadot_cli, &polkadot_cli, tokio_handle)
 						.map_err(|err| format!("Relay chain argument error: {}", err))?;
 
-				crate::service::start_parachain_node(
+				service::start_parachain_node(
 					config,
 					polkadot_config,
 					collator_options,

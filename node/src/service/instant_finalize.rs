@@ -21,14 +21,12 @@ use sc_consensus::BlockImport;
 use sp_runtime::traits::Block as BlockT;
 
 pub struct InstantFinalizeBlockImport<I>(I);
-
 impl<I> InstantFinalizeBlockImport<I> {
 	/// Create a new instance.
 	pub fn new(inner: I) -> Self {
 		Self(inner)
 	}
 }
-
 #[async_trait::async_trait]
 impl<Block, I> BlockImport<Block> for InstantFinalizeBlockImport<I>
 where
