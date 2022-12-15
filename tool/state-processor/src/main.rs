@@ -1,5 +1,6 @@
 mod balances;
 mod identity;
+mod evm;
 mod system;
 mod vesting;
 
@@ -51,11 +52,9 @@ impl Processor {
 	}
 
 	fn process(mut self) -> Result<()> {
-		self.process_system();
-		self.process_vesting();
+		self.process_system().process_vesting().process_evm();
 		self.process_identity();
-
-
+		
 		self.save()
 	}
 
@@ -270,6 +269,10 @@ fn get_hashed_key(full_key: &str, item_key: &str) -> String {
 // twox128(pallet) + twox128(item) + *_concat(account_id_32) -> account_id_32
 fn get_last_64(key: &str) -> String {
 	format!("0x{}", &key[key.len() - 64..])
+}
+
+fn identity(key: &str, _: &str) -> String {
+	key.into()
 }
 
 fn replace_first_match(key: &str, from: &str, to: &str) -> String {

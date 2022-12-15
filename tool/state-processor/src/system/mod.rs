@@ -132,11 +132,19 @@ impl Processor {
 		let mut remaining_ring = <Map<u128>>::default();
 		let mut remaining_kton = <Map<u128>>::default();
 
-		log::info!("take solo account infos and remaining balances");
+		log::info!("take solo `System::Account`, `Ethereum::RemainingRingBalance` and `Ethereum::RemainingKtonBalance`");
 		self.solo_state
 			.take_map(b"System", b"Account", &mut account_infos, get_hashed_key)
 			.take_map(b"Ethereum", b"RemainingRingBalance", &mut remaining_ring, get_hashed_key)
 			.take_map(b"Ethereum", b"RemainingKtonBalance", &mut remaining_kton, get_hashed_key);
+
+		log::info!("adjust solo balance decimals");
+		account_infos.iter_mut().for_each(|(_, v)| {
+			v.data.free *= GWEI;
+			v.data.reserved *= GWEI;
+			v.data.free_kton_or_misc_frozen *= GWEI;
+			v.data.reserved_kton_or_fee_frozen *= GWEI;
+		});
 
 		log::info!("merge solo remaining balances");
 		remaining_ring.into_iter().for_each(|(k, v)| {
@@ -160,21 +168,13 @@ impl Processor {
 			}
 		});
 
-		log::info!("adjust solo balance decimals");
-		account_infos.iter_mut().for_each(|(_, v)| {
-			v.data.free *= GWEI;
-			v.data.reserved *= GWEI;
-			v.data.free_kton_or_misc_frozen *= GWEI;
-			v.data.reserved_kton_or_fee_frozen *= GWEI;
-		});
-
 		account_infos
 	}
 
 	fn process_para_account_infos(&mut self) -> Map<AccountInfo> {
 		let mut account_infos = <Map<AccountInfo>>::default();
 
-		log::info!("take para account infos");
+		log::info!("take para `System::Account`");
 		self.para_state.take_map(b"System", b"Account", &mut account_infos, get_hashed_key);
 
 		account_infos
