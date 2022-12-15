@@ -4,7 +4,7 @@ use crate::*;
 use array_bytes::bytes2hex;
 use frame_support::{traits::ConstU32, BoundedVec};
 use pallet_identity::{Data, Judgement, RegistrarInfo, Registration};
-use sp_core::{blake2_128, crypto::AccountId32};
+use sp_core::crypto::AccountId32;
 use subhasher::blake2_128_concat;
 
 // TODO: Note this value is different between pangolin/crab and darwinia network.
@@ -32,7 +32,7 @@ impl Processor {
 		log::info!("update identities's deposit and judgement decimal.");
 		identities.iter_mut().for_each(|(_k, v)| {
 			v.deposit = v.deposit * GWEI;
-			v.judgements.iter_mut().for_each(|(index, judgement)| {
+			v.judgements.iter_mut().for_each(|(_, judgement)| {
 				if let Judgement::FeePaid(amount) = judgement {
 					*amount = *amount * GWEI;
 				}
@@ -59,7 +59,8 @@ impl Processor {
 						.0
 						.entry(full_key(b"AccountMigration", b"Accounts", &super_hash))
 						.and_modify(|v| {
-							let mut info = decode::<AccountInfo>(v).expect("");
+							let mut info =
+								decode::<AccountInfo>(v).expect("The account should existed!");
 							let deposit = SUB_ACCOUNT_DEPOSIT.min(*subs_deposit);
 							*subs_deposit -= deposit;
 

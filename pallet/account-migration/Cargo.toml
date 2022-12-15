@@ -21,13 +21,12 @@ dc-primitives = { default-features = false, path = "../../core/primitives" }
 frame-support   = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
 frame-system    = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
 pallet-balances = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
+pallet-identity = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
 pallet-vesting  = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
 sp-core         = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
 sp-io           = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
 sp-runtime      = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
 sp-std          = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
-
-pallet-identity = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
 
 [dev-dependencies]
 sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
@@ -46,11 +45,10 @@ std = [
 	"frame-support/std",
 	"frame-system/std",
 	"pallet-balances/std",
+	"pallet-identity/std",
 	"pallet-vesting/std",
 	"sp-core/std",
 	"sp-io/std",
-
-	"pallet-identity/std",
 	"sp-runtime/std",
 	"sp-std/std",
 ]

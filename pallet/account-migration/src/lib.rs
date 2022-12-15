@@ -53,8 +53,10 @@ use dc_primitives::{AccountId as AccountId20, Balance, BlockNumber, Index};
 // substrate
 use frame_support::{
 	log,
+	migration::put_storage_value,
 	pallet_prelude::*,
-	traits::{LockableCurrency, WithdrawReasons},
+	traits::{LockableCurrency, ReservableCurrency, WithdrawReasons},
+	StorageHasher, Twox64Concat,
 };
 use frame_system::{pallet_prelude::*, AccountInfo};
 use pallet_balances::AccountData;
@@ -66,9 +68,6 @@ use sp_runtime::{traits::Verify, AccountId32};
 use sp_std::prelude::*;
 
 type Message = [u8; 32];
-
-const MAX_REGISTRARS: u32 = 100;
-const MAX_ADDITIONAL_FIELDS: u32 = 100;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -86,6 +85,7 @@ pub mod pallet {
 			AccountData = AccountData<Balance>,
 		> + pallet_balances::Config<Balance = Balance>
 		+ pallet_vesting::Config<Currency = pallet_balances::Pallet<Self>>
+		+ pallet_identity::Config<Currency = pallet_balances::Pallet<Self>>
 	{
 		/// Override the [`frame_system::Config::RuntimeEvent`].
 		type RuntimeEvent: From<Event> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
@@ -116,26 +116,6 @@ pub mod pallet {
 	pub type Accounts<T: Config> =
 		StorageMap<_, Identity, AccountId32, AccountInfo<Index, AccountData<Balance>>>;
 
-	/// pallet-identity
-	#[pallet::storage]
-	#[pallet::getter(fn identity)]
-	pub(super) type IdentityOf<T: Config> = StorageMap<
-		_,
-		Twox64Concat,
-		AccountId32,
-		Registration<Balance, ConstU32<MAX_REGISTRARS>, ConstU32<MAX_ADDITIONAL_FIELDS>>,
-		OptionQuery,
-	>;
-
-	/// TODO: Add comment
-	#[pallet::storage]
-	#[pallet::getter(fn registrars)]
-	pub(super) type Registrars<T: Config> = StorageValue<
-		_,
-		BoundedVec<Option<RegistrarInfo<Balance, AccountId32>>, ConstU32<MAX_REGISTRARS>>,
-		ValueQuery,
-	>;
-
 	/// [`pallet_vesting::Vesting`] data.
 	///
 	/// <https://github.dev/paritytech/substrate/blob/19162e43be45817b44c7d48e50d03f074f60fbf4/frame/vesting/src/lib.rs#L188>
@@ -145,7 +125,27 @@ pub mod pallet {
 	pub type Vestings<T: Config> =
 		StorageMap<_, Blake2_128Concat, AccountId32, Vec<VestingInfo<Balance, BlockNumber>>>;
 
-	// TODO: identity storages
+	/// [`pallet_identity::IdentityOf`] data.
+	///
+	/// <https://github.com/paritytech/substrate/blob/polkadot-v0.9.30/frame/identity/src/lib.rs#L163>
+	#[pallet::storage]
+	#[pallet::getter(fn identity_of)]
+	pub(super) type IdentityOf<T: Config> = StorageMap<
+		_,
+		Twox64Concat,
+		AccountId32,
+		Registration<Balance, ConstU32<100>, ConstU32<100>>,
+	>;
+
+	/// [`pallet_identity::Registrars`] data.
+	///
+	/// <https://github.com/paritytech/substrate/blob/polkadot-v0.9.30/frame/identity/src/lib.rs#L199>
+	#[pallet::storage]
+	#[pallet::unbounded]
+	#[pallet::getter(fn registrars)]
+	pub(super) type Registrars<T: Config> =
+		StorageValue<_, Vec<Option<RegistrarInfo<Balance, AccountId32>>>, ValueQuery>;
+
 	// TODO: proxy storages
 	// TODO: staking storages
 
@@ -166,20 +166,8 @@ pub mod pallet {
 
 			<frame_system::Account<T>>::insert(to, account);
 
-			if let Some(vs) = <Vestings<T>>::get(&from) {
-				let locked = vs.iter().map(|v| v.locked()).sum();
-
-				<pallet_vesting::Vesting<T>>::insert(
-					to,
-					BoundedVec::try_from(vs).map_err(|_| <Error<T>>::ExceedMaxVestings)?,
-				);
-
-				// https://github.dev/paritytech/substrate/blob/19162e43be45817b44c7d48e50d03f074f60fbf4/frame/vesting/src/lib.rs#L248
-				let reasons = WithdrawReasons::TRANSFER | WithdrawReasons::RESERVE;
-
-				// https://github.dev/paritytech/substrate/blob/19162e43be45817b44c7d48e50d03f074f60fbf4/frame/vesting/src/lib.rs#L86
-				<pallet_balances::Pallet<T>>::set_lock(*b"vesting ", &to, locked, reasons);
-			}
+			Self::process_vesting(&from, &to)?;
+			Self::process_identity(&from, &to)?;
 
 			Self::deposit_event(Event::Migrated { from, to });
 
@@ -231,6 +219,62 @@ pub mod pallet {
 	}
 }
 pub use pallet::*;
+
+impl<T: Config> Pallet<T> {
+	/// Vesting migrate
+	pub fn process_vesting(from: &AccountId32, to: &AccountId20) -> DispatchResult {
+		let Some(vs) = <Vestings<T>>::get(from) else {
+			return Ok(());
+		};
+
+		let locked = vs.iter().map(|v| v.locked()).sum();
+		<pallet_vesting::Vesting<T>>::insert(
+			to,
+			BoundedVec::try_from(vs).map_err(|_| <Error<T>>::ExceedMaxVestings)?,
+		);
+
+		// https://github.dev/paritytech/substrate/blob/19162e43be45817b44c7d48e50d03f074f60fbf4/frame/vesting/src/lib.rs#L248
+		let reasons = WithdrawReasons::TRANSFER | WithdrawReasons::RESERVE;
+
+		// https://github.dev/paritytech/substrate/blob/19162e43be45817b44c7d48e50d03f074f60fbf4/frame/vesting/src/lib.rs#L86
+		<pallet_balances::Pallet<T>>::set_lock(*b"vesting ", &to, locked, reasons);
+
+		Ok(())
+	}
+
+	/// Identity migrate
+	pub fn process_identity(from: &AccountId32, to: &AccountId20) -> DispatchResult {
+		let Some(id) = IdentityOf::<T>::take(from) else {
+			return Ok(());
+		};
+
+		put_storage_value(
+			b"Identity",
+			b"IdentityOf",
+			&Twox64Concat::hash(&to.encode()),
+			id.encode(),
+		);
+		<pallet_balances::Pallet<T>>::reserve(to, id.deposit)?;
+
+		let mut chain_rs = <pallet_identity::Pallet<T>>::registrars().into_inner();
+		for (i, rs) in Self::registrars().iter().enumerate() {
+			if let Some(rs) = rs {
+				if rs.account == *from {
+					chain_rs.push(Some(RegistrarInfo {
+						account: to.clone(),
+						fee: rs.fee,
+						fields: rs.fields,
+					}));
+
+					Registrars::<T>::mutate(|rs| rs.remove(i));
+				}
+			}
+
+			put_storage_value(b"Identity", b"Registrars", &[], chain_rs.encode());
+		}
+		Ok(())
+	}
+}
 
 fn sr25519_signable_message(
 	chain_id: u64,

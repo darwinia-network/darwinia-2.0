@@ -20,9 +20,10 @@ subhasher   = { git = "https://github.com/hack-ink/subalfred" }
 subspector  = { git = "https://github.com/hack-ink/subalfred" }
 substorager = { git = "https://github.com/hack-ink/subalfred" }
 
+# parity
 pallet-identity = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
-frame-support = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
-sp-core = { version = "7.0.0" }
+frame-support   = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
+sp-core         = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
 
 [workspace]
 exclude = []

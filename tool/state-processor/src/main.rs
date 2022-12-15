@@ -255,6 +255,7 @@ where
 	Ok(D::decode(&mut &*v)?)
 }
 
+#[allow(unused)]
 // twox128(pallet) + twox128(item) -> twox128(pallet) + twox128(item)
 fn get_identity_key(key: &str, _: &str) -> String {
 	key.into()
@@ -270,6 +271,7 @@ fn get_last_64(key: &str) -> String {
 	format!("0x{}", &key[key.len() - 64..])
 }
 
+#[allow(unused)]
 fn identity(key: &str, _: &str) -> String {
 	key.into()
 }
