@@ -69,16 +69,10 @@ pub struct Unbonding {
 
 #[derive(Debug, Encode, Decode)]
 pub struct Ledger {
-	/// Staked RING.
-	pub staked_ring: Balance,
-	/// Staked KTON.
-	pub staked_kton: Balance,
-	/// Staked deposits.
-	pub staked_deposits: BoundedVec<DepositId<T>, T::MaxDeposits>,
-	/// The RING in unstaking process.
-	pub unstaking_ring: BoundedVec<(Balance, T::BlockNumber), T::MaxUnstakings>,
-	/// The KTON in unstaking process.
-	pub unstaking_kton: BoundedVec<(Balance, T::BlockNumber), T::MaxUnstakings>,
-	/// The deposit in unstaking process.
-	pub unstaking_deposits: BoundedVec<(DepositId<T>, T::BlockNumber), T::MaxUnstakings>,
+	staked_ring: u128,
+	staked_kton: u128,
+	staked_deposits: Vec<u8>,
+	unstaking_ring: Vec<(u128, u32)>,
+	unstaking_kton: Vec<(u128, u32)>,
+	unstaking_deposits: Vec<(u8, u32)>,
 }
