@@ -59,8 +59,7 @@ impl Processor {
 						.0
 						.entry(full_key(b"AccountMigration", b"Accounts", &super_hash))
 						.and_modify(|v| {
-							let mut info =
-								decode::<AccountInfo>(v).expect("The account should existed!");
+							let mut info = decode::<AccountInfo>(v).expect("Never happened!");
 							let deposit = SUB_ACCOUNT_DEPOSIT.min(*subs_deposit);
 							*subs_deposit -= deposit;
 
@@ -69,7 +68,7 @@ impl Processor {
 				}
 			}
 		});
-
+		
 		log::info!("set `AccountMigration::IdentityOf` and`AccountMigration::Registrars`.");
 		identities.iter().for_each(|(k, v)| {
 			self.shell_state
