@@ -1,5 +1,6 @@
 mod balances;
 mod evm;
+mod staking;
 mod system;
 mod vesting;
 
@@ -51,7 +52,7 @@ impl Processor {
 	}
 
 	fn process(mut self) -> Result<()> {
-		self.process_system().process_vesting().process_evm();
+		self.process_system().process_vesting().process_staking().process_evm();
 
 		self.save()
 	}
@@ -76,7 +77,6 @@ impl State {
 		Ok(Self(from_file::<ChainSpec>(path)?.genesis.raw.top))
 	}
 
-	#[allow(unused)]
 	fn prune(&mut self, pallet: &[u8], items: Option<&[&[u8]]>) -> &mut Self {
 		// Prune specific storages.
 		if let Some(items) = items {
@@ -117,18 +117,13 @@ impl State {
 		self
 	}
 
-	fn take_raw<F>(
-		&mut self,
-		prefix: &str,
-		buffer: &mut Map<String>,
-		preprocess_key: F,
-	) -> &mut Self
+	fn take_raw<F>(&mut self, prefix: &str, buffer: &mut Map<String>, process_key: F) -> &mut Self
 	where
 		F: Fn(&str, &str) -> String,
 	{
 		self.0.retain(|k, v| {
 			if k.starts_with(prefix) {
-				buffer.insert(preprocess_key(k, prefix), v.to_owned());
+				buffer.insert(process_key(k, prefix), v.to_owned());
 
 				false
 			} else {
@@ -172,7 +167,7 @@ impl State {
 		pallet: &[u8],
 		item: &[u8],
 		buffer: &mut Map<D>,
-		preprocess_key: F,
+		process_key: F,
 	) -> &mut Self
 	where
 		D: Decode,
@@ -185,7 +180,7 @@ impl State {
 			if full_key.starts_with(&item_key) {
 				match decode(v) {
 					Ok(v) => {
-						buffer.insert(preprocess_key(full_key, &item_key), v);
+						buffer.insert(process_key(full_key, &item_key), v);
 					},
 					Err(e) => log::warn!("failed to decode `{full_key}:{v}`, due to `{e}`"),
 				}
@@ -203,6 +198,18 @@ impl State {
 				String::from_utf8_lossy(item)
 			);
 		}
+
+		self
+	}
+
+	fn insert_map<E, F>(&mut self, pairs: Map<E>, process_key: F) -> &mut Self
+	where
+		E: Encode,
+		F: Fn(&str) -> String,
+	{
+		pairs.into_iter().for_each(|(k, v)| {
+			self.0.insert(process_key(&k), array_bytes::bytes2hex("0x", v.encode()));
+		});
 
 		self
 	}
