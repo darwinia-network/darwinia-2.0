@@ -73,6 +73,6 @@ pub enum ExistenceReason {
 
 #[derive(Debug, Encode, Decode)]
 pub struct Approval {
-	pub(super) amount: u128,
-	pub(super) deposit: u128,
+	pub amount: u128,
+	pub deposit: u128,
 }

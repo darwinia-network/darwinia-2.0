@@ -1,7 +1,7 @@
 // darwinia
 use crate::*;
 // parity
-use sp_core::H160;
+use sp_core::{H160, U256};
 
 #[derive(Debug)]
 pub struct AccountAll {
@@ -149,7 +149,7 @@ impl Processor {
 			};
 
 			if is_evm_address(&k) {
-				log::info!("set `Assets::Account`");
+				log::info!("set `Assets::Account` and `Assets::Approvals`");
 				if v.kton != 0 || v.kton_reserved != 0 {
 					let aa = AssetAccount {
 						balance: v.kton,
@@ -164,7 +164,20 @@ impl Processor {
 					self.shell_state
 						.0
 						.insert(full_key(b"Assets", b"Account", &k), encode_value(&aa));
-					// TODO: Move precompile approve to asset approve.
+
+					let mut approves = Map::<U256>::default();
+					self.solo_state.take_map(
+						b"KtonERC20",
+						b"Approves",
+						&mut approves,
+						get_hashed_key,
+					);
+					approves.iter().for_each(|(k, v)| {
+						self.shell_state.0.insert(
+							full_key(b"Assets", b"Approvals", &k),
+							encode_value(Approval { amount: v.as_u128(), deposit: 0 }.encode()),
+						);
+					});
 				}
 
 				self.shell_state.0.insert(full_key(b"System", b"Account", &k), encode_value(a));
