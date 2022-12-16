@@ -1,6 +1,7 @@
 // darwinia
 use crate::*;
 // parity
+use array_bytes::bytes2hex;
 use sp_core::{H160, U256};
 
 #[derive(Debug)]
@@ -92,9 +93,6 @@ impl Processor {
 			.0
 			.insert(item_key(b"Balances", b"TotalIssuance"), encode_value(ring_total_issuance));
 
-		log::info!("set `Assets::Asset`");
-		log::info!("kton_total_issuance({kton_total_issuance})");
-		log::info!("kton_total_issuance_storage({kton_total_issuance_storage})");
 		let mut kton_details = AssetDetails {
 			owner: H160::from_low_u64_be(999),   // TODO: update this
 			issuer: H160::from_low_u64_be(999),  // TODO: update this
@@ -109,27 +107,6 @@ impl Processor {
 			approvals: 0,
 			is_frozen: false,
 		};
-		// do it later
-		// self.shell_state.0.insert(
-		// 	item_key(b"Assets", b"Asset"),
-		// 	encode_value(
-		// 		AssetDetails {
-		// 			owner: H160::from_low_u64_be(999),   // TODO: update this
-		// 			issuer: H160::from_low_u64_be(999),  // TODO: update this
-		// 			admin: H160::from_low_u64_be(999),   // TODO: update this
-		// 			freezer: H160::from_low_u64_be(999), // TODO: update this
-		// 			supply: kton_total_issuance,
-		// 			deposit: 0,
-		// 			min_balance: 0,
-		// 			is_sufficient: true,
-		// 			sufficients: 0,
-		// 			accounts: 0,
-		// 			approvals: 0,
-		// 			is_frozen: false,
-		// 		}
-		// 		.encode(),
-		// 	),
-		// );
 
 		log::info!("update ring misc frozen and fee frozen");
 		log::info!("set `System::Account`");
@@ -161,10 +138,19 @@ impl Processor {
 					a.sufficients += 1;
 					kton_details.accounts += 1;
 					kton_details.sufficients += 1;
-					// TODO: this is a double map in pallet-assets module
-					self.shell_state
-						.0
-						.insert(full_key(b"Assets", b"Account", &k), encode_value(&aa));
+					// Note: this is double map structure in the pallet-assets.
+					self.shell_state.0.insert(
+						full_key(
+							b"Assets",
+							b"Account",
+							&format!(
+								"{} {}",
+								bytes2hex("", subhasher::blake2_128_concat(&1026u64.encode())),
+								&k
+							),
+						),
+						encode_value(&aa),
+					);
 
 					let mut approves = Map::<U256>::default();
 					self.solo_state.take_map(
@@ -204,6 +190,30 @@ impl Processor {
 					.insert(full_key(b"AccountMigration", b"Accounts", &k), encode_value(a));
 			}
 		});
+
+		log::info!("set `Assets::Asset`");
+		log::info!("kton_total_issuance({kton_total_issuance})");
+		log::info!("kton_total_issuance_storage({kton_total_issuance_storage})");
+		self.shell_state.0.insert(
+			item_key(b"Assets", b"Asset"),
+			encode_value(
+				AssetDetails {
+					owner: H160::from_low_u64_be(999),   // TODO: update this
+					issuer: H160::from_low_u64_be(999),  // TODO: update this
+					admin: H160::from_low_u64_be(999),   // TODO: update this
+					freezer: H160::from_low_u64_be(999), // TODO: update this
+					supply: kton_total_issuance,
+					deposit: 0,
+					min_balance: 0,
+					is_sufficient: true,
+					sufficients: 0,
+					accounts: 0,
+					approvals: 0,
+					is_frozen: false,
+				}
+				.encode(),
+			),
+		);
 
 		self
 	}
@@ -276,4 +286,12 @@ fn verify_evm_address_checksum_should_work() {
 	// public-key 0x64766d3a00000000000000b7de7f8c52ac75e036d05fda53a75cf12714a76973
 	// Substrate 5ELRpquT7C3mWtjerpPfdmaGoSh12BL2gFCv2WczEcv6E1zL
 	assert!(is_evm_address("0x64766d3a00000000000000b7de7f8c52ac75e036d05fda53a75cf12714a76973"));
+}
+
+#[test]
+fn test_hash() {
+	assert_eq!(
+		array_bytes::bytes2hex("", subhasher::blake2_128_concat(&1026u64.encode())),
+		"15ffd708b25d8ed5477f01d3f9277c360204000000000000"
+	);
 }
