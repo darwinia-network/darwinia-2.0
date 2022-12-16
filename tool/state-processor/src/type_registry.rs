@@ -50,3 +50,29 @@ pub struct AssetDetails {
 	pub approvals: u32,
 	pub is_frozen: bool,
 }
+
+#[derive(Debug, Encode, Decode)]
+pub struct AssetAccount {
+	pub balance: u128,
+	pub is_frozen: bool,
+	pub reason: ExistenceReason,
+	pub extra: (),
+}
+
+#[derive(Debug, Encode, Decode)]
+pub enum ExistenceReason {
+	#[codec(index = 0)]
+	Consumer,
+	#[codec(index = 1)]
+	Sufficient,
+	#[codec(index = 2)]
+	DepositHeld(u128),
+	#[codec(index = 3)]
+	DepositRefunded,
+}
+
+#[derive(Debug, Encode, Decode)]
+pub struct Approval {
+	pub(super) amount: u128,
+	pub(super) deposit: u128,
+}

@@ -95,26 +95,41 @@ impl Processor {
 		log::info!("set `Assets::Asset`");
 		log::info!("kton_total_issuance({kton_total_issuance})");
 		log::info!("kton_total_issuance_storage({kton_total_issuance_storage})");
-		self.shell_state.0.insert(
-			item_key(b"Assets", b"Asset"),
-			encode_value(
-				AssetDetails {
-					owner: H160::from_low_u64_be(999),   // TODO: update this
-					issuer: H160::from_low_u64_be(999),  // TODO: update this
-					admin: H160::from_low_u64_be(999),   // TODO: update this
-					freezer: H160::from_low_u64_be(999), // TODO: update this
-					supply: kton_total_issuance,
-					deposit: 0,
-					min_balance: 0,
-					is_sufficient: true,
-					sufficients: 0,
-					accounts: 0,
-					approvals: 0,
-					is_frozen: false,
-				}
-				.encode(),
-			),
-		);
+		let mut kton_details = AssetDetails {
+			owner: H160::from_low_u64_be(999),   // TODO: update this
+			issuer: H160::from_low_u64_be(999),  // TODO: update this
+			admin: H160::from_low_u64_be(999),   // TODO: update this
+			freezer: H160::from_low_u64_be(999), // TODO: update this
+			supply: kton_total_issuance,
+			deposit: 0,
+			min_balance: 0,
+			is_sufficient: true,
+			sufficients: 0,
+			accounts: 0,
+			approvals: 0,
+			is_frozen: false,
+		};
+		// do it later
+		// self.shell_state.0.insert(
+		// 	item_key(b"Assets", b"Asset"),
+		// 	encode_value(
+		// 		AssetDetails {
+		// 			owner: H160::from_low_u64_be(999),   // TODO: update this
+		// 			issuer: H160::from_low_u64_be(999),  // TODO: update this
+		// 			admin: H160::from_low_u64_be(999),   // TODO: update this
+		// 			freezer: H160::from_low_u64_be(999), // TODO: update this
+		// 			supply: kton_total_issuance,
+		// 			deposit: 0,
+		// 			min_balance: 0,
+		// 			is_sufficient: true,
+		// 			sufficients: 0,
+		// 			accounts: 0,
+		// 			approvals: 0,
+		// 			is_frozen: false,
+		// 		}
+		// 		.encode(),
+		// 	),
+		// );
 
 		log::info!("update ring misc frozen and fee frozen");
 		log::info!("set `System::Account`");
@@ -134,11 +149,25 @@ impl Processor {
 			};
 
 			if is_evm_address(&k) {
-				self.shell_state.0.insert(full_key(b"System", b"Account", &k), encode_value(a));
+				log::info!("set `Assets::Account`");
+				if v.kton != 0 || v.kton_reserved != 0 {
+					let aa = AssetAccount {
+						balance: v.kton,
+						is_frozen: false,
+						reason: ExistenceReason::Sufficient,
+						extra: (),
+					};
 
-			// TODO: migrate kton balances.
-			// 3. Give the kton asset to the `Asset::Account`, remember to update the pointers
-			// 4. Move precompile approve to asset approve.
+					a.sufficients += 1;
+					kton_details.accounts += 1;
+					kton_details.sufficients += 1;
+					self.shell_state
+						.0
+						.insert(full_key(b"Assets", b"Account", &k), encode_value(&aa));
+					// TODO: Move precompile approve to asset approve.
+				}
+
+				self.shell_state.0.insert(full_key(b"System", b"Account", &k), encode_value(a));
 			} else {
 				a.nonce = 0;
 
