@@ -48,15 +48,18 @@
 #[cfg(test)]
 mod tests;
 
+use array_bytes::bytes2hex;
 // darwinia
 use dc_primitives::{AccountId as AccountId20, Balance, BlockNumber, Index};
 // substrate
 use frame_support::{
-	log,
+	log, migration,
 	pallet_prelude::*,
 	traits::{LockableCurrency, WithdrawReasons},
+	Blake2_128Concat, StorageHasher,
 };
 use frame_system::{pallet_prelude::*, AccountInfo};
+use pallet_assets::AssetAccount;
 use pallet_balances::AccountData;
 use pallet_vesting::VestingInfo;
 use sp_core::sr25519::{Public, Signature};
@@ -112,6 +115,12 @@ pub mod pallet {
 	pub type Accounts<T: Config> =
 		StorageMap<_, Identity, AccountId32, AccountInfo<Index, AccountData<Balance>>>;
 
+	/// TODO: add more comments
+	#[pallet::storage]
+	#[pallet::getter(fn kton_account_of)]
+	pub type KtonAccounts<T: Config> =
+		StorageMap<_, Blake2_128Concat, AccountId32, AssetAccount<u128, u128, ()>>;
+
 	/// [`pallet_vesting::Vesting`] data.
 	///
 	/// <https://github.dev/paritytech/substrate/blob/19162e43be45817b44c7d48e50d03f074f60fbf4/frame/vesting/src/lib.rs#L188>
@@ -155,6 +164,45 @@ pub mod pallet {
 
 				// https://github.dev/paritytech/substrate/blob/19162e43be45817b44c7d48e50d03f074f60fbf4/frame/vesting/src/lib.rs#L86
 				<pallet_balances::Pallet<T>>::set_lock(*b"vesting ", &to, locked, reasons);
+			}
+
+			if let Some(a) = KtonAccounts::<T>::take(&from) {
+				frame_system::Pallet::<T>::inc_sufficients(&to);
+
+				migration::put_storage_value(
+					b"Assets",
+					b"Account",
+					&[
+						Blake2_128Concat::hash(&1026u64.encode()),
+						Blake2_128Concat::hash(&to.encode()),
+					]
+					.concat(),
+					a.encode(),
+				);
+				#[derive(Debug, Encode, Decode)]
+				pub struct AssetDetails {
+					pub owner: AccountId20,
+					pub issuer: AccountId20,
+					pub admin: AccountId20,
+					pub freezer: AccountId20,
+					pub supply: u128,
+					pub deposit: u128,
+					pub min_balance: u128,
+					pub is_sufficient: bool,
+					pub accounts: u32,
+					pub sufficients: u32,
+					pub approvals: u32,
+					pub is_frozen: bool,
+				}
+
+				if let Some(mut asset_details) = migration::get_storage_value::<AssetDetails>(
+					b"Assets",
+					b"Asset",
+					&Blake2_128Concat::hash(&1026u64.encode()),
+				) {
+					asset_details.accounts += 1;
+					asset_details.sufficients += 1;
+				}
 			}
 
 			Self::deposit_event(Event::Migrated { from, to });

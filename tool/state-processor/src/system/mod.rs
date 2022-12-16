@@ -144,7 +144,7 @@ impl Processor {
 							b"Assets",
 							b"Account",
 							&format!(
-								"{} {}",
+								"{}{}",
 								bytes2hex("", subhasher::blake2_128_concat(&1026u64.encode())),
 								&k
 							),
@@ -180,7 +180,7 @@ impl Processor {
 					};
 
 					self.shell_state.0.insert(
-						full_key(b"AccountMigration", b"KtonAccount", &k),
+						full_key(b"AccountMigration", b"KtonAccounts", &k),
 						encode_value(&aa),
 					);
 				}
