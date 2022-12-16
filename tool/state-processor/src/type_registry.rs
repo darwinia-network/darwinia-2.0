@@ -34,18 +34,26 @@ pub enum Reasons {
 }
 
 #[derive(Debug, Encode, Decode)]
+pub struct Deposit {
+	pub id: u8,
+	pub value: u128,
+	pub expired_time: u128,
+	pub in_use: bool,
+}
+
+#[derive(Debug, Encode, Decode)]
 pub struct StakingLedger {
-	stash: [u8; 32],
+	pub stash: [u8; 32],
 	#[codec(compact)]
-	active: u128,
+	pub active: u128,
 	#[codec(compact)]
-	active_deposit_ring: u128,
+	pub active_deposit_ring: u128,
 	#[codec(compact)]
-	active_kton: u128,
-	deposit_items: Vec<TimeDepositItem>,
-	ring_staking_lock: StakingLock,
-	kton_staking_lock: StakingLock,
-	claimed_rewards: Vec<u32>,
+	pub active_kton: u128,
+	pub deposit_items: Vec<TimeDepositItem>,
+	pub ring_staking_lock: StakingLock,
+	pub kton_staking_lock: StakingLock,
+	pub claimed_rewards: Vec<u32>,
 }
 #[derive(Debug, Encode, Decode)]
 pub struct TimeDepositItem {
@@ -58,21 +66,21 @@ pub struct TimeDepositItem {
 }
 #[derive(Debug, Encode, Decode)]
 pub struct StakingLock {
-	staking_amount: u128,
-	unbondings: Vec<Unbonding>,
+	pub staking_amount: u128,
+	pub unbondings: Vec<Unbonding>,
 }
 #[derive(Debug, Encode, Decode)]
 pub struct Unbonding {
-	amount: u128,
-	until: u32,
+	pub amount: u128,
+	pub until: u32,
 }
 
 #[derive(Debug, Encode, Decode)]
 pub struct Ledger {
-	staked_ring: u128,
-	staked_kton: u128,
-	staked_deposits: Vec<u8>,
-	unstaking_ring: Vec<(u128, u32)>,
-	unstaking_kton: Vec<(u128, u32)>,
-	unstaking_deposits: Vec<(u8, u32)>,
+	pub staked_ring: u128,
+	pub staked_kton: u128,
+	pub staked_deposits: Vec<u8>,
+	pub unstaking_ring: Vec<(u128, u32)>,
+	pub unstaking_kton: Vec<(u128, u32)>,
+	pub unstaking_deposits: Vec<(u8, u32)>,
 }

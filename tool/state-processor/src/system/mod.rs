@@ -86,9 +86,7 @@ impl Processor {
 		log::info!("set `Balances::TotalIssuance`");
 		log::info!("ring_total_issuance({ring_total_issuance})");
 		log::info!("ring_total_issuance_storage({ring_total_issuance_storage})");
-		self.shell_state
-			.0
-			.insert(item_key(b"Balances", b"TotalIssuance"), encode_value(ring_total_issuance));
+		self.shell_state.insert_value(b"Balances", b"TotalIssuance", "", ring_total_issuance);
 
 		log::info!("kton_total_issuance({kton_total_issuance})");
 		log::info!("kton_total_issuance_storage({kton_total_issuance_storage})");
@@ -112,15 +110,13 @@ impl Processor {
 			};
 
 			if is_evm_address(&k) {
-				self.shell_state.0.insert(full_key(b"System", b"Account", &k), encode_value(a));
+				self.shell_state.insert_value(b"System", b"Account", &k, a);
 
 			// TODO: migrate kton balances.
 			} else {
 				a.nonce = 0;
 
-				self.shell_state
-					.0
-					.insert(full_key(b"AccountMigration", b"Accounts", &k), encode_value(a));
+				self.shell_state.insert_value(b"AccountMigration", b"Accounts", &k, a);
 			}
 		});
 

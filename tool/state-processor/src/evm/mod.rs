@@ -7,7 +7,7 @@ const PALLET_ETHEREUM_SCHEMA: &str = "0x3a657468657265756d5f736368656d61";
 impl Processor {
 	fn process_ethereum_schema(&mut self) -> &mut Self {
 		log::info!("set `PALLET_ETHEREUM_SCHEMA`");
-		self.shell_state.0.insert(PALLET_ETHEREUM_SCHEMA.into(), "0x3".into());
+		self.shell_state.insert_raw_key_raw_value(PALLET_ETHEREUM_SCHEMA.into(), "0x3".into());
 
 		self
 	}
@@ -22,15 +22,17 @@ impl Processor {
 
 		log::info!("take `EVM::AccountCodes` and `EVM::AccountStorages`");
 		self.solo_state
-			.take_raw(&item_key(b"EVM", b"AccountCodes"), &mut account_codes, |key, from| {
-			replace_first_match(key, from, &item_key(b"Evm", b"AccountCodes"))
-		})
-			.take_raw(&item_key(b"EVM", b"AccountStorages"), &mut account_storages, |key, from| {
-			replace_first_match(key, from, &item_key(b"Evm", b"AccountStorages"))
-		});
+			.take_raw_map(&item_key(b"EVM", b"AccountCodes"), &mut account_codes, |key, from| {
+				replace_first_match(key, from, &item_key(b"Evm", b"AccountCodes"))
+			})
+			.take_raw_map(
+				&item_key(b"EVM", b"AccountStorages"),
+				&mut account_storages,
+				|key, from| replace_first_match(key, from, &item_key(b"Evm", b"AccountStorages")),
+			);
 
 		log::info!("set `Evm::AccountCodes` and `Evm::AccountStorages`");
-		self.shell_state.insert_raw(account_codes).insert_raw(account_storages);
+		self.shell_state.insert_raw_key_map(account_codes).insert_raw_key_map(account_storages);
 
 		self
 	}

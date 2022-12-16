@@ -14,8 +14,8 @@ impl Processor {
 
 		log::info!("take solo `Balances::TotalIssuance`, `Kton::TotalIssuance`, `Balances::Locks` and `Kton::Locks`");
 		self.solo_state
-			.take_value(b"Balances", b"TotalIssuance", &mut solo_ring_total_issuance)
-			.take_value(b"Kton", b"TotalIssuance", &mut kton_total_issuance)
+			.take_value(b"Balances", b"TotalIssuance", "", &mut solo_ring_total_issuance)
+			.take_value(b"Kton", b"TotalIssuance", "", &mut kton_total_issuance)
 			.take_map(b"Balances", b"Locks", &mut solo_ring_locks, get_hashed_key)
 			.take_map(b"Kton", b"Locks", &mut solo_kton_locks, get_hashed_key);
 
@@ -32,7 +32,7 @@ impl Processor {
 
 		log::info!("take para `Balances::TotalIssuance` and `Balances::Locks`");
 		self.para_state
-			.take_value(b"Balances", b"TotalIssuance", &mut para_ring_total_issuance)
+			.take_value(b"Balances", b"TotalIssuance", "", &mut para_ring_total_issuance)
 			.take_map(b"Balances", b"Locks", &mut para_ring_locks, get_hashed_key);
 
 		log::info!("check solo ring locks, there should not be any `solo_ring_locks`");

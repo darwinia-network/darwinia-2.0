@@ -77,47 +77,27 @@ impl State {
 		Ok(Self(from_file::<ChainSpec>(path)?.genesis.raw.top))
 	}
 
-	fn prune(&mut self, pallet: &[u8], items: Option<&[&[u8]]>) -> &mut Self {
-		// Prune specific storages.
-		if let Some(items) = items {
-			for item in items {
-				let k = item_key(pallet, item);
-
-				self.0.remove(&k).or_else(|| {
-					log::warn!(
-						"`{}::{}: {k}` not found",
-						String::from_utf8_lossy(pallet),
-						String::from_utf8_lossy(item)
-					);
-
-					None
-				});
-			}
-		}
-		// Prune entire pallet.
-		else {
-			let prefix = pallet_key(pallet);
-			let mut pruned = false;
-
-			self.0.retain(|full_key, _| {
-				if full_key.starts_with(&prefix) {
-					pruned = true;
-
-					false
-				} else {
-					true
-				}
-			});
-
-			if !pruned {
-				log::warn!("`{}: {prefix}` not found", String::from_utf8_lossy(pallet));
-			}
-		}
+	fn insert_raw_key_raw_value(&mut self, key: String, value: String) -> &mut Self {
+		self.0.insert(key, value);
 
 		self
 	}
 
-	fn take_raw<F>(&mut self, prefix: &str, buffer: &mut Map<String>, process_key: F) -> &mut Self
+	fn insert_raw_key_value<E>(&mut self, key: String, value: E) -> &mut Self
+	where
+		E: Encode,
+	{
+		self.0.insert(key, encode_value(value));
+
+		self
+	}
+
+	fn take_raw_map<F>(
+		&mut self,
+		prefix: &str,
+		buffer: &mut Map<String>,
+		process_key: F,
+	) -> &mut Self
 	where
 		F: Fn(&str, &str) -> String,
 	{
@@ -134,7 +114,7 @@ impl State {
 		self
 	}
 
-	fn insert_raw(&mut self, pairs: Map<String>) -> &mut Self {
+	fn insert_raw_key_map(&mut self, pairs: Map<String>) -> &mut Self {
 		pairs.into_iter().for_each(|(k, v)| {
 			if self.0.contains_key(&k) {
 				log::error!("key({k}) has already existed, overriding");
@@ -146,18 +126,51 @@ impl State {
 		self
 	}
 
-	fn take_value<D>(&mut self, pallet: &[u8], item: &[u8], value: &mut D) -> &mut Self
+	fn get_value<D>(&mut self, pallet: &[u8], item: &[u8], hash: &str, value: &mut D) -> &mut Self
 	where
 		D: Decode,
 	{
-		let key = item_key(pallet, item);
+		let key = full_key(pallet, item, hash);
+
+		if let Some(v) = self.0.get(&key) {
+			match decode(&v) {
+				Ok(v) => *value = v,
+				Err(e) => log::warn!(
+					"failed to decode `{}::{}::{hash}({v})`, due to `{e}`",
+					String::from_utf8_lossy(pallet),
+					String::from_utf8_lossy(item),
+				),
+			}
+		}
+
+		self
+	}
+
+	fn take_value<D>(&mut self, pallet: &[u8], item: &[u8], hash: &str, value: &mut D) -> &mut Self
+	where
+		D: Decode,
+	{
+		let key = full_key(pallet, item, hash);
 
 		if let Some(v) = self.0.remove(&key) {
 			match decode(&v) {
 				Ok(v) => *value = v,
-				Err(e) => log::warn!("failed to decode `{key}:{v}`, due to `{e}`"),
+				Err(e) => log::warn!(
+					"failed to decode `{}::{}::{hash}({v})`, due to `{e}`",
+					String::from_utf8_lossy(pallet),
+					String::from_utf8_lossy(item)
+				),
 			}
 		}
+
+		self
+	}
+
+	fn insert_value<E>(&mut self, pallet: &[u8], item: &[u8], hash: &str, value: E) -> &mut Self
+	where
+		E: Encode,
+	{
+		self.0.insert(full_key(pallet, item, hash), encode_value(value));
 
 		self
 	}
@@ -174,13 +187,13 @@ impl State {
 		F: Fn(&str, &str) -> String,
 	{
 		let len = buffer.len();
-		let item_key = item_key(pallet, item);
+		let prefix = item_key(pallet, item);
 
 		self.0.retain(|full_key, v| {
-			if full_key.starts_with(&item_key) {
+			if full_key.starts_with(&prefix) {
 				match decode(v) {
 					Ok(v) => {
-						buffer.insert(process_key(full_key, &item_key), v);
+						buffer.insert(process_key(full_key, &prefix), v);
 					},
 					Err(e) => log::warn!("failed to decode `{full_key}:{v}`, due to `{e}`"),
 				}
@@ -208,7 +221,7 @@ impl State {
 		F: Fn(&str) -> String,
 	{
 		pairs.into_iter().for_each(|(k, v)| {
-			self.0.insert(process_key(&k), array_bytes::bytes2hex("0x", v.encode()));
+			self.0.insert(process_key(&k), encode_value(v));
 		});
 
 		self
@@ -276,10 +289,21 @@ fn get_last_64(key: &str) -> String {
 	format!("0x{}", &key[key.len() - 64..])
 }
 
-fn identity(key: &str, _: &str) -> String {
-	key.into()
-}
-
 fn replace_first_match(key: &str, from: &str, to: &str) -> String {
 	key.replacen(from, to, 1)
+}
+
+fn adjust_decimals(x: u128) -> u128 {
+	x * GWEI
+}
+
+fn adjust_block_time(pivot: u32, target: u32) -> u32 {
+	target.checked_sub(pivot).unwrap_or_default() / 2
+}
+
+#[test]
+fn adjust_block_time_should_work() {
+	[(0, 4, 2), (4, 2, 0), (4, 4, 0)].iter().for_each(|&(pivot, target, expected)| {
+		assert_eq!(adjust_block_time(pivot, target), expected);
+	});
 }
