@@ -1,5 +1,7 @@
 // crates.io
 use parity_scale_codec::{Decode, Encode};
+// parity
+use sp_core::H160;
 
 pub const GWEI: u128 = 1_000_000_000;
 
@@ -31,4 +33,20 @@ pub enum Reasons {
 	Fee = 0,
 	Misc = 1,
 	All = 2,
+}
+
+#[derive(Debug, Encode, Decode)]
+pub struct AssetDetails {
+	pub owner: H160,
+	pub issuer: H160,
+	pub admin: H160,
+	pub freezer: H160,
+	pub supply: u128,
+	pub deposit: u128,
+	pub min_balance: u128,
+	pub is_sufficient: bool,
+	pub accounts: u32,
+	pub sufficients: u32,
+	pub approvals: u32,
+	pub is_frozen: bool,
 }

@@ -1,5 +1,7 @@
 // darwinia
 use crate::*;
+// parity
+use sp_core::H160;
 
 #[derive(Debug)]
 pub struct AccountAll {
@@ -90,9 +92,29 @@ impl Processor {
 			.0
 			.insert(item_key(b"Balances", b"TotalIssuance"), encode_value(ring_total_issuance));
 
+		log::info!("set `Assets::Asset`");
 		log::info!("kton_total_issuance({kton_total_issuance})");
 		log::info!("kton_total_issuance_storage({kton_total_issuance_storage})");
-		// TODO: set KTON total issuance
+		self.shell_state.0.insert(
+			item_key(b"Assets", b"Asset"),
+			encode_value(
+				AssetDetails {
+					owner: H160::from_low_u64_be(999),   // TODO: update this
+					issuer: H160::from_low_u64_be(999),  // TODO: update this
+					admin: H160::from_low_u64_be(999),   // TODO: update this
+					freezer: H160::from_low_u64_be(999), // TODO: update this
+					supply: kton_total_issuance,
+					deposit: 0,
+					min_balance: 0,
+					is_sufficient: true,
+					sufficients: 0,
+					accounts: 0,
+					approvals: 0,
+					is_frozen: false,
+				}
+				.encode(),
+			),
+		);
 
 		log::info!("update ring misc frozen and fee frozen");
 		log::info!("set `System::Account`");
@@ -115,12 +137,18 @@ impl Processor {
 				self.shell_state.0.insert(full_key(b"System", b"Account", &k), encode_value(a));
 
 			// TODO: migrate kton balances.
+			// 3. Give the kton asset to the `Asset::Account`, remember to update the pointers
+			// 4. Move precompile approve to asset approve.
 			} else {
 				a.nonce = 0;
 
 				self.shell_state
 					.0
 					.insert(full_key(b"AccountMigration", b"Accounts", &k), encode_value(a));
+
+				// TODO: migrate kton balances.
+				// 5. Give those kton asset to the `AccountMigration::KtonAccounts`, be careful
+				// about the pointers
 			}
 		});
 
