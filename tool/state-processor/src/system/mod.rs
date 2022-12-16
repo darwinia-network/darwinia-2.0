@@ -161,6 +161,7 @@ impl Processor {
 					a.sufficients += 1;
 					kton_details.accounts += 1;
 					kton_details.sufficients += 1;
+					// TODO: this is a double map in pallet-assets module
 					self.shell_state
 						.0
 						.insert(full_key(b"Assets", b"Account", &k), encode_value(&aa));
@@ -184,13 +185,23 @@ impl Processor {
 			} else {
 				a.nonce = 0;
 
+				if v.kton != 0 || v.kton_reserved != 0 {
+					let aa = AssetAccount {
+						balance: v.kton,
+						is_frozen: false,
+						reason: ExistenceReason::Sufficient,
+						extra: (),
+					};
+
+					self.shell_state.0.insert(
+						full_key(b"AccountMigration", b"KtonAccount", &k),
+						encode_value(&aa),
+					);
+				}
+
 				self.shell_state
 					.0
 					.insert(full_key(b"AccountMigration", b"Accounts", &k), encode_value(a));
-
-				// TODO: migrate kton balances.
-				// 5. Give those kton asset to the `AccountMigration::KtonAccounts`, be careful
-				// about the pointers
 			}
 		});
 
