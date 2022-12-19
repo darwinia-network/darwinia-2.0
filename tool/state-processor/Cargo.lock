@@ -442,6 +442,7 @@ dependencies = [
  "array-bytes",
  "fxhash",
  "log",
+ "once_cell",
  "parity-scale-codec",
  "pretty_env_logger",
  "serde",

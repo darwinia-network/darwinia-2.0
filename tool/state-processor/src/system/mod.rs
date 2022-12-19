@@ -83,13 +83,15 @@ impl Processor {
 			ring_total_issuance += v.data.reserved;
 		});
 
+		log::info!("`ring_total_issuance({ring_total_issuance})`");
+		log::info!("`ring_total_issuance_storage({ring_total_issuance_storage})`");
+
 		log::info!("set `Balances::TotalIssuance`");
-		log::info!("ring_total_issuance({ring_total_issuance})");
-		log::info!("ring_total_issuance_storage({ring_total_issuance_storage})");
 		self.shell_state.insert_value(b"Balances", b"TotalIssuance", "", ring_total_issuance);
 
-		log::info!("kton_total_issuance({kton_total_issuance})");
-		log::info!("kton_total_issuance_storage({kton_total_issuance_storage})");
+		log::info!("`kton_total_issuance({kton_total_issuance})`");
+		log::info!("`kton_total_issuance_storage({kton_total_issuance_storage})`");
+
 		// TODO: set KTON total issuance
 
 		log::info!("update ring misc frozen and fee frozen");
@@ -134,13 +136,8 @@ impl Processor {
 			.take_map(b"Ethereum", b"RemainingRingBalance", &mut remaining_ring, get_hashed_key)
 			.take_map(b"Ethereum", b"RemainingKtonBalance", &mut remaining_kton, get_hashed_key);
 
-		log::info!("adjust solo balance decimals");
-		account_infos.iter_mut().for_each(|(_, v)| {
-			v.data.free *= GWEI;
-			v.data.reserved *= GWEI;
-			v.data.free_kton_or_misc_frozen *= GWEI;
-			v.data.reserved_kton_or_fee_frozen *= GWEI;
-		});
+		log::info!("adjust solo `AccountData`s");
+		account_infos.iter_mut().for_each(|(_, v)| v.data.adjust());
 
 		log::info!("merge solo remaining balances");
 		remaining_ring.into_iter().for_each(|(k, v)| {

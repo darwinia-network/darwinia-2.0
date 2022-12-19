@@ -4,6 +4,9 @@ mod staking;
 mod system;
 mod vesting;
 
+mod adjust;
+use adjust::*;
+
 mod type_registry;
 use type_registry::*;
 
@@ -13,16 +16,20 @@ use std::{
 	fs::File,
 	io::{Read, Write},
 	mem,
+	sync::RwLock,
 };
 // crates.io
 use anyhow::Result;
 use fxhash::FxHashMap;
+use once_cell::sync::Lazy;
 use parity_scale_codec::{Decode, Encode};
 use serde::de::DeserializeOwned;
 // hack-ink
 use subspector::ChainSpec;
 
 type Map<V> = FxHashMap<String, V>;
+
+static NOW: Lazy<RwLock<u32>> = Lazy::new(|| RwLock::new(0));
 
 fn main() -> Result<()> {
 	env::set_var("RUST_LOG", "state_processor");
@@ -52,6 +59,12 @@ impl Processor {
 	}
 
 	fn process(mut self) -> Result<()> {
+		self.solo_state.get_value(b"System", b"Number", "", &mut *NOW.write().unwrap());
+
+		let _guard = NOW.read().unwrap();
+
+		assert!(*_guard != 0);
+
 		self.process_system().process_vesting().process_staking().process_evm();
 
 		self.save()
@@ -126,14 +139,14 @@ impl State {
 		self
 	}
 
-	fn get_value<D>(&mut self, pallet: &[u8], item: &[u8], hash: &str, value: &mut D) -> &mut Self
+	fn get_value<D>(&self, pallet: &[u8], item: &[u8], hash: &str, value: &mut D) -> &Self
 	where
 		D: Decode,
 	{
 		let key = full_key(pallet, item, hash);
 
 		if let Some(v) = self.0.get(&key) {
-			match decode(&v) {
+			match decode(v) {
 				Ok(v) => *value = v,
 				Err(e) => log::warn!(
 					"failed to decode `{}::{}::{hash}({v})`, due to `{e}`",
@@ -226,6 +239,10 @@ impl State {
 
 		self
 	}
+
+	// fn transfer(&mut self, from: &str, to: &str, amount: u128) {}
+
+	// fn inc_consumers(&mut self, who: &str) {}
 }
 
 fn from_file<D>(path: &str) -> Result<D>
@@ -291,19 +308,4 @@ fn get_last_64(key: &str) -> String {
 
 fn replace_first_match(key: &str, from: &str, to: &str) -> String {
 	key.replacen(from, to, 1)
-}
-
-fn adjust_decimals(x: u128) -> u128 {
-	x * GWEI
-}
-
-fn adjust_block_time(pivot: u32, target: u32) -> u32 {
-	target.checked_sub(pivot).unwrap_or_default() / 2
-}
-
-#[test]
-fn adjust_block_time_should_work() {
-	[(0, 4, 2), (4, 2, 0), (4, 4, 0)].iter().for_each(|&(pivot, target, expected)| {
-		assert_eq!(adjust_block_time(pivot, target), expected);
-	});
 }

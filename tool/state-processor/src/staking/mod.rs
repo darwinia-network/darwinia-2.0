@@ -3,48 +3,50 @@ use crate::*;
 
 impl Processor {
 	pub fn process_staking(&mut self) -> &mut Self {
-		let mut solo_block_number = u32::default();
 		// Storage items.
 		// https://github.dev/darwinia-network/darwinia-common/blob/6a9392cfb9fe2c99b1c2b47d0c36125d61991bb7/frame/staking/src/lib.rs#L611
 		let mut ledgers = <Map<StakingLedger>>::default();
+		let mut ring_pool_storage = u128::default();
+		let mut kton_pool_storage = u128::default();
 		let mut ring_pool = u128::default();
 		let mut kton_pool = u128::default();
 
 		log::info!("take solo `Staking::Ledger`, `Staking::RingPool` and `Staking::KtonPool`");
 		self.solo_state
 			.take_map(b"Staking", b"Ledger", &mut ledgers, get_identity_key)
-			.take_value(b"Staking", b"RingPool", "", &mut ring_pool)
-			.take_value(b"Staking", b"KtonPool", "", &mut kton_pool);
+			.take_value(b"Staking", b"RingPool", "", &mut ring_pool_storage)
+			.take_value(b"Staking", b"KtonPool", "", &mut kton_pool_storage);
 
-		log::info!("get solo `System::Number`");
-		self.solo_state.get_value(b"System", b"Number", "", &mut solo_block_number);
-
-		log::info!("adjust decimals, convert ledger, adjust unstaking duration then set `AccountMigration::Ledgers`");
+		log::info!("adjust decimals and block number, convert ledger, adjust unstaking duration then set `AccountMigration::Ledgers` and `AccountMigration::Deposits`");
 		{
-			let staking_ik = item_key(b"Staking", b"Ledgers");
-			let deposit_ik = item_key(b"Deposit", b"Deposits");
+			let staking_ik = item_key(b"AccountMigration", b"Ledgers");
+			let deposit_ik = item_key(b"AccountMigration", b"Deposits");
 
-			ledgers.into_iter().for_each(|(_, v)| {
+			ledgers.into_iter().for_each(|(_, mut v)| {
+				v.adjust();
+
 				let hash_k = array_bytes::bytes2hex("", subhasher::blake2_128_concat(v.stash));
 				let deposit_k = format!("{deposit_ik}{hash_k}");
 				let staking_k = format!("{staking_ik}{hash_k}");
 				let mut staked_deposits = Vec::default();
 
 				if !v.deposit_items.is_empty() {
-					// TODO: account references
+					let mut deposit_ring = u128::default();
+
 					self.shell_state.insert_raw_key_value(
 						deposit_k,
 						v.deposit_items
 							.into_iter()
 							.enumerate()
 							.map(|(i, d)| {
-								let i = i as _;
+								let id = i as _;
 
-								staked_deposits.push(i);
+								staked_deposits.push(id);
+								deposit_ring += d.value;
 
 								Deposit {
-									id: i,
-									value: adjust_decimals(d.value),
+									id,
+									value: d.value,
 									expired_time: d.expire_time as _,
 									in_use: true,
 								}
@@ -52,6 +54,10 @@ impl Processor {
 							.collect::<Vec<_>>(),
 					);
 				}
+
+				ring_pool += v.active;
+				kton_pool += v.active_kton;
+
 				self.shell_state.insert_raw_key_value(
 					staking_k,
 					Ledger {
@@ -62,23 +68,13 @@ impl Processor {
 							.ring_staking_lock
 							.unbondings
 							.into_iter()
-							.map(|u| {
-								(
-									adjust_decimals(u.amount),
-									adjust_block_time(solo_block_number, u.until),
-								)
-							})
+							.map(|u| (u.amount, u.until))
 							.collect(),
 						unstaking_kton: v
 							.kton_staking_lock
 							.unbondings
 							.into_iter()
-							.map(|u| {
-								(
-									adjust_decimals(u.amount),
-									adjust_block_time(solo_block_number, u.until),
-								)
-							})
+							.map(|u| (u.amount, u.until))
 							.collect(),
 						unstaking_deposits: Default::default(),
 					},
@@ -86,12 +82,18 @@ impl Processor {
 			});
 		}
 
-		log::info!("adjust `ring_pool` and `kton_pool` balance decimals");
-		ring_pool = adjust_decimals(ring_pool);
-		kton_pool = adjust_decimals(kton_pool);
+		ring_pool_storage.adjust();
+		kton_pool_storage.adjust();
 
-		log::info!("{ring_pool}");
-		log::info!("{kton_pool}");
+		log::info!("`ring_pool({ring_pool})`");
+		log::info!("`ring_pool_storage({ring_pool_storage})`");
+		log::info!("`kton_pool({kton_pool})`");
+		log::info!("`kton_pool_storage({kton_pool_storage})`");
+
+		log::info!("set `Staking::RingPool` and `Staking::KtonPool`");
+		self.solo_state
+			.insert_value(b"Staking", b"RingPool", "", ring_pool)
+			.insert_value(b"Staking", b"KtonPool", "", kton_pool);
 
 		self
 	}
