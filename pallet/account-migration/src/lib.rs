@@ -180,7 +180,7 @@ pub mod pallet {
 					.concat(),
 					a.encode(),
 				);
-				// Unable to access to the upstream struct because of permission restriction.
+				// The upstream structure cannot be accessed due to permission restrictions.
 				#[derive(Debug, Encode, Decode)]
 				pub struct AssetDetails {
 					pub owner: AccountId20,
@@ -204,6 +204,14 @@ pub mod pallet {
 				) {
 					asset_details.accounts += 1;
 					asset_details.sufficients += 1;
+
+					// Fresh to new details
+					migration::put_storage_value(
+						b"Assets",
+						b"Asset",
+						&Blake2_128Concat::hash(&1026u64.encode()),
+						asset_details.encode(),
+					);
 				}
 			}
 
