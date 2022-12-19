@@ -1,6 +1,7 @@
 // crates.io
 use parity_scale_codec::{Decode, Encode};
 // parity
+use frame_support::{traits::ConstU32, BoundedVec};
 use sp_core::H160;
 
 pub const GWEI: u128 = 1_000_000_000;
@@ -13,6 +14,7 @@ pub struct AccountInfo {
 	pub sufficients: u32,
 	pub data: AccountData,
 }
+
 #[derive(Debug, Encode, Decode)]
 pub struct AccountData {
 	pub free: u128,
@@ -35,6 +37,7 @@ pub enum Reasons {
 	All = 2,
 }
 
+// https://github.dev/paritytech/substrate/blob/polkadot-v0.9.30/frame/assets/src/types.rs#L33
 #[derive(Debug, Encode, Decode)]
 pub struct AssetDetails {
 	pub owner: H160,
@@ -51,6 +54,7 @@ pub struct AssetDetails {
 	pub is_frozen: bool,
 }
 
+// https://github.dev/paritytech/substrate/blob/polkadot-v0.9.30/frame/assets/src/types.rs#L115
 #[derive(Debug, Encode, Decode)]
 pub struct AssetAccount {
 	pub balance: u128,
@@ -59,6 +63,7 @@ pub struct AssetAccount {
 	pub extra: (),
 }
 
+// https://github.dev/paritytech/substrate/blob/polkadot-v0.9.30/frame/assets/src/types.rs#L88
 #[derive(Debug, Encode, Decode)]
 pub enum ExistenceReason {
 	#[codec(index = 0)]
@@ -71,8 +76,18 @@ pub enum ExistenceReason {
 	DepositRefunded,
 }
 
+// https://github.dev/paritytech/substrate/blob/polkadot-v0.9.30/frame/assets/src/types.rs#L73
 #[derive(Debug, Encode, Decode)]
 pub struct Approval {
 	pub amount: u128,
 	pub deposit: u128,
+}
+
+#[derive(Clone, Encode, Decode)]
+pub struct AssetMetadata {
+	pub deposit: u128,
+	pub name: BoundedVec<u8, ConstU32<50>>,
+	pub symbol: BoundedVec<u8, ConstU32<50>>,
+	pub decimals: u8,
+	pub is_frozen: bool,
 }

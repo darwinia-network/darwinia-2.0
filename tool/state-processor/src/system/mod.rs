@@ -1,7 +1,8 @@
 // darwinia
 use crate::*;
-// parity
 use array_bytes::bytes2hex;
+use subhasher::blake2_128_concat;
+// parity
 use sp_core::{H160, U256};
 
 #[derive(Debug)]
@@ -100,8 +101,8 @@ impl Processor {
 			freezer: H160::from_low_u64_be(999), // TODO: update this
 			supply: kton_total_issuance,
 			deposit: 0,
-			min_balance: 0,
-			is_sufficient: true,
+			min_balance: 1,      // The same as the value in the runtime.
+			is_sufficient: true, // The same as the value in the runtime.
 			sufficients: 0,
 			accounts: 0,
 			approvals: 0,
@@ -111,6 +112,7 @@ impl Processor {
 		log::info!("update ring misc frozen and fee frozen");
 		log::info!("set `System::Account`");
 		log::info!("set `Balances::Locks`");
+		log::info!("set `Assets::Account` and `Assets::Approvals`");
 		accounts.into_iter().for_each(|(k, v)| {
 			let mut a = AccountInfo {
 				nonce: v.nonce,
@@ -126,7 +128,6 @@ impl Processor {
 			};
 
 			if is_evm_address(&k) {
-				log::info!("set `Assets::Account` and `Assets::Approvals`");
 				if v.kton != 0 || v.kton_reserved != 0 {
 					let aa = AssetAccount {
 						balance: v.kton,
@@ -145,13 +146,14 @@ impl Processor {
 							b"Account",
 							&format!(
 								"{}{}",
-								bytes2hex("", subhasher::blake2_128_concat(&1026u64.encode())),
+								bytes2hex("", blake2_128_concat(&1026u64.encode())),
 								&k
 							),
 						),
 						encode_value(&aa),
 					);
 
+					// https://github.dev/darwinia-network/darwinia-common/blob/6a9392cfb9fe2c99b1c2b47d0c36125d61991bb7/frame/dvm/evm/precompiles/kton/src/lib.rs#L72
 					let mut approves = Map::<U256>::default();
 					self.solo_state.take_map(
 						b"KtonERC20",
@@ -167,6 +169,8 @@ impl Processor {
 					});
 				}
 
+				// Kton migration will change the ref_count for the account, so the System Account
+				// should come next.
 				self.shell_state.0.insert(full_key(b"System", b"Account", &k), encode_value(a));
 			} else {
 				a.nonce = 0;
@@ -195,20 +199,22 @@ impl Processor {
 		log::info!("kton_total_issuance({kton_total_issuance})");
 		log::info!("kton_total_issuance_storage({kton_total_issuance_storage})");
 		self.shell_state.0.insert(
-			item_key(b"Assets", b"Asset"),
+			full_key(b"Assets", b"Asset", &bytes2hex("", blake2_128_concat(&1026u64.encode()))),
+			encode_value(kton_details),
+		);
+
+		log::info!("set `Assets::Metadata`");
+		self.shell_state.0.insert(
+			full_key(b"Assets", b"Metadata", &bytes2hex("", blake2_128_concat(&1026u64.encode()))),
 			encode_value(
-				AssetDetails {
-					owner: H160::from_low_u64_be(999),   // TODO: update this
-					issuer: H160::from_low_u64_be(999),  // TODO: update this
-					admin: H160::from_low_u64_be(999),   // TODO: update this
-					freezer: H160::from_low_u64_be(999), // TODO: update this
-					supply: kton_total_issuance,
+				AssetMetadata {
 					deposit: 0,
-					min_balance: 0,
-					is_sufficient: true,
-					sufficients: 0,
-					accounts: 0,
-					approvals: 0,
+					name: b"Darwinia Commitment Token"
+						.to_vec()
+						.try_into()
+						.expect("name.len() < string limits"),
+					symbol: b"KTON".to_vec().try_into().expect("symbol.len() < string limits"),
+					decimals: 18,
 					is_frozen: false,
 				}
 				.encode(),
@@ -286,12 +292,4 @@ fn verify_evm_address_checksum_should_work() {
 	// public-key 0x64766d3a00000000000000b7de7f8c52ac75e036d05fda53a75cf12714a76973
 	// Substrate 5ELRpquT7C3mWtjerpPfdmaGoSh12BL2gFCv2WczEcv6E1zL
 	assert!(is_evm_address("0x64766d3a00000000000000b7de7f8c52ac75e036d05fda53a75cf12714a76973"));
-}
-
-#[test]
-fn test_hash() {
-	assert_eq!(
-		array_bytes::bytes2hex("", subhasher::blake2_128_concat(&1026u64.encode())),
-		"15ffd708b25d8ed5477f01d3f9277c360204000000000000"
-	);
 }
