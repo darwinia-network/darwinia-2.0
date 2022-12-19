@@ -1,6 +1,8 @@
+// crates.io
+use array_bytes::bytes2hex;
 // darwinia
 use crate::*;
-use array_bytes::bytes2hex;
+// parity
 use frame_support::{Blake2_128Concat, StorageHasher};
 use sp_core::H160;
 
@@ -117,9 +119,6 @@ impl Processor {
 
 			match is_evm_addr(&key) {
 				(true, addr) => {
-					// https://github.com/paritytech/frontier/blob/master/frame/evm/src/lib.rs#L701
-					a.sufficients += 1;
-
 					self.shell_state.0.insert(
 						full_key(
 							b"System",
@@ -128,6 +127,7 @@ impl Processor {
 						),
 						encode_value(a),
 					);
+					// TODO: migrate kton balances.
 				},
 				(false, None) => {
 					a.nonce = 0;
