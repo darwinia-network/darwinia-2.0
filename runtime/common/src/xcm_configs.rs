@@ -109,8 +109,8 @@ impl ShouldExecute for DenyReserveTransferToRelayChain {
 	}
 }
 
-// Struct that converts a given MultiLocation into a 20 bytes account id by hashing
-// with blake2_256 and taking the first 20 bytes
+/// Struct that converts a given MultiLocation into a 20 bytes account id by hashing
+/// with blake2_256 and taking the first 20 bytes
 pub struct Account20Hash<AccountId>(PhantomData<AccountId>);
 impl<AccountId: From<[u8; 20]> + Into<[u8; 20]> + Clone> Convert<MultiLocation, AccountId>
 	for Account20Hash<AccountId>
