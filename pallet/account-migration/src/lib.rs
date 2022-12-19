@@ -125,25 +125,25 @@ pub mod pallet {
 	pub type Vestings<T: Config> =
 		StorageMap<_, Blake2_128Concat, AccountId32, Vec<VestingInfo<Balance, BlockNumber>>>;
 
-	/// [`pallet_identity::IdentityOf`] data.
+	/// [`pallet_identity::Registration`] data.
 	///
-	/// <https://github.com/paritytech/substrate/blob/polkadot-v0.9.30/frame/identity/src/lib.rs#L163>
+	/// <https://github.dev/paritytech/substrate/blob/polkadot-v0.9.30/frame/identity/src/lib.rs#L163>
 	#[pallet::storage]
 	#[pallet::getter(fn identity_of)]
-	pub(super) type IdentityOf<T: Config> = StorageMap<
+	pub type IdentityOf<T: Config> = StorageMap<
 		_,
 		Twox64Concat,
 		AccountId32,
 		Registration<Balance, ConstU32<100>, ConstU32<100>>,
 	>;
 
-	/// [`pallet_identity::Registrars`] data.
+	/// [`pallet_identity::RegistrarInfo`] data.
 	///
-	/// <https://github.com/paritytech/substrate/blob/polkadot-v0.9.30/frame/identity/src/lib.rs#L199>
+	/// <https://github.dev/paritytech/substrate/blob/polkadot-v0.9.30/frame/identity/src/lib.rs#L199>
 	#[pallet::storage]
 	#[pallet::unbounded]
 	#[pallet::getter(fn registrars)]
-	pub(super) type Registrars<T: Config> =
+	pub type Registrars<T: Config> =
 		StorageValue<_, Vec<Option<RegistrarInfo<Balance, AccountId32>>>, ValueQuery>;
 
 	// TODO: proxy storages
@@ -237,7 +237,7 @@ impl<T: Config> Pallet<T> {
 		let reasons = WithdrawReasons::TRANSFER | WithdrawReasons::RESERVE;
 
 		// https://github.dev/paritytech/substrate/blob/19162e43be45817b44c7d48e50d03f074f60fbf4/frame/vesting/src/lib.rs#L86
-		<pallet_balances::Pallet<T>>::set_lock(*b"vesting ", &to, locked, reasons);
+		<pallet_balances::Pallet<T>>::set_lock(*b"vesting ", to, locked, reasons);
 
 		Ok(())
 	}
@@ -248,12 +248,9 @@ impl<T: Config> Pallet<T> {
 			return Ok(());
 		};
 
-		put_storage_value(
-			b"Identity",
-			b"IdentityOf",
-			&Twox64Concat::hash(&to.encode()),
-			id.encode(),
-		);
+		let module = b"Identity".as_ref();
+		put_storage_value(module, b"IdentityOf", &Twox64Concat::hash(&to.encode()), id.encode());
+		// https://vscode.dev/github.com/paritytech/substrate/blob/a3ed0119c45cdd0d571ad34e5b3ee7518c8cef8d/frame/identity/src/lib.rs#L360
 		<pallet_balances::Pallet<T>>::reserve(to, id.deposit)?;
 
 		let mut chain_rs = <pallet_identity::Pallet<T>>::registrars().into_inner();
@@ -261,7 +258,7 @@ impl<T: Config> Pallet<T> {
 			if let Some(rs) = rs {
 				if rs.account == *from {
 					chain_rs.push(Some(RegistrarInfo {
-						account: to.clone(),
+						account: *to,
 						fee: rs.fee,
 						fields: rs.fields,
 					}));
@@ -270,7 +267,7 @@ impl<T: Config> Pallet<T> {
 				}
 			}
 
-			put_storage_value(b"Identity", b"Registrars", &[], chain_rs.encode());
+			put_storage_value(module, b"Registrars", &[], chain_rs.encode());
 		}
 		Ok(())
 	}
