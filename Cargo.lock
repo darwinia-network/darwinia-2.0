@@ -2304,7 +2304,6 @@ dependencies = [
 name = "darwinia-account-migration"
 version = "6.0.0"
 dependencies = [
- "array-bytes 4.2.0",
  "dc-primitives",
  "frame-support",
  "frame-system",

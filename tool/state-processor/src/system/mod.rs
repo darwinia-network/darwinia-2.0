@@ -109,7 +109,6 @@ impl Processor {
 			is_frozen: false,
 		};
 
-		log::info!("update ring misc frozen and fee frozen");
 		log::info!("set `System::Account`");
 		log::info!("set `Balances::Locks`");
 		log::info!("set `Assets::Account` and `Assets::Approvals`");
@@ -146,7 +145,7 @@ impl Processor {
 							b"Account",
 							&format!(
 								"{}{}",
-								bytes2hex("", blake2_128_concat(&1026u64.encode())),
+								bytes2hex("", blake2_128_concat(&KTON_ID.encode())),
 								&k
 							),
 						),
@@ -162,6 +161,7 @@ impl Processor {
 						get_hashed_key,
 					);
 					approves.iter().for_each(|(k, v)| {
+						kton_details.approvals += 1;
 						self.shell_state.0.insert(
 							full_key(b"Assets", b"Approvals", &k),
 							encode_value(Approval { amount: v.as_u128(), deposit: 0 }.encode()),
@@ -199,13 +199,13 @@ impl Processor {
 		log::info!("kton_total_issuance({kton_total_issuance})");
 		log::info!("kton_total_issuance_storage({kton_total_issuance_storage})");
 		self.shell_state.0.insert(
-			full_key(b"Assets", b"Asset", &bytes2hex("", blake2_128_concat(&1026u64.encode()))),
+			full_key(b"Assets", b"Asset", &bytes2hex("", blake2_128_concat(&KTON_ID.encode()))),
 			encode_value(kton_details),
 		);
 
 		log::info!("set `Assets::Metadata`");
 		self.shell_state.0.insert(
-			full_key(b"Assets", b"Metadata", &bytes2hex("", blake2_128_concat(&1026u64.encode()))),
+			full_key(b"Assets", b"Metadata", &bytes2hex("", blake2_128_concat(&KTON_ID.encode()))),
 			encode_value(
 				AssetMetadata {
 					deposit: 0,

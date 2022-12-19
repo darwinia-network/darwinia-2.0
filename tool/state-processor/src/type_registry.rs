@@ -5,6 +5,7 @@ use frame_support::{traits::ConstU32, BoundedVec};
 use sp_core::H160;
 
 pub const GWEI: u128 = 1_000_000_000;
+pub const KTON_ID: u64 = 1026;
 
 #[derive(Debug, Encode, Decode)]
 pub struct AccountInfo {
@@ -83,6 +84,7 @@ pub struct Approval {
 	pub deposit: u128,
 }
 
+// https://github.dev/paritytech/substrate/blob/polkadot-v0.9.30/frame/assets/src/types.rs#L127
 #[derive(Clone, Encode, Decode)]
 pub struct AssetMetadata {
 	pub deposit: u128,

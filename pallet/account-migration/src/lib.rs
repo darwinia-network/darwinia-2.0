@@ -48,7 +48,6 @@
 #[cfg(test)]
 mod tests;
 
-use array_bytes::bytes2hex;
 // darwinia
 use dc_primitives::{AccountId as AccountId20, Balance, BlockNumber, Index};
 // substrate
@@ -115,7 +114,9 @@ pub mod pallet {
 	pub type Accounts<T: Config> =
 		StorageMap<_, Identity, AccountId32, AccountInfo<Index, AccountData<Balance>>>;
 
-	/// TODO: add more comments
+	/// [`pallet_asset::AssetAccount`] data.
+	///
+	/// https://github.dev/paritytech/substrate/blob/polkadot-v0.9.30/frame/assets/src/types.rs#L115
 	#[pallet::storage]
 	#[pallet::getter(fn kton_account_of)]
 	pub type KtonAccounts<T: Config> =
@@ -179,6 +180,7 @@ pub mod pallet {
 					.concat(),
 					a.encode(),
 				);
+				// Unable to access to the upstream struct because of permission restriction.
 				#[derive(Debug, Encode, Decode)]
 				pub struct AssetDetails {
 					pub owner: AccountId20,
