@@ -24,6 +24,5 @@ substorager = { git = "https://github.com/hack-ink/subalfred" }
 frame-support = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
 sp-core       = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
 
-
 [workspace]
 exclude = []
