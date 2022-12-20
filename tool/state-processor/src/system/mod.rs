@@ -111,8 +111,15 @@ impl Processor {
 			};
 
 			if let Some(k) = try_get_evm_address(&key) {
-				// If this account is a contract address, then we should update the suffcient.
-				
+				// If the evm account is a contract contract, then we should increase the
+				// sufficients by one.
+				if self.solo_state.contains_key(&full_key(
+					b"EVM",
+					b"AccountCodes",
+					&array_bytes::bytes2hex("", subhasher::blake2_128_concat(k)),
+				)) {
+					a.sufficients += 1;
+				}
 
 				self.shell_state.insert_value(
 					b"System",
