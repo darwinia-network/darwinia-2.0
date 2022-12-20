@@ -98,7 +98,7 @@ impl Processor {
 		log::info!("`kton_pool_storage({kton_pool_storage})`");
 
 		log::info!("set `Staking::RingPool` and `Staking::KtonPool`");
-		self.solo_state.insert_value(b"Staking", b"RingPool", "", ring_pool).insert_value(
+		self.shell_state.insert_value(b"Staking", b"RingPool", "", ring_pool).insert_value(
 			b"Staking",
 			b"KtonPool",
 			"",
@@ -106,7 +106,7 @@ impl Processor {
 		);
 
 		log::info!("set `Staking::ElapsedTime`");
-		self.solo_state.insert_value(b"Staking", b"ElapsedTime", "", elapsed_time as u128);
+		self.shell_state.insert_value(b"Staking", b"ElapsedTime", "", elapsed_time as u128);
 
 		self
 	}
