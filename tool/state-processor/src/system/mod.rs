@@ -17,11 +17,9 @@ pub struct AccountAll {
 }
 
 impl Processor {
-	// System storage items.
-	// https://github.com/paritytech/substrate/blob/polkadot-v0.9.16/frame/system/src/lib.rs#L545-L639
-	// Balances storage items.
-	// https://github.com/paritytech/substrate/blob/polkadot-v0.9.16/frame/balances/src/lib.rs#L486-L535
 	pub fn process_system(&mut self) -> &mut Self {
+		// System storage items.
+		// https://github.dev/darwinia-network/substrate/blob/darwinia-v0.12.5/frame/system/src/lib.rs#L545
 		let solo_account_infos = self.process_solo_account_infos();
 		let para_account_infos = self.process_para_account_infos();
 		let (ring_total_issuance_storage, kton_total_issuance_storage) = self.process_balances();

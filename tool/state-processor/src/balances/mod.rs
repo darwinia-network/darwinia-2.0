@@ -5,6 +5,9 @@ type Locks = Vec<BalanceLock>;
 
 impl Processor {
 	pub fn process_balances(&mut self) -> (u128, u128) {
+		// Balances storage items.
+		// https://github.dev/darwinia-network/substrate/blob/darwinia-v0.12.5/frame/balances/src/lib.rs#L486
+
 		let mut solo_ring_total_issuance = u128::default();
 		let mut solo_kton_total_issuance = u128::default();
 		let mut solo_ring_locks = <Map<Locks>>::default();

@@ -1,7 +1,7 @@
 // darwinia
 use crate::*;
 
-// https://github.com/paritytech/frontier/blob/polkadot-v0.9.30/primitives/storage/src/lib.rs#L23
+// https://github.dev/paritytech/frontier/blob/polkadot-v0.9.30/primitives/storage/src/lib.rs#L23
 const PALLET_ETHEREUM_SCHEMA: &str = "0x3a657468657265756d5f736368656d61";
 
 impl Processor {
@@ -16,7 +16,7 @@ impl Processor {
 		self.process_ethereum_schema();
 
 		// Storage items.
-		// https://github.com/paritytech/frontier/blob/aca04f2269a9d6da2011f0c04069f0354fab01a1/frame/evm/src/lib.rs#L495-L502
+		// https://github.dev/darwinia-network/frontier/blob/darwinia-v0.12.5/frame/evm/src/lib.rs#L407
 		let mut account_codes = Map::default();
 		let mut account_storages = Map::default();
 
