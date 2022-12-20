@@ -16,10 +16,10 @@
 // You should have received a copy of the GNU General Public License
 // along with Darwinia. If not, see <https://www.gnu.org/licenses/>.
 
-// crates.io
-use codec::Encode;
 // core
 use core::marker::PhantomData;
+// crates.io
+use codec::Encode;
 // darwinia
 use dc_primitives::GWEI;
 // polkadot
