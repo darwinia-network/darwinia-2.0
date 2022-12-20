@@ -1,8 +1,5 @@
 // crates.io
 use parity_scale_codec::{Decode, Encode};
-// parity
-use frame_support::{traits::ConstU32, BoundedVec};
-use sp_core::H160;
 
 pub const GWEI: u128 = 1_000_000_000;
 pub const KTON_ID: u64 = 1026;
@@ -41,10 +38,10 @@ pub enum Reasons {
 // https://github.dev/paritytech/substrate/blob/polkadot-v0.9.30/frame/assets/src/types.rs#L33
 #[derive(Debug, Encode, Decode)]
 pub struct AssetDetails {
-	pub owner: H160,
-	pub issuer: H160,
-	pub admin: H160,
-	pub freezer: H160,
+	pub owner: [u8; 20],
+	pub issuer: [u8; 20],
+	pub admin: [u8; 20],
+	pub freezer: [u8; 20],
 	pub supply: u128,
 	pub deposit: u128,
 	pub min_balance: u128,
@@ -88,8 +85,8 @@ pub struct Approval {
 #[derive(Clone, Encode, Decode)]
 pub struct AssetMetadata {
 	pub deposit: u128,
-	pub name: BoundedVec<u8, ConstU32<50>>,
-	pub symbol: BoundedVec<u8, ConstU32<50>>,
+	pub name: Vec<u8>,
+	pub symbol: Vec<u8>,
 	pub decimals: u8,
 	pub is_frozen: bool,
 }

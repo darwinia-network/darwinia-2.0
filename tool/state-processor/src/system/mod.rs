@@ -2,8 +2,6 @@
 use crate::*;
 use array_bytes::bytes2hex;
 use subhasher::blake2_128_concat;
-// parity
-use sp_core::{H160, U256};
 
 #[derive(Debug)]
 pub struct AccountAll {
@@ -95,10 +93,10 @@ impl Processor {
 			.insert(item_key(b"Balances", b"TotalIssuance"), encode_value(ring_total_issuance));
 
 		let mut kton_details = AssetDetails {
-			owner: H160::from_low_u64_be(999),   // TODO: update this
-			issuer: H160::from_low_u64_be(999),  // TODO: update this
-			admin: H160::from_low_u64_be(999),   // TODO: update this
-			freezer: H160::from_low_u64_be(999), // TODO: update this
+			owner: [1u8; 20],   // TODO: update this
+			issuer: [1u8; 20],  // TODO: update this
+			admin: [1u8; 20],   // TODO: update this
+			freezer: [1u8; 20], // TODO: update this
 			supply: kton_total_issuance,
 			deposit: 0,
 			min_balance: 1,      // The same as the value in the runtime.
