@@ -13,9 +13,8 @@ impl Processor {
 		log::info!("adjust solo `VestingInfo`s");
 		vestings.iter_mut().for_each(|(_, v)| v.adjust());
 
+		log::info!("set `AccountMigration::Vestings`");
 		{
-			log::info!("set `AccountMigration::Vestings`");
-
 			let ik = item_key(b"AccountMigration", b"Vestings");
 
 			self.shell_state.insert_map(vestings, |h| format!("{ik}{h}"));
