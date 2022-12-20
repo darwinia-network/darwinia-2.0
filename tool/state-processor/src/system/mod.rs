@@ -1,8 +1,8 @@
 // darwinia
 use crate::*;
 use array_bytes::bytes2hex;
-use subhasher::blake2_128_concat;
 use sp_core::U256;
+use subhasher::blake2_128_concat;
 
 #[derive(Debug)]
 pub struct AccountAll {
@@ -136,18 +136,16 @@ impl Processor {
 					kton_details.accounts += 1;
 					kton_details.sufficients += 1;
 					// Note: this is double map structure in the pallet-assets.
-					// self.shell_state.0.insert(
-					// 	full_key(
-					// 		b"Assets",
-					// 		b"Account",
-					// 		&format!(
-					// 			"{}{}",
-					// 			bytes2hex("", blake2_128_concat(&KTON_ID.encode())),
-					// 			&k
-					// 		),
-					// 	),
-					// 	encode_value(&aa),
-					// );
+					self.shell_state.insert_value(
+						b"Assets",
+						b"Account",
+						&format!(
+							"{}{}",
+							bytes2hex("", blake2_128_concat(&KTON_ID.encode())),
+							bytes2hex("", blake2_128_concat(&k.encode())),
+						),
+						&aa,
+					);
 
 					// https://github.dev/darwinia-network/darwinia-common/blob/6a9392cfb9fe2c99b1c2b47d0c36125d61991bb7/frame/dvm/evm/precompiles/kton/src/lib.rs#L72
 					let mut approves = Map::<U256>::default();
@@ -159,9 +157,11 @@ impl Processor {
 					);
 					approves.iter().for_each(|(k, v)| {
 						kton_details.approvals += 1;
-						self.shell_state.0.insert(
-							full_key(b"Assets", b"Approvals", &k),
-							encode_value(Approval { amount: v.as_u128(), deposit: 0 }.encode()),
+						self.shell_state.insert_value(
+							b"Assets",
+							b"Approvals",
+							&k,
+							Approval { amount: v.as_u128(), deposit: 0 },
 						);
 					});
 				}
@@ -169,10 +169,9 @@ impl Processor {
 				self.shell_state.insert_value(
 					b"System",
 					b"Account",
-					&array_bytes::bytes2hex("", subhasher::blake2_128_concat(k)),
+					&array_bytes::bytes2hex("", blake2_128_concat(k)),
 					a,
 				);
-			// TODO: migrate kton balances.
 			} else {
 				a.nonce = 0;
 
@@ -184,10 +183,7 @@ impl Processor {
 						extra: (),
 					};
 
-					self.shell_state.0.insert(
-						full_key(b"AccountMigration", b"KtonAccounts", &k),
-						encode_value(&aa),
-					);
+					self.shell_state.insert_value(b"AccountMigration", b"KtonAccounts", &k, &aa);
 				}
 
 				self.shell_state.insert_value(
@@ -202,27 +198,25 @@ impl Processor {
 		log::info!("set `Assets::Asset`");
 		log::info!("kton_total_issuance({kton_total_issuance})");
 		log::info!("kton_total_issuance_storage({kton_total_issuance_storage})");
-		self.shell_state.0.insert(
-			full_key(b"Assets", b"Asset", &bytes2hex("", blake2_128_concat(&KTON_ID.encode()))),
-			encode_value(kton_details),
+		self.shell_state.insert_value(
+			b"Assets",
+			b"Asset",
+			&bytes2hex("", blake2_128_concat(&KTON_ID.encode())),
+			kton_details,
 		);
 
 		log::info!("set `Assets::Metadata`");
-		self.shell_state.0.insert(
-			full_key(b"Assets", b"Metadata", &bytes2hex("", blake2_128_concat(&KTON_ID.encode()))),
-			encode_value(
-				AssetMetadata {
-					deposit: 0,
-					name: b"Darwinia Commitment Token"
-						.to_vec()
-						.try_into()
-						.expect("name.len() < string limits"),
-					symbol: b"KTON".to_vec().try_into().expect("symbol.len() < string limits"),
-					decimals: 18,
-					is_frozen: false,
-				}
-				.encode(),
-			),
+		self.shell_state.insert_value(
+			b"Assets",
+			b"Metadata",
+			&bytes2hex("", blake2_128_concat(&KTON_ID.encode())),
+			AssetMetadata {
+				deposit: 0,
+				name: b"Darwinia Commitment Token".to_vec(),
+				symbol: b"KTON".to_vec(),
+				decimals: 18,
+				is_frozen: false,
+			},
 		);
 
 		self
