@@ -2329,6 +2329,9 @@ dependencies = [
  "frame-support",
  "frame-system",
  "pallet-collective",
+ "parity-scale-codec",
+ "sp-io",
+ "sp-std",
  "xcm",
  "xcm-executor",
 ]
