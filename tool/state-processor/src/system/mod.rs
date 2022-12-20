@@ -89,10 +89,10 @@ impl Processor {
 		self.shell_state.insert_value(b"Balances", b"TotalIssuance", "", ring_total_issuance);
 
 		let mut kton_details = AssetDetails {
-			owner: [1u8; 20],   // TODO: update this
-			issuer: [1u8; 20],  // TODO: update this
-			admin: [1u8; 20],   // TODO: update this
-			freezer: [1u8; 20], // TODO: update this
+			owner: ROOT,
+			issuer: ROOT,
+			admin: ROOT,
+			freezer: ROOT,
 			supply: kton_total_issuance,
 			deposit: 0,
 			min_balance: 1,      // The same as the value in the runtime.

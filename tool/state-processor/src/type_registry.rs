@@ -3,6 +3,8 @@ use parity_scale_codec::{Decode, Encode};
 
 pub const GWEI: u128 = 1_000_000_000;
 pub const KTON_ID: u64 = 1026;
+https://github.com/darwinia-network/darwinia-2.0/blob/main/runtime/common/src/gov_origin.rs#L46
+pub const ROOT: [u8; 20] = [0x72, 0x6f, 0x6f, 0x74, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 
 #[derive(Debug, Encode, Decode)]
 pub struct AccountInfo {

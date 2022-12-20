@@ -56,8 +56,8 @@ use dc_primitives::{AccountId as AccountId20, Balance, BlockNumber, Index};
 use frame_support::{
 	log, migration,
 	pallet_prelude::*,
-	Blake2_128Concat, StorageHasher,
 	traits::{Currency, ExistenceRequirement::KeepAlive, LockableCurrency, WithdrawReasons},
+	StorageHasher,
 };
 use frame_system::{pallet_prelude::*, AccountInfo};
 use pallet_assets::AssetAccount;
