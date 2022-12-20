@@ -111,6 +111,9 @@ impl Processor {
 			};
 
 			if let Some(k) = try_get_evm_address(&key) {
+				// If this account is a contract address, then we should update the suffcient.
+				
+
 				self.shell_state.insert_value(
 					b"System",
 					b"Account",
