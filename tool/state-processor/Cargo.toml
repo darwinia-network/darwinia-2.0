@@ -22,7 +22,7 @@ subspector  = { git = "https://github.com/hack-ink/subalfred" }
 substorager = { git = "https://github.com/hack-ink/subalfred" }
 
 # parity
-sp-core       = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
 
 [workspace]
 exclude = []

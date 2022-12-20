@@ -1,6 +1,5 @@
 // darwinia
 use crate::*;
-use array_bytes::bytes2hex;
 use sp_core::U256;
 use subhasher::blake2_128_concat;
 
@@ -141,8 +140,8 @@ impl Processor {
 						b"Account",
 						&format!(
 							"{}{}",
-							bytes2hex("", blake2_128_concat(&KTON_ID.encode())),
-							bytes2hex("", blake2_128_concat(&k.encode())),
+							array_bytes::bytes2hex("", blake2_128_concat(&KTON_ID.encode())),
+							array_bytes::bytes2hex("", blake2_128_concat(&k.encode())),
 						),
 						&aa,
 					);
@@ -189,7 +188,7 @@ impl Processor {
 				self.shell_state.insert_value(
 					b"AccountMigration",
 					b"Accounts",
-					&array_bytes::bytes2hex("", subhasher::blake2_128_concat(k)),
+					&array_bytes::bytes2hex("", blake2_128_concat(k)),
 					a,
 				);
 			}
@@ -201,7 +200,7 @@ impl Processor {
 		self.shell_state.insert_value(
 			b"Assets",
 			b"Asset",
-			&bytes2hex("", blake2_128_concat(&KTON_ID.encode())),
+			&array_bytes::bytes2hex("", blake2_128_concat(&KTON_ID.encode())),
 			kton_details,
 		);
 
@@ -209,7 +208,7 @@ impl Processor {
 		self.shell_state.insert_value(
 			b"Assets",
 			b"Metadata",
-			&bytes2hex("", blake2_128_concat(&KTON_ID.encode())),
+			&array_bytes::bytes2hex("", blake2_128_concat(&KTON_ID.encode())),
 			AssetMetadata {
 				deposit: 0,
 				name: b"Darwinia Commitment Token".to_vec(),
