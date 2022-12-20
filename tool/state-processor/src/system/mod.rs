@@ -98,6 +98,7 @@ impl Processor {
 		log::info!("set `System::Account`");
 		log::info!("set `Balances::Locks`");
 		accounts.into_iter().for_each(|(k, v)| {
+			let key = get_last_64(&k);
 			let mut a = AccountInfo {
 				nonce: v.nonce,
 				consumers: v.consumers,
@@ -111,14 +112,23 @@ impl Processor {
 				},
 			};
 
-			if is_evm_address(&k) {
-				self.shell_state.insert_value(b"System", b"Account", &k, a);
-
+			if let Some(k) = try_get_evm_address(&key) {
+				self.shell_state.insert_value(
+					b"System",
+					b"Account",
+					&array_bytes::bytes2hex("", subhasher::blake2_128_concat(k)),
+					a,
+				);
 			// TODO: migrate kton balances.
 			} else {
 				a.nonce = 0;
 
-				self.shell_state.insert_value(b"AccountMigration", b"Accounts", &k, a);
+				self.shell_state.insert_value(
+					b"AccountMigration",
+					b"Accounts",
+					&array_bytes::bytes2hex("", subhasher::blake2_128_concat(k)),
+					a,
+				);
 			}
 		});
 
@@ -174,11 +184,14 @@ impl Processor {
 	}
 }
 
-fn is_evm_address(address: &str) -> bool {
-	let address = array_bytes::hex2bytes_unchecked(address);
+fn try_get_evm_address(key: &str) -> Option<[u8; 20]> {
+	let k = array_bytes::hex2bytes_unchecked(key);
 
-	address.starts_with(b"dvm:")
-		&& address[1..31].iter().fold(address[0], |checksum, &byte| checksum ^ byte) == address[31]
+	if k.starts_with(b"dvm:") && k[1..31].iter().fold(k[0], |checksum, &b| checksum ^ b) == k[31] {
+		Some(array_bytes::slice2array_unchecked(&k[11..31]))
+	} else {
+		None
+	}
 }
 
 #[test]
@@ -187,5 +200,9 @@ fn verify_evm_address_checksum_should_work() {
 	// sub-seed
 	// public-key 0x64766d3a00000000000000b7de7f8c52ac75e036d05fda53a75cf12714a76973
 	// Substrate 5ELRpquT7C3mWtjerpPfdmaGoSh12BL2gFCv2WczEcv6E1zL
-	assert!(is_evm_address("0x64766d3a00000000000000b7de7f8c52ac75e036d05fda53a75cf12714a76973"));
+	assert_eq!(
+		try_get_evm_address("0x64766d3a00000000000000b7de7f8c52ac75e036d05fda53a75cf12714a76973")
+			.unwrap(),
+		array_bytes::hex2array_unchecked::<_, 20>("0xb7de7f8c52ac75e036d05fda53a75cf12714a769")
+	);
 }
