@@ -7,6 +7,7 @@ pub trait Adjust {
 
 impl Adjust for u32 {
 	fn adjust(&mut self) {
+		// https://github.com/darwinia-network/darwinia-2.0/issues/78
 		*self = self.checked_sub(*NOW.read().unwrap()).unwrap_or_default() / 2;
 	}
 }
