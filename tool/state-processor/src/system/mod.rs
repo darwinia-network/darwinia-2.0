@@ -1,6 +1,5 @@
 // darwinia
 use crate::*;
-use sp_core::U256;
 use subhasher::blake2_128_concat;
 
 #[derive(Debug)]
@@ -147,7 +146,7 @@ impl Processor {
 					);
 
 					// https://github.dev/darwinia-network/darwinia-common/blob/6a9392cfb9fe2c99b1c2b47d0c36125d61991bb7/frame/dvm/evm/precompiles/kton/src/lib.rs#L72
-					let mut approves = Map::<U256>::default();
+					let mut approves = Map::<primitive_types::U256>::default();
 					self.solo_state.take_map(
 						b"KtonERC20",
 						b"Approves",
