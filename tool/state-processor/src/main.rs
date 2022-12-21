@@ -1,5 +1,6 @@
 mod balances;
 mod evm;
+mod indices;
 mod staking;
 mod system;
 mod vesting;
@@ -65,7 +66,7 @@ impl Processor {
 
 		assert!(*_guard != 0);
 
-		self.process_system().process_vesting().process_staking().process_evm();
+		self.process_system().process_indices().process_vesting().process_staking().process_evm();
 
 		self.save()
 	}
@@ -188,6 +189,22 @@ impl State {
 		self
 	}
 
+	fn mutate_value<D, F>(&mut self, pallet: &[u8], item: &[u8], hash: &str, f: F) -> &mut Self
+	where
+		D: Default + Encode + Decode,
+		F: FnOnce(&mut D),
+	{
+		let mut v = D::default();
+
+		self.get_value(pallet, item, hash, &mut v);
+
+		f(&mut v);
+
+		self.insert_value(pallet, item, hash, v);
+
+		self
+	}
+
 	fn take_map<D, F>(
 		&mut self,
 		pallet: &[u8],
@@ -240,9 +257,24 @@ impl State {
 		self
 	}
 
+	// fn inc_consumers(&mut self, who: &str) {}
+
 	// fn transfer(&mut self, from: &str, to: &str, amount: u128) {}
 
-	// fn inc_consumers(&mut self, who: &str) {}
+	fn unreserve<A>(&mut self, who: A, amount: u128)
+	where
+		A: AsRef<[u8]>,
+	{
+		self.mutate_value(
+			b"System",
+			b"Account",
+			&blake2_128_concat_to_string(who),
+			|a: &mut AccountInfo| {
+				a.data.free += amount;
+				a.data.reserved -= amount;
+			},
+		);
+	}
 }
 
 fn from_file<D>(path: &str) -> Result<D>
@@ -302,4 +334,11 @@ fn get_last_64(key: &str) -> String {
 
 fn replace_first_match(key: &str, from: &str, to: &str) -> String {
 	key.replacen(from, to, 1)
+}
+
+fn blake2_128_concat_to_string<D>(data: D) -> String
+where
+	D: AsRef<[u8]>,
+{
+	array_bytes::bytes2hex("", subhasher::blake2_128_concat(data))
 }
