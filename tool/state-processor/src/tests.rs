@@ -116,6 +116,75 @@ fn account_adjust_with_remaining_balance_solo_account() {
 }
 
 #[test]
+fn evm_account_adjust() {
+	run_test(|tester| {
+		// https://crab.subscan.io/account/0x740d5718a79A8559fEeE8B00922F8Cd773A81D84(5ELRpquT7C3mWtjeqR9f69c4swcFDHAfYC9wP5JSDg8rJHxZ)
+		let addr: [u8; 32] = hex_n_into_unchecked::<_, _, 32>(
+			"0x64766d3a00000000000000740d5718a79a8559feee8b00922f8cd773a81d84ad",
+		);
+
+		let mut account_info = AccountInfo::default();
+		tester.solo_state.get_value(
+			b"System",
+			b"Account",
+			&bytes2hex("", subhasher::blake2_128_concat(&addr)),
+			&mut account_info,
+		);
+		assert_ne!(account_info.nonce, 0);
+		assert_ne!(account_info.data.free, 0);
+
+		// after migrate
+		let migrate_addr: [u8; 20] =
+			hex_n_into_unchecked::<_, _, 20>("0x740d5718a79A8559fEeE8B00922F8Cd773A81D84");
+		let mut migrated_account_info = AccountInfo::default();
+		tester.processed_state.get_value(
+			b"System",
+			b"Account",
+			&bytes2hex("", subhasher::blake2_128_concat(&migrate_addr)),
+			&mut migrated_account_info,
+		);
+		// assert the nonce doesn't changed.
+		assert_eq!(migrated_account_info.nonce, account_info.nonce);
+		assert_eq!(migrated_account_info.consumers, account_info.consumers);
+		assert_eq!(migrated_account_info.providers, account_info.providers);
+		assert_eq!(migrated_account_info.sufficients, account_info.sufficients);
+		assert_eq!(migrated_account_info.data.free, account_info.data.free * GWEI);
+	});
+}
+
+#[test]
+#[ignore]
+fn evm_contract_account_adjust_sufficients() {
+	run_test(|tester| {
+		// https://crab.subscan.io/account/0x0050f880c35c31c13bfd9cbb7d28aafaeca3abd2(5ELRpquT7C3mWtjeo2WC5kAYFWzyRP2h55XDwo8ogDNkjm4h)
+		let addr: [u8; 32] = hex_n_into_unchecked::<_, _, 32>(
+			"0x64766d3a000000000000000050f880c35c31c13bfd9cbb7d28aafaeca3abd2d0",
+		);
+
+		let mut account_info = AccountInfo::default();
+		tester.solo_state.get_value(
+			b"System",
+			b"Account",
+			&bytes2hex("", subhasher::blake2_128_concat(&addr)),
+			&mut account_info,
+		);
+		assert_eq!(account_info.sufficients, 0);
+
+		// after migrated
+		let migrate_addr: [u8; 20] =
+			hex_n_into_unchecked::<_, _, 20>("0x0050f880c35c31c13bfd9cbb7d28aafaeca3abd2");
+		let mut migrated_account_info = AccountInfo::default();
+		tester.processed_state.get_value(
+			b"System",
+			b"Account",
+			&bytes2hex("", subhasher::blake2_128_concat(&migrate_addr)),
+			&mut migrated_account_info,
+		);
+		assert_eq!(account_info.sufficients, 1);
+	});
+}
+
+#[test]
 fn account_adjust_for_both_solo_and_para_chain_account() {}
 
 #[test]
@@ -145,18 +214,38 @@ fn kton_total_issuance() {}
 #[test]
 fn special_accounts() {}
 
-#[test]
-fn nonce_adjust_for_account_id_32() {}
-
-#[test]
-fn nonce_adjust_for_evm_account() {}
-
 // --- EVM & Ethereum ---
 
 #[test]
-fn evm_code_migrate() {}
+fn evm_code_migrate() {
+	run_test(|tester| {
+		// https://crab.subscan.io/account/0x0050f880c35c31c13bfd9cbb7d28aafaeca3abd2
+		let addr: [u8; 20] =
+			hex_n_into_unchecked::<_, _, 20>("0x0050f880c35c31c13bfd9cbb7d28aafaeca3abd2");
+		let mut code = Vec::<u8>::new();
+		tester.solo_state.get_value(
+			b"EVM",
+			b"AccountCodes",
+			&bytes2hex("", subhasher::blake2_128_concat(&addr)),
+			&mut code,
+		);
+		assert_ne!(code.len(), 0);
+
+		// after migrate
+		let mut migrated_code = Vec::<u8>::new();
+		tester.processed_state.get_value(
+			b"Evm",
+			b"AccountCodes",
+			&bytes2hex("", subhasher::blake2_128_concat(&addr)),
+			&mut migrated_code,
+		);
+		assert_eq!(code, migrated_code);
+	});
+}
 
 #[test]
 fn evm_account_storage_migrate() {}
 
 // --- Staking ---
+
+// --- Vesting ---
