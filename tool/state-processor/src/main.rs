@@ -10,6 +10,9 @@ use adjust::*;
 mod type_registry;
 use type_registry::*;
 
+#[cfg(test)]
+mod tests;
+
 // std
 use std::{
 	env,
@@ -51,8 +54,8 @@ impl Processor {
 		let mut shell_chain_spec = from_file::<ChainSpec>("test-data/shell.json")?;
 
 		Ok(Self {
-			solo_state: State::from_file("test-data/solo.json")?,
-			para_state: State::from_file("test-data/para.json")?,
+			solo_state: State::from_file("test-data/crab.json")?,
+			para_state: State::from_file("test-data/pangolin-parachain.json")?,
 			shell_state: State(mem::take(&mut shell_chain_spec.genesis.raw.top)),
 			shell_chain_spec,
 		})
@@ -84,7 +87,7 @@ impl Processor {
 	}
 }
 
-struct State(Map<String>);
+pub struct State(Map<String>);
 impl State {
 	fn from_file(path: &str) -> Result<Self> {
 		Ok(Self(from_file::<ChainSpec>(path)?.genesis.raw.top))
