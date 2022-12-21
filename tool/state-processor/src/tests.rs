@@ -31,8 +31,10 @@ where
 	assert!(result.is_ok())
 }
 
+// --- System ---
+
 #[test]
-fn balance_ring_adjust_for_only_solo_chain_account() {
+fn account_adjust_for_only_solo_chain_account() {
 	run_test(|tester| {
 		// https://crab.subscan.io/account/5F2CnHR4JDJW4RXqXhH7dpk4tQuu2qCf7UPzZLX4exDg9VxE
 		let addr: [u8; 32] = hex_n_into_unchecked::<_, _, 32>(
@@ -90,10 +92,28 @@ fn balance_ring_adjust_for_only_solo_chain_account() {
 }
 
 #[test]
-fn balance_adjust_for_both_solo_and_para_chain_account() {}
+fn account_adjust_for_both_solo_and_para_chain_account() {}
 
 #[test]
-fn ring_total_issuance() {}
+fn ring_total_issuance() {
+	run_test(|tester| {
+		let mut total_issuance = u128::default();
+		tester.solo_state.get_value(b"Balances", b"TotalIssuance", "", &mut total_issuance);
+		assert_ne!(total_issuance, 0);
+
+		// after migrate
+		let mut migrated_total_issuance = u128::default();
+		tester.processed_state.get_value(
+			b"Balances",
+			b"TotalIssuance",
+			"",
+			&mut migrated_total_issuance,
+		);
+
+		// TODO: (2230295244267321287000000000, 2230419970862321271000000000)
+		// assert_eq!(total_issuance * GWEI, migrated_total_issuance);
+	});
+}
 
 #[test]
 fn kton_total_issuance() {}
