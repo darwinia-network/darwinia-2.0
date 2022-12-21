@@ -150,6 +150,7 @@ impl State {
 		println!("bear: --- key: {:?}", key);
 
 		if let Some(v) = self.0.get(&key) {
+			println!("bear: --- value: {:?}", v);
 			match decode(v) {
 				Ok(v) => *value = v,
 				Err(e) => log::warn!(
@@ -158,6 +159,8 @@ impl State {
 					String::from_utf8_lossy(item),
 				),
 			}
+		} else {
+			println!("bear: --- Cannot find the key");
 		}
 
 		self
