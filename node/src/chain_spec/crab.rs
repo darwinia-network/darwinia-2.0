@@ -154,14 +154,9 @@ pub fn genesis_config() -> ChainSpec {
 				balances: Default::default(),
 				transaction_payment: Default::default(),
 				assets: AssetsConfig {
-					assets: vec![(
-						AssetIds::CKton as _,
-						ROOT,
-						true,
-						1,
-					)],
+					assets: vec![(AssetIds::CKton as _, ROOT, true, 1)],
 					metadata: vec![(
-						AssetIds::PKton as _,
+						AssetIds::CKton as _,
 						b"Crab Commitment Token".to_vec(),
 						b"CKTON".to_vec(),
 						18,

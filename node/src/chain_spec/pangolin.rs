@@ -154,12 +154,7 @@ pub fn genesis_config() -> ChainSpec {
 				balances: Default::default(),
 				transaction_payment: Default::default(),
 				assets: AssetsConfig {
-					assets: vec![(
-						AssetIds::PKton as _,
-						ROOT,
-						true,
-						1,
-					)],
+					assets: vec![(AssetIds::PKton as _, ROOT, true, 1)],
 					metadata: vec![(
 						AssetIds::PKton as _,
 						b"Pangolin Commitment Token".to_vec(),
@@ -240,20 +235,15 @@ fn testnet_genesis(
 		},
 		transaction_payment: Default::default(),
 		assets: AssetsConfig {
-					assets: vec![(
-						AssetIds::PKton as _,
-						ROOT,
-						true,
-						1,
-					)],
-					metadata: vec![(
-						AssetIds::PKton as _,
-						b"Pangolin Commitment Token".to_vec(),
-						b"PKTON".to_vec(),
-						18,
-					)],
-					..Default::default()
-				},
+			assets: vec![(AssetIds::PKton as _, ROOT, true, 1)],
+			metadata: vec![(
+				AssetIds::PKton as _,
+				b"Pangolin Commitment Token".to_vec(),
+				b"PKTON".to_vec(),
+				18,
+			)],
+			..Default::default()
+		},
 
 		// Consensus stuff.
 		staking: StakingConfig {
