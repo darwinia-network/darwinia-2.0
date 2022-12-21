@@ -121,12 +121,7 @@ impl Processor {
 			} else {
 				a.nonce = 0;
 
-				self.shell_state.insert_value(
-					b"AccountMigration",
-					b"Accounts",
-					&blake2_128_concat_to_string(k),
-					a,
-				);
+				self.shell_state.insert_value(b"AccountMigration", b"Accounts", &k, a);
 			}
 		});
 
