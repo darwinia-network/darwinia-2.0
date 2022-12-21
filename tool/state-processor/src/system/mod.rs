@@ -124,19 +124,14 @@ impl Processor {
 				self.shell_state.insert_value(
 					b"System",
 					b"Account",
-					&array_bytes::bytes2hex("", subhasher::blake2_128_concat(k)),
+					&blake2_128_concat_to_string(k),
 					a,
 				);
 			// TODO: migrate kton balances.
 			} else {
 				a.nonce = 0;
 
-				self.shell_state.insert_value(
-					b"AccountMigration",
-					b"Accounts",
-					&array_bytes::bytes2hex("", subhasher::blake2_128_concat(k)),
-					a,
-				);
+				self.shell_state.insert_value(b"AccountMigration", b"Accounts", &k, a);
 			}
 		});
 
