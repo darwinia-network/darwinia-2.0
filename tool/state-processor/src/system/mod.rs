@@ -117,7 +117,7 @@ impl Processor {
 					b"EVM",
 					b"AccountCodes",
 					&array_bytes::bytes2hex("", subhasher::blake2_128_concat(k)),
-				)) {
+				)) && a.sufficients == 0 {
 					a.sufficients += 1;
 				}
 
