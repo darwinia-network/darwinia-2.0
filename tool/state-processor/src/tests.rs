@@ -31,14 +31,14 @@ where
 	assert!(result.is_ok())
 }
 
-// --- System ---
+// --- System & Balances ---
 
 #[test]
-fn account_adjust_for_only_solo_chain_account() {
+fn account_adjust_solo_chain_account() {
 	run_test(|tester| {
-		// https://crab.subscan.io/account/5F2CnHR4JDJW4RXqXhH7dpk4tQuu2qCf7UPzZLX4exDg9VxE
+		// https://crab.subscan.io/account/5HakQe5khJMA2iZ99mQy2uAG2pXgub7aAH8k8bTwpNufWsRg
 		let addr: [u8; 32] = hex_n_into_unchecked::<_, _, 32>(
-			"0x82cc5514cdaa945629347924da4b804735c1530be80a5e001ce0b413cc46aa47",
+			"0xf4171e1b64c96cc17f601f28d002cb5fcd27eab8b6585e296f4652be5bf05550",
 		);
 
 		let mut account_info = AccountInfo::default();
@@ -48,21 +48,56 @@ fn account_adjust_for_only_solo_chain_account() {
 			&bytes2hex("", subhasher::blake2_128_concat(&addr)),
 			&mut account_info,
 		);
+		assert_ne!(account_info.nonce, 0);
+		assert_ne!(account_info.consumers, 0);
+		assert_ne!(account_info.providers, 0);
+		assert_eq!(account_info.sufficients, 0);
+		assert_ne!(account_info.data.free, 0);
+		assert_ne!(account_info.data.free_kton_or_misc_frozen, 0);
 
-		assert_eq!(
-			account_info,
-			AccountInfo {
-				nonce: 0,
-				consumers: 0,
-				providers: 1,
-				sufficients: 0,
-				data: AccountData {
-					free: 48_904_000_000_000,
-					reserved: 0,
-					free_kton_or_misc_frozen: 0,
-					reserved_kton_or_fee_frozen: 0,
-				}
-			}
+		// after migrate
+		let mut migrated_account_info = AccountInfo::default();
+		tester.processed_state.get_value(
+			b"AccountMigration",
+			b"Accounts",
+			&bytes2hex("", subhasher::blake2_128_concat(&addr)),
+			&mut migrated_account_info,
+		);
+		// assert pointer not changes
+		assert_eq!(account_info.consumers, migrated_account_info.consumers);
+		assert_eq!(account_info.providers, migrated_account_info.providers);
+		assert_eq!(account_info.sufficients, migrated_account_info.sufficients);
+		// assert nonce reset
+		assert_eq!(migrated_account_info.nonce, 0);
+		// the kton part has been removed.
+		assert_eq!(migrated_account_info.data.free_kton_or_misc_frozen, 0);
+		// assert decimal adjust
+		assert_eq!(account_info.data.free * GWEI, migrated_account_info.data.free);
+	});
+}
+
+#[test]
+fn account_adjust_with_remaining_balance_solo_account() {
+	run_test(|tester| {
+		// This is a pure substrate account_id(not derived one)
+		// https://crab.subscan.io/account/5HakQe5khJMA2iZ99mQy2uAG2pXgub7aAH8k8bTwpNufWsRg
+		let addr: [u8; 32] = hex_n_into_unchecked::<_, _, 32>(
+			"0xf4171e1b64c96cc17f601f28d002cb5fcd27eab8b6585e296f4652be5bf05550",
+		);
+
+		let mut account_info = AccountInfo::default();
+		tester.solo_state.get_value(
+			b"System",
+			b"Account",
+			&bytes2hex("", subhasher::blake2_128_concat(&addr)),
+			&mut account_info,
+		);
+		let mut remaining_balance = u128::default();
+		tester.solo_state.get_value(
+			b"Ethereum",
+			b"RemainingRingBalance",
+			&bytes2hex("", subhasher::blake2_128_concat(&addr)),
+			&mut remaining_balance,
 		);
 
 		// after migrate
@@ -74,19 +109,8 @@ fn account_adjust_for_only_solo_chain_account() {
 			&mut migrated_account_info,
 		);
 		assert_eq!(
-			migrated_account_info,
-			AccountInfo {
-				nonce: 0,
-				consumers: 0,
-				providers: 1,
-				sufficients: 0,
-				data: AccountData {
-					free: 48_904_000_000_000 * GWEI,
-					reserved: 0,
-					free_kton_or_misc_frozen: 0,
-					reserved_kton_or_fee_frozen: 0,
-				}
-			}
+			migrated_account_info.data.free,
+			account_info.data.free * GWEI + remaining_balance
 		);
 	});
 }
@@ -127,8 +151,12 @@ fn nonce_adjust_for_account_id_32() {}
 #[test]
 fn nonce_adjust_for_evm_account() {}
 
+// --- EVM & Ethereum ---
+
 #[test]
 fn evm_code_migrate() {}
 
 #[test]
 fn evm_account_storage_migrate() {}
+
+// --- Staking ---
