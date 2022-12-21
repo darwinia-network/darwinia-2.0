@@ -147,6 +147,7 @@ impl State {
 		D: Decode,
 	{
 		let key = full_key(pallet, item, hash);
+		println!("bear: --- key: {:?}", key);
 
 		if let Some(v) = self.0.get(&key) {
 			match decode(v) {

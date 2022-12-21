@@ -3,7 +3,7 @@ use parity_scale_codec::{Decode, Encode};
 
 pub const GWEI: u128 = 1_000_000_000;
 
-#[derive(Debug, Encode, Decode)]
+#[derive(Default, Debug, Encode, Decode, PartialEq, Eq)]
 pub struct AccountInfo {
 	pub nonce: u32,
 	pub consumers: u32,
@@ -11,7 +11,7 @@ pub struct AccountInfo {
 	pub sufficients: u32,
 	pub data: AccountData,
 }
-#[derive(Debug, Encode, Decode)]
+#[derive(Default, Debug, Encode, Decode, PartialEq, Eq)]
 pub struct AccountData {
 	pub free: u128,
 	pub reserved: u128,
