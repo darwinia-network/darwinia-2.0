@@ -149,12 +149,18 @@ impl State {
 		if let Some(v) = self.0.get(&key) {
 			match decode(v) {
 				Ok(v) => *value = v,
-				Err(e) => log::warn!(
+				Err(e) => log::error!(
 					"failed to decode `{}::{}::{hash}({v})`, due to `{e}`",
 					String::from_utf8_lossy(pallet),
 					String::from_utf8_lossy(item),
 				),
 			}
+		} else {
+			log::error!(
+				"key not found `{}::{}::{hash}`",
+				String::from_utf8_lossy(pallet),
+				String::from_utf8_lossy(item),
+			);
 		}
 
 		self
@@ -169,12 +175,18 @@ impl State {
 		if let Some(v) = self.0.remove(&key) {
 			match decode(&v) {
 				Ok(v) => *value = v,
-				Err(e) => log::warn!(
+				Err(e) => log::error!(
 					"failed to decode `{}::{}::{hash}({v})`, due to `{e}`",
 					String::from_utf8_lossy(pallet),
 					String::from_utf8_lossy(item)
 				),
 			}
+		} else {
+			log::error!(
+				"key not found `{}::{}::{hash}`",
+				String::from_utf8_lossy(pallet),
+				String::from_utf8_lossy(item),
+			);
 		}
 
 		self
@@ -225,7 +237,7 @@ impl State {
 					Ok(v) => {
 						buffer.insert(process_key(full_key, &prefix), v);
 					},
-					Err(e) => log::warn!("failed to decode `{full_key}:{v}`, due to `{e}`"),
+					Err(e) => log::error!("failed to decode `{full_key}:{v}`, due to `{e}`"),
 				}
 
 				false
