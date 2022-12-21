@@ -239,7 +239,21 @@ fn testnet_genesis(
 			balances: endowed_accounts.iter().cloned().map(|k| (k, 100_000_000 * UNIT)).collect(),
 		},
 		transaction_payment: Default::default(),
-		assets: Default::default(),
+		assets: AssetsConfig {
+					assets: vec![(
+						AssetIds::PKton as _,
+						ROOT,
+						true,
+						1,
+					)],
+					metadata: vec![(
+						AssetIds::PKton as _,
+						b"Pangolin Commitment Token".to_vec(),
+						b"PKTON".to_vec(),
+						18,
+					)],
+					..Default::default()
+				},
 
 		// Consensus stuff.
 		staking: StakingConfig {
