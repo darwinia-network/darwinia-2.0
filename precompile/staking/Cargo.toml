@@ -32,6 +32,9 @@ sp-std        = { default-features = false, git = "https://github.com/paritytech
 codec      = { package = "parity-scale-codec", version = "3.2" }
 scale-info = { version = "2.3", features = ["derive"] }
 
+# darwinia
+darwinia-deposit = { path = "../../pallet/deposit" }
+
 # moonbeam
 precompile-utils = { git = "https://github.com/darwinia-network/moonbeam.git", branch = "polkadot-v0.9.30", features = ["testing"] }
 
