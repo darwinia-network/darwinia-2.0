@@ -2452,7 +2452,6 @@ dependencies = [
 name = "darwinia-precompile-staking"
 version = "6.0.0"
 dependencies = [
- "darwinia-deposit",
  "darwinia-staking",
  "fp-evm",
  "frame-support",

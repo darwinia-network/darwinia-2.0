@@ -32,7 +32,10 @@ pub use weights::WeightInfo;
 // core
 use core::{
 	cmp::Ordering::{Equal, Greater, Less},
-	ops::ControlFlow::{Break, Continue},
+	ops::{
+		ControlFlow::{Break, Continue},
+		Deref,
+	},
 };
 // crates.io
 use codec::FullCodec;
@@ -52,12 +55,6 @@ use frame_support::{
 use frame_system::pallet_prelude::*;
 use sp_runtime::traits::AccountIdConversion;
 
-/// Deposit identifier.
-///
-/// It's not a global-unique identifier.
-/// It's only used for distinguishing the deposits under a specific account.
-pub type DepositId = u8;
-
 /// Milliseconds per month.
 pub const MILLISECS_PER_MONTH: Moment = MILLISECS_PER_YEAR / 12;
 
@@ -68,6 +65,27 @@ pub trait Minting {
 
 	/// Mint API.
 	fn mint(beneficiary: &Self::AccountId, amount: Balance) -> DispatchResult;
+}
+
+/// Deposit identifier.
+///
+/// It's not a global-unique identifier.
+/// It's only used for distinguishing the deposits under a specific account.
+// https://github.com/polkadot-js/apps/issues/8591
+// pub type DepositId = u8;
+#[derive(Clone, Copy, PartialEq, Eq, Encode, Decode, MaxEncodedLen, TypeInfo, RuntimeDebug)]
+pub struct DepositId(pub u8);
+impl From<u8> for DepositId {
+	fn from(id: u8) -> Self {
+		Self(id)
+	}
+}
+impl Deref for DepositId {
+	type Target = u8;
+
+	fn deref(&self) -> &Self::Target {
+		&self.0
+	}
 }
 
 /// Deposit.
@@ -192,7 +210,7 @@ pub mod pallet {
 				ds.try_insert(
 					id as _,
 					Deposit {
-						id,
+						id: DepositId(id),
 						value: amount,
 						expired_time: T::UnixTime::now().as_millis()
 							+ MILLISECS_PER_MONTH * months as Moment,
