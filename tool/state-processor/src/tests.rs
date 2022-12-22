@@ -345,3 +345,37 @@ fn vesting_info_adjust() {
 		assert!(migrated_vesting_info.starting_block < vesting_info.starting_block);
 	});
 }
+
+// --- Indices ---
+
+#[test]
+fn indices_adjust() {
+	run_test(|tester| {
+		// https://crab.subscan.io/account/5ELRpquT7C3mWtjes9CNUiDpW1x3VwQYK7ZWq3kiH91UMftL
+		let addr: [u8; 32] = hex_n_into_unchecked::<_, _, 32>(
+			"0x64766d3a00000000000000c7912465c55be41bd09325b393f4fbea73f26d473b",
+		);
+		let mut account_info = AccountInfo::default();
+		tester.solo_state.get_value(
+			b"System",
+			b"Account",
+			&bytes2hex("", subhasher::blake2_128_concat(&addr)),
+			&mut account_info,
+		);
+		assert_ne!(account_info.data.reserved, 0);
+
+		// after migrated
+		let mut migrated_account_info = AccountInfo::default();
+		tester.processed_state.get_value(
+			b"System",
+			b"Account",
+			&bytes2hex("", subhasher::blake2_128_concat(&addr)),
+			&mut migrated_account_info,
+		);
+		assert_ne!(
+			migrated_account_info.data.free,
+			(account_info.data.free + account_info.data.reserved) * GWEI
+		);
+		assert_eq!(migrated_account_info.data.reserved, 0);
+	});
+}
