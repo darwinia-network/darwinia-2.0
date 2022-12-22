@@ -6,7 +6,7 @@ pub const KTON_ID: u64 = 1026;
 // https://github.dev/darwinia-network/darwinia-2.0/blob/c9fdfa170501648102bd0137c0437e367e743770/runtime/common/src/gov_origin.rs#L46
 pub const ROOT: [u8; 20] = [0x72, 0x6f, 0x6f, 0x74, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 
-#[derive(Debug, Encode, Decode)]
+#[derive(Default, Debug, Encode, Decode)]
 pub struct AccountInfo {
 	pub nonce: u32,
 	pub consumers: u32,
@@ -14,8 +14,7 @@ pub struct AccountInfo {
 	pub sufficients: u32,
 	pub data: AccountData,
 }
-
-#[derive(Debug, Encode, Decode)]
+#[derive(Default, Debug, Encode, Decode)]
 pub struct AccountData {
 	pub free: u128,
 	pub reserved: u128,
@@ -23,7 +22,7 @@ pub struct AccountData {
 	pub reserved_kton_or_fee_frozen: u128,
 }
 
-#[derive(Debug, Encode, Decode)]
+#[derive(Default, Debug, Encode, Decode)]
 pub struct BalanceLock {
 	pub id: [u8; 8],
 	pub amount: u128,
@@ -37,23 +36,28 @@ pub enum Reasons {
 	Misc = 1,
 	All = 2,
 }
+impl Default for Reasons {
+	fn default() -> Self {
+		Self::All
+	}
+}
 
-#[derive(Debug, Encode, Decode)]
+#[derive(Default, Debug, Encode, Decode)]
 pub struct VestingInfo {
 	pub locked: u128,
 	pub per_block: u128,
 	pub starting_block: u32,
 }
 
-#[derive(Debug, Encode, Decode)]
+#[derive(Default, Debug, Encode, Decode)]
 pub struct Deposit {
-	pub id: u8,
+	pub id: u16,
 	pub value: u128,
 	pub expired_time: u128,
 	pub in_use: bool,
 }
 
-#[derive(Debug, Encode, Decode)]
+#[derive(Default, Debug, Encode, Decode)]
 pub struct StakingLedger {
 	pub stash: [u8; 32],
 	#[codec(compact)]
@@ -67,8 +71,7 @@ pub struct StakingLedger {
 	pub kton_staking_lock: StakingLock,
 	pub claimed_rewards: Vec<u32>,
 }
-
-#[derive(Debug, Encode, Decode)]
+#[derive(Default, Debug, Encode, Decode)]
 pub struct TimeDepositItem {
 	#[codec(compact)]
 	pub value: u128,
@@ -77,27 +80,25 @@ pub struct TimeDepositItem {
 	#[codec(compact)]
 	pub expire_time: u64,
 }
-
-#[derive(Debug, Encode, Decode)]
+#[derive(Default, Debug, Encode, Decode)]
 pub struct StakingLock {
 	pub staking_amount: u128,
 	pub unbondings: Vec<Unbonding>,
 }
-
-#[derive(Debug, Encode, Decode)]
+#[derive(Default, Debug, Encode, Decode)]
 pub struct Unbonding {
 	pub amount: u128,
 	pub until: u32,
 }
 
-#[derive(Debug, Encode, Decode)]
+#[derive(Default, Debug, Encode, Decode)]
 pub struct Ledger {
 	pub staked_ring: u128,
 	pub staked_kton: u128,
-	pub staked_deposits: Vec<u8>,
+	pub staked_deposits: Vec<u16>,
 	pub unstaking_ring: Vec<(u128, u32)>,
 	pub unstaking_kton: Vec<(u128, u32)>,
-	pub unstaking_deposits: Vec<(u8, u32)>,
+	pub unstaking_deposits: Vec<(u16, u32)>,
 }
 
 // https://github.dev/paritytech/substrate/blob/polkadot-v0.9.30/frame/assets/src/types.rs#L33

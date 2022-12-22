@@ -122,6 +122,17 @@ impl Processor {
 			};
 
 			if let Some(k) = try_get_evm_address(&key) {
+				// If the evm account is a contract contract with sufficients, then we should
+				// increase the sufficients by one.
+				if self.solo_state.contains_key(&full_key(
+					b"EVM",
+					b"AccountCodes",
+					&blake2_128_concat_to_string(k),
+				)) && a.sufficients == 0
+				{
+					a.sufficients += 1;
+				}
+
 				if v.kton != 0 || v.kton_reserved != 0 {
 					let aa = AssetAccount {
 						balance: v.kton,
@@ -167,7 +178,7 @@ impl Processor {
 				self.shell_state.insert_value(
 					b"System",
 					b"Account",
-					&array_bytes::bytes2hex("", blake2_128_concat(k)),
+					&blake2_128_concat_to_string(k),
 					a,
 				);
 			} else {
@@ -184,12 +195,7 @@ impl Processor {
 					self.shell_state.insert_value(b"AccountMigration", b"KtonAccounts", &k, &aa);
 				}
 
-				self.shell_state.insert_value(
-					b"AccountMigration",
-					b"Accounts",
-					&array_bytes::bytes2hex("", blake2_128_concat(k)),
-					a,
-				);
+				self.shell_state.insert_value(b"AccountMigration", b"Accounts", &k, a);
 			}
 		});
 
