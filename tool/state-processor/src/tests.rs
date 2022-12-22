@@ -312,7 +312,6 @@ fn evm_account_storage_migrate() {
 // --- Staking ---
 
 #[test]
-// #[ignore]
 fn bounded_migrate() {
 	run_test(|tester| {
 		// https://crab.subscan.io/account/5FxS8ugbXi4WijFuNS45Wg3Z5QsdN8hLZMmo71afoW8hJP67
@@ -324,21 +323,80 @@ fn bounded_migrate() {
 		tester.solo_state.get_value(
 			b"Staking",
 			b"Bonded",
-			&bytes2hex("", subhasher::blake2_128_concat(&addr)),
+			&bytes2hex("", subhasher::twox64_concat(&addr)),
 			&mut controller,
 		);
 		assert_ne!(controller, [0u8; 32]);
 
 		// after migrate
-
+		let mut migrated_controller = [0u8; 32];
+		tester.processed_state.get_value(
+			b"AccountMigration",
+			b"Bonded",
+			&bytes2hex("", subhasher::twox64_concat(&addr)),
+			&mut migrated_controller,
+		);
+		assert_eq!(migrated_controller, controller);
 	});
-
 }
 
 #[test]
-fn ledgers_migrate() {}
+fn deposit_items_migrate() {
+	run_test(|tester| {});
+}
 
 #[test]
+fn ledgers_migrate() {
+	run_test(|tester| {});
+}
+
+#[test]
+fn ring_pool_migrate() {
+	run_test(|tester| {
+		let mut ring_pool = u128::default();
+		tester.solo_state.get_value(b"Staking", b"RingPool", "", &mut ring_pool);
+		assert_ne!(ring_pool, 0);
+
+		// after migrate
+		let mut migrated_ring_pool = u128::default();
+		tester.processed_state.get_value(b"Staking", b"RingPool", "", &mut migrated_ring_pool);
+		assert_eq!(migrated_ring_pool, ring_pool * GWEI);
+	});
+}
+
+#[test]
+fn kton_pool_migrate() {
+	run_test(|tester| {
+		let mut kton_pool = u128::default();
+		tester.solo_state.get_value(b"Staking", b"KtonPool", "", &mut kton_pool);
+		assert_ne!(kton_pool, 0);
+
+		// after migrate
+		let mut migrated_kton_pool = u128::default();
+		tester.processed_state.get_value(b"Staking", b"KtonPool", "", &mut migrated_kton_pool);
+		assert_eq!(migrated_kton_pool, kton_pool * GWEI);
+	});
+}
+
+#[test]
+fn elapsed_time_migrate() {
+	run_test(|tester| {
+		let mut elapsed_time = u64::default();
+		tester.solo_state.get_value(b"Staking", b"LivingTime", "", &mut elapsed_time);
+		assert_ne!(elapsed_time, 0);
+
+		// after migrate
+		let mut migrated_elapsed_time = u128::default();
+		tester.processed_state.get_value(
+			b"Staking",
+			b"ElapsedTime",
+			"",
+			&mut migrated_elapsed_time,
+		);
+		assert_eq!(migrated_elapsed_time, elapsed_time as u128);
+	});
+}
+
 // --- Vesting ---
 #[test]
 fn vesting_info_adjust() {
