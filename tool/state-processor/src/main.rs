@@ -1,5 +1,6 @@
 mod balances;
 mod evm;
+mod indices;
 mod staking;
 mod system;
 mod vesting;
@@ -68,7 +69,7 @@ impl Processor {
 
 		assert!(*_guard != 0);
 
-		self.process_system().process_vesting().process_staking().process_evm();
+		self.process_system().process_indices().process_vesting().process_staking().process_evm();
 
 		self.save()
 	}
@@ -153,14 +154,18 @@ impl State {
 			println!("bear: --- value: {:?}", v);
 			match decode(v) {
 				Ok(v) => *value = v,
-				Err(e) => log::warn!(
+				Err(e) => log::error!(
 					"failed to decode `{}::{}::{hash}({v})`, due to `{e}`",
 					String::from_utf8_lossy(pallet),
 					String::from_utf8_lossy(item),
 				),
 			}
 		} else {
-			println!("bear: --- Cannot find the key");
+			log::error!(
+				"key not found `{}::{}::{hash}`",
+				String::from_utf8_lossy(pallet),
+				String::from_utf8_lossy(item),
+			);
 		}
 
 		self
@@ -175,12 +180,18 @@ impl State {
 		if let Some(v) = self.0.remove(&key) {
 			match decode(&v) {
 				Ok(v) => *value = v,
-				Err(e) => log::warn!(
+				Err(e) => log::error!(
 					"failed to decode `{}::{}::{hash}({v})`, due to `{e}`",
 					String::from_utf8_lossy(pallet),
 					String::from_utf8_lossy(item)
 				),
 			}
+		} else {
+			log::error!(
+				"key not found `{}::{}::{hash}`",
+				String::from_utf8_lossy(pallet),
+				String::from_utf8_lossy(item),
+			);
 		}
 
 		self
@@ -191,6 +202,22 @@ impl State {
 		E: Encode,
 	{
 		self.0.insert(full_key(pallet, item, hash), encode_value(value));
+
+		self
+	}
+
+	fn mutate_value<D, F>(&mut self, pallet: &[u8], item: &[u8], hash: &str, f: F) -> &mut Self
+	where
+		D: Default + Encode + Decode,
+		F: FnOnce(&mut D),
+	{
+		let mut v = D::default();
+
+		self.get_value(pallet, item, hash, &mut v);
+
+		f(&mut v);
+
+		self.insert_value(pallet, item, hash, v);
 
 		self
 	}
@@ -215,7 +242,7 @@ impl State {
 					Ok(v) => {
 						buffer.insert(process_key(full_key, &prefix), v);
 					},
-					Err(e) => log::warn!("failed to decode `{full_key}:{v}`, due to `{e}`"),
+					Err(e) => log::error!("failed to decode `{full_key}:{v}`, due to `{e}`"),
 				}
 
 				false
@@ -247,9 +274,28 @@ impl State {
 		self
 	}
 
-	// fn transfer(&mut self, from: &str, to: &str, amount: u128) {}
+	fn contains_key(&self, key: &str) -> bool {
+		self.0.contains_key(key)
+	}
 
 	// fn inc_consumers(&mut self, who: &str) {}
+
+	// fn transfer(&mut self, from: &str, to: &str, amount: u128) {}
+
+	fn unreserve<A>(&mut self, who: A, amount: u128)
+	where
+		A: AsRef<[u8]>,
+	{
+		self.mutate_value(
+			b"System",
+			b"Account",
+			&blake2_128_concat_to_string(who),
+			|a: &mut AccountInfo| {
+				a.data.free += amount;
+				a.data.reserved -= amount;
+			},
+		);
+	}
 }
 
 fn from_file<D>(path: &str) -> Result<D>
@@ -309,4 +355,11 @@ fn get_last_64(key: &str) -> String {
 
 fn replace_first_match(key: &str, from: &str, to: &str) -> String {
 	key.replacen(from, to, 1)
+}
+
+fn blake2_128_concat_to_string<D>(data: D) -> String
+where
+	D: AsRef<[u8]>,
+{
+	array_bytes::bytes2hex("", subhasher::blake2_128_concat(data))
 }

@@ -111,10 +111,21 @@ impl Processor {
 			};
 
 			if let Some(k) = try_get_evm_address(&key) {
+				// If the evm account is a contract contract with sufficients, then we should
+				// increase the sufficients by one.
+				if self.solo_state.contains_key(&full_key(
+					b"EVM",
+					b"AccountCodes",
+					&blake2_128_concat_to_string(k),
+				)) && a.sufficients == 0
+				{
+					a.sufficients += 1;
+				}
+
 				self.shell_state.insert_value(
 					b"System",
 					b"Account",
-					&array_bytes::bytes2hex("", subhasher::blake2_128_concat(k)),
+					&blake2_128_concat_to_string(k),
 					a,
 				);
 			// TODO: migrate kton balances.
