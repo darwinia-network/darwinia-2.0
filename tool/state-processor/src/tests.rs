@@ -311,8 +311,35 @@ fn evm_account_storage_migrate() {
 
 // --- Staking ---
 
-// --- Vesting ---
+#[test]
+// #[ignore]
+fn bounded_migrate() {
+	run_test(|tester| {
+		// https://crab.subscan.io/account/5FxS8ugbXi4WijFuNS45Wg3Z5QsdN8hLZMmo71afoW8hJP67
+		let addr: [u8; 32] = hex_n_into_unchecked::<_, _, 32>(
+			"0xac288b0d41a3dcb69b025f51d9ad76ee088339f1c27708e164f9b019c584897d",
+		);
 
+		let mut controller = [0u8; 32];
+		tester.solo_state.get_value(
+			b"Staking",
+			b"Bonded",
+			&bytes2hex("", subhasher::blake2_128_concat(&addr)),
+			&mut controller,
+		);
+		assert_ne!(controller, [0u8; 32]);
+
+		// after migrate
+
+	});
+
+}
+
+#[test]
+fn ledgers_migrate() {}
+
+#[test]
+// --- Vesting ---
 #[test]
 fn vesting_info_adjust() {
 	run_test(|tester| {
