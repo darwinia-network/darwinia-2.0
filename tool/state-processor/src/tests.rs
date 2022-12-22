@@ -3,7 +3,7 @@
 
 use core::panic;
 
-use crate::{AccountData, AccountInfo, State, GWEI};
+use crate::{full_key, AccountData, AccountInfo, Map, State, GWEI};
 use array_bytes::{bytes2hex, hex_n_into_unchecked};
 
 struct Tester {
@@ -244,7 +244,41 @@ fn evm_code_migrate() {
 }
 
 #[test]
-fn evm_account_storage_migrate() {}
+fn evm_account_storage_migrate() {
+	run_test(|tester| {
+		// https://crab.subscan.io/account/0x0050f880c35c31c13bfd9cbb7d28aafaeca3abd2
+		let addr: [u8; 20] =
+			hex_n_into_unchecked::<_, _, 20>("0x0050f880c35c31c13bfd9cbb7d28aafaeca3abd2");
+
+		let storage_item_len = tester.solo_state.0.iter().fold(0u32, |sum, (k, v)| {
+			if k.starts_with(&full_key(
+				b"EVM",
+				b"AccountStorages",
+				&bytes2hex("", subhasher::blake2_128_concat(&addr)),
+			)) {
+				sum + 1
+			} else {
+				sum
+			}
+		});
+		assert_ne!(storage_item_len, 0);
+
+		// after migrate
+		let migrated_storage_item_len =
+			tester.processed_state.0.iter().fold(0u32, |sum, (k, v)| {
+				if k.starts_with(&full_key(
+					b"Evm",
+					b"AccountStorages",
+					&bytes2hex("", subhasher::blake2_128_concat(&addr)),
+				)) {
+					sum + 1
+				} else {
+					sum
+				}
+			});
+		assert_eq!(storage_item_len, migrated_storage_item_len);
+	});
+}
 
 // --- Staking ---
 
