@@ -3,7 +3,7 @@
 
 use core::panic;
 
-use crate::{full_key, AccountData, AccountInfo, Map, State, GWEI};
+use crate::{full_key, AccountData, AccountInfo, Map, State, VestingInfo, GWEI};
 use array_bytes::{bytes2hex, hex_n_into_unchecked};
 use primitive_types::H256;
 
@@ -250,7 +250,7 @@ fn evm_account_storage_migrate() {
 		let addr: [u8; 20] =
 			hex_n_into_unchecked::<_, _, 20>("0x0050f880c35c31c13bfd9cbb7d28aafaeca3abd2");
 
-		let storage_item_len = tester.solo_state.0.iter().fold(0u32, |sum, (k, v)| {
+		let storage_item_len = tester.solo_state.0.iter().fold(0u32, |sum, (k, _)| {
 			if k.starts_with(&full_key(
 				b"EVM",
 				b"AccountStorages",
@@ -281,7 +281,7 @@ fn evm_account_storage_migrate() {
 
 		// after migrate
 		let migrated_storage_item_len =
-			tester.processed_state.0.iter().fold(0u32, |sum, (k, v)| {
+			tester.processed_state.0.iter().fold(0u32, |sum, (k, _)| {
 				if k.starts_with(&full_key(
 					b"Evm",
 					b"AccountStorages",
@@ -312,3 +312,36 @@ fn evm_account_storage_migrate() {
 // --- Staking ---
 
 // --- Vesting ---
+
+#[test]
+fn vesting_info_adjust() {
+	run_test(|tester| {
+		// https://crab.subscan.io/account/5EFJA3K6uRfkLxqjhHyrkJoQjfhmhyVyVEG5XtPPBM6yCCxM
+		let addr: [u8; 32] = hex_n_into_unchecked::<_, _, 32>(
+			"0x608c62275934b164899ca6270c4b89c5d84b2390d4316fda980cd1b3acfad525",
+		);
+
+		let mut vesting_info = VestingInfo::default();
+		tester.solo_state.get_value(
+			b"Vesting",
+			b"Vesting",
+			&bytes2hex("", subhasher::blake2_128_concat(&addr)),
+			&mut vesting_info,
+		);
+		assert_ne!(vesting_info.locked, 0);
+		assert_ne!(vesting_info.starting_block, 0);
+
+		// after migrate
+		let mut migrated_vesting_info = VestingInfo::default();
+		tester.processed_state.get_value(
+			b"AccountMigration",
+			b"Vestings",
+			&bytes2hex("", subhasher::blake2_128_concat(&addr)),
+			&mut migrated_vesting_info,
+		);
+
+		assert_eq!(migrated_vesting_info.locked, vesting_info.locked * GWEI);
+		assert_eq!(migrated_vesting_info.per_block, vesting_info.per_block * GWEI * 2);
+		assert!(migrated_vesting_info.starting_block < vesting_info.starting_block);
+	});
+}
