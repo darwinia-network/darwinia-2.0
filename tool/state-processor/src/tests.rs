@@ -5,6 +5,7 @@ use core::panic;
 
 use crate::{full_key, AccountData, AccountInfo, Map, State, GWEI};
 use array_bytes::{bytes2hex, hex_n_into_unchecked};
+use primitive_types::H256;
 
 struct Tester {
 	solo_state: State,
@@ -153,7 +154,6 @@ fn evm_account_adjust() {
 }
 
 #[test]
-#[ignore]
 fn evm_contract_account_adjust_sufficients() {
 	run_test(|tester| {
 		// https://crab.subscan.io/account/0x0050f880c35c31c13bfd9cbb7d28aafaeca3abd2(5ELRpquT7C3mWtjeo2WC5kAYFWzyRP2h55XDwo8ogDNkjm4h)
@@ -180,7 +180,7 @@ fn evm_contract_account_adjust_sufficients() {
 			&bytes2hex("", subhasher::blake2_128_concat(&migrate_addr)),
 			&mut migrated_account_info,
 		);
-		assert_eq!(account_info.sufficients, 1);
+		assert_eq!(migrated_account_info.sufficients, 1);
 	});
 }
 
@@ -263,6 +263,22 @@ fn evm_account_storage_migrate() {
 		});
 		assert_ne!(storage_item_len, 0);
 
+		let storage_key: [u8; 32] = hex_n_into_unchecked::<_, _, 32>(
+			"0x2093bcd1218dc1519493ee712ddfee3f4ced2d74096331d39d4247147baf17e2",
+		);
+		let mut storage_value = H256::zero();
+		tester.solo_state.get_value(
+			b"EVM",
+			b"AccountStorages",
+			&format!(
+				"{}{}",
+				&bytes2hex("", subhasher::blake2_128_concat(&addr)),
+				&bytes2hex("", subhasher::blake2_128_concat(&storage_key)),
+			),
+			&mut storage_value,
+		);
+		assert_ne!(storage_value, H256::zero());
+
 		// after migrate
 		let migrated_storage_item_len =
 			tester.processed_state.0.iter().fold(0u32, |sum, (k, v)| {
@@ -277,6 +293,19 @@ fn evm_account_storage_migrate() {
 				}
 			});
 		assert_eq!(storage_item_len, migrated_storage_item_len);
+
+		let mut migrated_storage_value = H256::zero();
+		tester.processed_state.get_value(
+			b"Evm",
+			b"AccountStorages",
+			&format!(
+				"{}{}",
+				&bytes2hex("", subhasher::blake2_128_concat(&addr)),
+				&bytes2hex("", subhasher::blake2_128_concat(&storage_key)),
+			),
+			&mut migrated_storage_value,
+		);
+		assert_eq!(storage_value, migrated_storage_value);
 	});
 }
 

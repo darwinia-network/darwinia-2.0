@@ -21,5 +21,7 @@ subhasher   = { git = "https://github.com/hack-ink/subalfred" }
 subspector  = { git = "https://github.com/hack-ink/subalfred" }
 substorager = { git = "https://github.com/hack-ink/subalfred" }
 
+primitive-types = { version = "0.12.1", features = ["codec"] }
+
 [workspace]
 exclude = []
