@@ -3,7 +3,10 @@
 
 use core::panic;
 
-use crate::{full_key, AccountData, AccountInfo, Map, State, VestingInfo, GWEI};
+use crate::{
+	full_key, type_registry::StakingLedger, AccountData, AccountInfo, Deposit, Map, State,
+	VestingInfo, GWEI,
+};
 use array_bytes::{bytes2hex, hex_n_into_unchecked};
 use primitive_types::H256;
 
@@ -342,7 +345,39 @@ fn bounded_migrate() {
 
 #[test]
 fn deposit_items_migrate() {
-	run_test(|tester| {});
+	run_test(|tester| {
+		// https://crab.subscan.io/account/5Dfh9agy74KFmdYqxNGEWae9fE9pdzYnyCUJKqK47Ac64zqM
+		let addr: [u8; 32] = hex_n_into_unchecked::<_, _, 32>(
+			"0x46eb701bdc7f74ffda9c4335d82b3ae8d4e52c5ac630e50d68ab99822e29b3f6",
+		);
+
+		let mut ledger = StakingLedger::default();
+		tester.solo_state.get_value(
+			b"Staking",
+			b"Ledger",
+			&bytes2hex("", subhasher::blake2_128_concat(&addr)),
+			&mut ledger,
+		);
+		assert_ne!(ledger.deposit_items.len(), 0);
+		let deposits_sum: u128 = ledger.deposit_items.iter().map(|i| i.value).sum();
+
+		// after migrate
+		let mut migrated_deposits = Vec::<Deposit>::new();
+		tester.processed_state.get_value(
+			b"AccountMigration",
+			b"Deposits",
+			&bytes2hex("", subhasher::blake2_128_concat(&addr)),
+			&mut migrated_deposits,
+		);
+		assert_eq!(migrated_deposits.len(), ledger.deposit_items.len());
+		ledger.deposit_items.iter().zip(migrated_deposits.iter()).for_each(|(old, new)| {
+			assert_eq!(new.value, old.value * GWEI);
+			assert_eq!(new.expired_time, old.expire_time as u128);
+			assert!(new.in_use);
+		});
+		let migrated_deposits_sum: u128 = migrated_deposits.iter().map(|i| i.value).sum();
+		assert_eq!(migrated_deposits_sum, deposits_sum * GWEI);
+	});
 }
 
 #[test]
