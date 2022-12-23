@@ -302,6 +302,7 @@ frame_support::construct_runtime! {
 		Preimage: pallet_preimage = 24,
 		Proxy: pallet_proxy = 25,
 		Multisig: pallet_multisig = 26,
+		SoloToPara: cumulus_pallet_solo_to_para = 43,
 
 		// XCM stuff.
 		XcmpQueue: cumulus_pallet_xcmp_queue = 27,

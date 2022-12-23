@@ -19,19 +19,6 @@
 // darwinia
 use crate::*;
 
-frame_support::parameter_types! {
-	pub const ReservedXcmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT.saturating_div(4);
-	pub const ReservedDmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT.saturating_div(4);
-}
-
-impl cumulus_pallet_parachain_system::Config for Runtime {
-	type CheckAssociatedRelayNumber = RelayNumberStrictlyIncreases;
-	type DmpMessageHandler = DmpQueue;
-	type OnSystemEvent = cumulus_pallet_solo_to_para::Pallet<Runtime>;
-	type OutboundXcmpMessageSource = XcmpQueue;
-	type ReservedDmpWeight = ReservedDmpWeight;
-	type ReservedXcmpWeight = ReservedXcmpWeight;
+impl cumulus_pallet_solo_to_para::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
-	type SelfParaId = parachain_info::Pallet<Self>;
-	type XcmpMessageHandler = XcmpQueue;
 }

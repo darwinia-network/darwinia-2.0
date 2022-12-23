@@ -89,6 +89,9 @@ mod proxy;
 
 mod multisig;
 
+pub mod solo_to_para;
+pub use solo_to_para::*;
+
 // XCM stuff.
 mod xcmp_queue;
 

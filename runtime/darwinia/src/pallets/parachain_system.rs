@@ -27,7 +27,7 @@ frame_support::parameter_types! {
 impl cumulus_pallet_parachain_system::Config for Runtime {
 	type CheckAssociatedRelayNumber = RelayNumberStrictlyIncreases;
 	type DmpMessageHandler = DmpQueue;
-	type OnSystemEvent = ();
+	type OnSystemEvent = cumulus_pallet_solo_to_para::Pallet<Runtime>;
 	type OutboundXcmpMessageSource = XcmpQueue;
 	type ReservedDmpWeight = ReservedDmpWeight;
 	type ReservedXcmpWeight = ReservedXcmpWeight;
