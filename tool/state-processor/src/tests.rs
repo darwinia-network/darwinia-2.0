@@ -4,7 +4,7 @@
 use core::panic;
 
 use crate::{
-	full_key, type_registry::StakingLedger, AccountData, AccountInfo, Deposit, Map, State,
+	full_key, type_registry::StakingLedger, AccountData, AccountInfo, Deposit, Ledger, Map, State,
 	VestingInfo, GWEI,
 };
 use array_bytes::{bytes2hex, hex_n_into_unchecked};
@@ -381,8 +381,72 @@ fn deposit_items_migrate() {
 }
 
 #[test]
-fn ledgers_migrate() {
-	run_test(|tester| {});
+fn ledgers_staked_value_migrate() {
+	run_test(|tester| {
+		// https://crab.subscan.io/account/5Dfh9agy74KFmdYqxNGEWae9fE9pdzYnyCUJKqK47Ac64zqM
+		let addr: [u8; 32] = hex_n_into_unchecked::<_, _, 32>(
+			"0x46eb701bdc7f74ffda9c4335d82b3ae8d4e52c5ac630e50d68ab99822e29b3f6",
+		);
+
+		let mut ledger = StakingLedger::default();
+		tester.solo_state.get_value(
+			b"Staking",
+			b"Ledger",
+			&bytes2hex("", subhasher::blake2_128_concat(&addr)),
+			&mut ledger,
+		);
+		assert_ne!(ledger.active, 0);
+		assert_ne!(ledger.active_kton, 0);
+
+		// after migrate
+		let mut migrated_ledger = Ledger::default();
+		tester.processed_state.get_value(
+			b"AccountMigration",
+			b"Ledgers",
+			&bytes2hex("", subhasher::blake2_128_concat(&addr)),
+			&mut migrated_ledger,
+		);
+		assert_eq!(migrated_ledger.staked_ring, ledger.active * GWEI);
+		assert_eq!(migrated_ledger.staked_kton, ledger.active_kton * GWEI);
+	});
+}
+
+#[test]
+fn ledgers_unbondings_migrate() {
+	run_test(|tester| {
+		// https://crab.subscan.io/account/5FGL7pMZFZK4zWX2y3CRABeqMpMjBq77LhfYipWoBAT9gJsa
+		let addr: [u8; 32] = hex_n_into_unchecked::<_, _, 32>(
+			"0x8d92774046fd3dc60d41825023506ad5ad91bd0d66e9c1df325fc3cf89c2d317",
+		);
+
+		let mut ledger = StakingLedger::default();
+		tester.solo_state.get_value(
+			b"Staking",
+			b"Ledger",
+			&bytes2hex("", subhasher::blake2_128_concat(&addr)),
+			&mut ledger,
+		);
+		assert_ne!(ledger.ring_staking_lock.unbondings.len(), 0);
+
+		// after migrate
+		let mut migrated_ledger = Ledger::default();
+		tester.processed_state.get_value(
+			b"AccountMigration",
+			b"Ledgers",
+			&bytes2hex("", subhasher::blake2_128_concat(&addr)),
+			&mut migrated_ledger,
+		);
+		ledger
+			.ring_staking_lock
+			.unbondings
+			.iter()
+			.zip(migrated_ledger.unstaking_ring.iter())
+			.for_each(|(old, (amount, util))| {
+				assert_eq!(*amount, old.amount * GWEI);
+				// TODO https://github.com/darwinia-network/darwinia-2.0/issues/158
+				// assert_eq!(*util, old.until);
+			});
+	});
 }
 
 #[test]
