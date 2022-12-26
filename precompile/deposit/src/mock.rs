@@ -93,8 +93,8 @@ impl pallet_timestamp::Config for TestRuntime {
 	type WeightInfo = ();
 }
 
-pub enum KtonMinting {}
-impl darwinia_deposit::Minting for KtonMinting {
+pub enum KtonAsset {}
+impl darwinia_deposit::SimpleAsset for KtonAsset {
 	type AccountId = AccountId;
 
 	fn mint(_beneficiary: &Self::AccountId, _amount: Balance) -> sp_runtime::DispatchResult {
@@ -103,7 +103,7 @@ impl darwinia_deposit::Minting for KtonMinting {
 }
 
 impl darwinia_deposit::Config for TestRuntime {
-	type Kton = KtonMinting;
+	type Kton = KtonAsset;
 	type MaxDeposits = frame_support::traits::ConstU32<16>;
 	type MinLockingAmount = frame_support::traits::ConstU128<100>;
 	type Ring = Balances;
