@@ -321,5 +321,15 @@ fn claim_with_penalty_should_work() {
 		assert_ok!(KtonAsset::mint(&1, UNIT));
 		assert_ok!(Deposit::claim_with_penalty(RuntimeOrigin::signed(1), 0));
 		assert_eq!(Assets::balance(0, 1), 999_984_771_573_604_062);
+		assert!(Deposit::deposit_of(&1).is_none());
+
+		assert_ok!(Deposit::lock(RuntimeOrigin::signed(1), UNIT, 1));
+		efflux(MILLISECS_PER_MONTH);
+		assert!(Deposit::deposit_of(&1).is_some());
+
+		assert_noop!(
+			Deposit::claim_with_penalty(RuntimeOrigin::signed(1), 0),
+			<Error<Runtime>>::DepositAlreadyExpired
+		);
 	});
 }

@@ -287,14 +287,19 @@ pub mod pallet {
 		#[pallet::weight(0)]
 		pub fn claim_with_penalty(origin: OriginFor<T>, id: DepositId) -> DispatchResult {
 			let who = ensure_signed(origin)?;
-			let d =
-				<Deposits<T>>::try_mutate(&who, |ds| {
-					let ds = ds.as_mut().ok_or(<Error<T>>::DepositNotFound)?;
+			let d = <Deposits<T>>::try_mutate(&who, |maybe_ds| {
+				let ds = maybe_ds.as_mut().ok_or(<Error<T>>::DepositNotFound)?;
+				let d = ds
+					.remove(ds.iter().position(|d| d.id == id).ok_or(<Error<T>>::DepositNotFound)?);
 
-					<Result<_, DispatchError>>::Ok(ds.remove(
-						ds.iter().position(|d| d.id == id).ok_or(<Error<T>>::DepositNotFound)?,
-					))
-				})?;
+				if ds.is_empty() {
+					<frame_system::Pallet<T>>::dec_consumers(&who);
+
+					*maybe_ds = None;
+				}
+
+				<Result<_, DispatchError>>::Ok(d)
+			})?;
 			let now = T::UnixTime::now().as_millis();
 
 			if d.expired_time <= now {
