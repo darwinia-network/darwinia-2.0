@@ -102,6 +102,10 @@ impl darwinia_deposit::SimpleAsset for KtonAsset {
 	fn mint(_beneficiary: &Self::AccountId, _amount: Balance) -> sp_runtime::DispatchResult {
 		Ok(())
 	}
+
+	fn burn(who: &Self::AccountId, amount: Balance) -> sp_runtime::DispatchResult {
+		Ok(())
+	}
 }
 
 impl darwinia_deposit::Config for TestRuntime {
