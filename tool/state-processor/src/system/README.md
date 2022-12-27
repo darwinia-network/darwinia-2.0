@@ -27,7 +27,7 @@
   - if is Substrate address
     - reset the nonce
     - insert to `AccountMigration::Accounts`
-    - insert to `AccountMigration::AssetAccounts`
+    - insert to `AccountMigration::KtonAccounts`
 - set KTON total issuances
   - compare the calculated one with the storage one
   - check remaining sum - TODO
