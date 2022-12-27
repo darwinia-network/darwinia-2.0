@@ -26,7 +26,7 @@ pub type PolkadotHeadersToKeep = ConstU32<500>;
 impl pallet_bridge_grandpa::Config<WithPolkadotGrandpa> for Runtime {
 	type BridgedChain = bp_darwinia::DarwiniaLike;
 	type HeadersToKeep = PolkadotHeadersToKeep;
-	type MaxBridgedAuthorities = ();
+	type MaxBridgedAuthorities = frame_support::traits::ConstU32<100_000>;
 	type MaxBridgedHeaderSize = ();
 	type MaxRequests = ConstU32<50>;
 	type WeightInfo = ();

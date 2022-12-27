@@ -26,7 +26,7 @@ pub type KusamaHeadersToKeep = ConstU32<500>;
 impl pallet_bridge_grandpa::Config<WithKusamaGrandpa> for Runtime {
 	type BridgedChain = bp_crab::DarwiniaLike;
 	type HeadersToKeep = KusamaHeadersToKeep;
-	type MaxBridgedAuthorities = ();
+	type MaxBridgedAuthorities = frame_support::traits::ConstU32<100_000>;
 	type MaxBridgedHeaderSize = ();
 	type MaxRequests = ConstU32<50>;
 	type WeightInfo = ();
