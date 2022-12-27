@@ -231,7 +231,7 @@ pub mod pallet {
 					RawOrigin::Signed(to).into(),
 					1026_u64,
 					staking_pot,
-					l.staked_kton + l.unstaking_kton.iter().map(|(r, _)| r).sum::<Balance>(),
+					l.staked_kton + l.unstaking_kton.iter().map(|(k, _)| k).sum::<Balance>(),
 				)?;
 				<darwinia_staking::Ledgers<T>>::insert(to, l);
 			}
