@@ -105,7 +105,7 @@ impl Processor {
 			is_frozen: false,
 		};
 
-		log::info!("set `System::Account`, `Balances::Locks` and `Assets::Account`");
+		log::info!("fix `Evm::AccountCodes` and set `Assets::Account`, `System::Account`, `AccountMigration::KtonAccounts` and `AccountMigration::Accounts`");
 		accounts.into_iter().for_each(|(k, v)| {
 			let key = get_last_64(&k);
 			let mut a = AccountInfo {
@@ -125,7 +125,7 @@ impl Processor {
 				// If the evm account is a contract contract with sufficients, then we should
 				// increase the sufficients by one.
 				if self.solo_state.contains_key(&full_key(
-					b"EVM",
+					b"Evm",
 					b"AccountCodes",
 					&blake2_128_concat_to_string(k),
 				)) && a.sufficients == 0
@@ -133,25 +133,7 @@ impl Processor {
 					a.sufficients += 1;
 				}
 
-				self.shell_state.insert_value(
-					b"System",
-					b"Account",
-					&blake2_128_concat_to_string(k),
-					a,
-				);
-
 				if v.kton != 0 {
-					let aa = AssetAccount {
-						balance: v.kton,
-						is_frozen: false,
-						reason: ExistenceReason::Sufficient,
-						extra: (),
-					};
-
-					a.sufficients += 1;
-					kton_details.accounts += 1;
-					kton_details.sufficients += 1;
-
 					self.shell_state.insert_value(
 						b"Assets",
 						b"Account",
@@ -160,24 +142,29 @@ impl Processor {
 							blake2_128_concat_to_string(KTON_ID.encode()),
 							blake2_128_concat_to_string(k.encode()),
 						),
-						&aa,
+						new_kton_account(&mut a, &mut kton_details, v.kton),
 					);
 				}
+
+				self.shell_state.insert_value(
+					b"System",
+					b"Account",
+					&blake2_128_concat_to_string(k),
+					a,
+				);
 			} else {
 				a.nonce = 0;
 
-				self.shell_state.insert_value(b"AccountMigration", b"Accounts", &k, a);
-
 				if v.kton != 0 {
-					let aa = AssetAccount {
-						balance: v.kton,
-						is_frozen: false,
-						reason: ExistenceReason::Sufficient,
-						extra: (),
-					};
-
-					self.shell_state.insert_value(b"AccountMigration", b"KtonAccounts", &k, &aa);
+					self.shell_state.insert_value(
+						b"AccountMigration",
+						b"KtonAccounts",
+						&k,
+						new_kton_account(&mut a, &mut kton_details, v.kton),
+					);
 				}
+
+				self.shell_state.insert_value(b"AccountMigration", b"Accounts", &k, a);
 			}
 		});
 
@@ -187,7 +174,7 @@ impl Processor {
 		self.shell_state.insert_value(
 			b"Assets",
 			b"Asset",
-			&array_bytes::bytes2hex("", subhasher::blake2_128_concat(&KTON_ID.encode())),
+			&blake2_128_concat_to_string(KTON_ID.encode()),
 			kton_details,
 		);
 
@@ -195,9 +182,10 @@ impl Processor {
 		self.shell_state.insert_value(
 			b"Assets",
 			b"Metadata",
-			&array_bytes::bytes2hex("", subhasher::blake2_128_concat(&KTON_ID.encode())),
+			&blake2_128_concat_to_string(KTON_ID.encode()),
 			AssetMetadata {
 				deposit: 0,
+				// TODO: different runtime
 				name: b"Darwinia Commitment Token".to_vec(),
 				symbol: b"KTON".to_vec(),
 				decimals: 18,
@@ -265,6 +253,18 @@ fn try_get_evm_address(key: &str) -> Option<[u8; 20]> {
 	} else {
 		None
 	}
+}
+
+fn new_kton_account(
+	account_info: &mut AccountInfo,
+	assert_details: &mut AssetDetails,
+	balance: u128,
+) -> AssetAccount {
+	account_info.sufficients += 1;
+	assert_details.accounts += 1;
+	assert_details.sufficients += 1;
+
+	AssetAccount { balance, is_frozen: false, reason: ExistenceReason::Sufficient, extra: () }
 }
 
 #[test]
