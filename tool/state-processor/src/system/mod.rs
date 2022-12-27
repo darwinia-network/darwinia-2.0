@@ -105,9 +105,7 @@ impl Processor {
 			is_frozen: false,
 		};
 
-		log::info!(
-			"set `System::Account`, `Balances::Locks`, `Assets::Account` and `Assets::Approvals`"
-		);
+		log::info!("set `System::Account`, `Balances::Locks` and `Assets::Account`");
 		accounts.into_iter().for_each(|(k, v)| {
 			let key = get_last_64(&k);
 			let mut a = AccountInfo {
