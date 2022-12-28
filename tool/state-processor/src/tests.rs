@@ -72,7 +72,7 @@ fn account_adjust_solo_chain_account() {
 		// the kton part has been removed.
 		assert_eq!(migrated_account_info.data.free_kton_or_misc_frozen, 0);
 
-		//  the kton part moved to the assert pallet
+		//  the kton part moved to the asset pallet
 		let mut asset_account = AssetAccount::default();
 		tester.processed_state.get_value(
 			b"AccountMigration",
@@ -127,9 +127,9 @@ fn account_adjust_with_remaining_balance_solo_account() {
 #[test]
 fn evm_account_adjust() {
 	run_test(|tester| {
-		// https://crab.subscan.io/account/0x740d5718a79A8559fEeE8B00922F8Cd773A81D84(5ELRpquT7C3mWtjeqR9f69c4swcFDHAfYC9wP5JSDg8rJHxZ)
+		// https://crab.subscan.io/account/0xaef71b03670f1c52cd3d8efc2ced3ad68ad91e33(5ELRpquT7C3mWtjerdj1oWyv6QzFuDenZHmtP8jcdgD8A3HC)
 		let addr: [u8; 32] = hex_n_into_unchecked::<_, _, 32>(
-			"0x64766d3a00000000000000740d5718a79a8559feee8b00922f8cd773a81d84ad",
+			"0x64766d3a00000000000000aef71b03670f1c52cd3d8efc2ced3ad68ad91e33f3",
 		);
 
 		let mut account_info = AccountInfo::default();
@@ -141,10 +141,11 @@ fn evm_account_adjust() {
 		);
 		assert_ne!(account_info.nonce, 0);
 		assert_ne!(account_info.data.free, 0);
+		assert_ne!(account_info.data.free_kton_or_misc_frozen, 0);
 
 		// after migrate
 		let migrate_addr: [u8; 20] =
-			hex_n_into_unchecked::<_, _, 20>("0x740d5718a79A8559fEeE8B00922F8Cd773A81D84");
+			hex_n_into_unchecked::<_, _, 20>("0xaef71b03670f1c52cd3d8efc2ced3ad68ad91e33");
 		let mut migrated_account_info = AccountInfo::default();
 		tester.processed_state.get_value(
 			b"System",
@@ -152,12 +153,29 @@ fn evm_account_adjust() {
 			&bytes2hex("", subhasher::blake2_128_concat(&migrate_addr)),
 			&mut migrated_account_info,
 		);
-		// assert the nonce doesn't changed.
+		// nonce doesn't changed.
 		assert_eq!(migrated_account_info.nonce, account_info.nonce);
 		assert_eq!(migrated_account_info.consumers, account_info.consumers);
 		assert_eq!(migrated_account_info.providers, account_info.providers);
-		assert_eq!(migrated_account_info.sufficients, account_info.sufficients);
+		// sufficient increase by one because of the asset pallet.
+		assert_eq!(migrated_account_info.sufficients, account_info.sufficients + 1);
 		assert_eq!(migrated_account_info.data.free, account_info.data.free * GWEI);
+		assert_eq!(migrated_account_info.data.free_kton_or_misc_frozen, 0);
+
+		//  the kton part moved to the asset pallet
+		let mut asset_account = AssetAccount::default();
+		tester.processed_state.get_value(
+			b"Assets",
+			b"Account",
+			&format!(
+				"{}{}",
+				blake2_128_concat_to_string(KTON_ID.encode()),
+				blake2_128_concat_to_string(migrate_addr.encode()),
+			),
+			&mut asset_account,
+		);
+		assert_eq!(asset_account.balance, account_info.data.free_kton_or_misc_frozen * GWEI);
+		assert!(!asset_account.is_frozen);
 	});
 }
 
@@ -193,9 +211,6 @@ fn evm_contract_account_adjust_sufficients() {
 }
 
 #[test]
-fn account_adjust_for_both_solo_and_para_chain_account() {}
-
-#[test]
 fn ring_total_issuance() {
 	run_test(|tester| {
 		let mut total_issuance = u128::default();
@@ -217,7 +232,31 @@ fn ring_total_issuance() {
 }
 
 #[test]
-fn kton_total_issuance() {}
+fn kton_total_issuance() {
+	run_test(|tester| {
+		let mut total_issuance = u128::default();
+		tester.solo_state.get_value(b"Kton", b"TotalIssuance", "", &mut total_issuance);
+		assert_ne!(total_issuance, 0);
+
+		// after migrate
+		let mut migrated_total_issuance = u128::default();
+		tester.processed_state.get_value(
+			b"Balances",
+			b"TotalIssuance",
+			"",
+			&mut migrated_total_issuance,
+		);
+
+		let mut details = AssetDetails::default();
+		tester.processed_state.get_value(
+			b"Assets",
+			b"Asset",
+			&blake2_128_concat_to_string(KTON_ID.encode()),
+			&mut details,
+		);
+		assert_eq!(details.supply, total_issuance * GWEI);
+	});
+}
 
 #[test]
 fn special_accounts() {}
