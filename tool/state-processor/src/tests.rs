@@ -520,8 +520,7 @@ fn ledgers_unbondings_migrate() {
 			.zip(migrated_ledger.unstaking_ring.iter())
 			.for_each(|(old, (amount, util))| {
 				assert_eq!(*amount, old.amount * GWEI);
-				// TODO https://github.com/darwinia-network/darwinia-2.0/issues/158
-				// assert_eq!(*util, old.until);
+				assert!(*util < old.until);
 			});
 	});
 }
