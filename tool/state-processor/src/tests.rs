@@ -15,7 +15,7 @@ impl Tester {
 	fn new() -> Self {
 		Self {
 			solo_state: State::from_file("test-data/crab.json").unwrap(),
-			para_state: State::from_file("test-data/pangolin-parachain.json").unwrap(),
+			para_state: State::from_file("test-data/crab-parachain.json").unwrap(),
 			processed_state: State::from_file("test-data/processed.json").unwrap(),
 		}
 	}
@@ -33,7 +33,7 @@ where
 // --- System & Balances & Asset ---
 
 #[test]
-fn account_adjust_solo_chain_account() {
+fn solo_chain_account_adjust() {
 	run_test(|tester| {
 		// https://crab.subscan.io/account/5HakQe5khJMA2iZ99mQy2uAG2pXgub7aAH8k8bTwpNufWsRg
 		let addr: [u8; 32] = hex_n_into_unchecked::<_, _, 32>(
@@ -86,7 +86,8 @@ fn account_adjust_solo_chain_account() {
 }
 
 #[test]
-fn account_adjust_with_remaining_balance_solo_account() {
+#[ignore]
+fn solo_chain_account_adjust_with_remaining_balance() {
 	run_test(|tester| {
 		// This is a pure substrate account_id(not derived one)
 		// https://crab.subscan.io/account/5HakQe5khJMA2iZ99mQy2uAG2pXgub7aAH8k8bTwpNufWsRg
@@ -108,6 +109,7 @@ fn account_adjust_with_remaining_balance_solo_account() {
 			&blake2_128_concat_to_string(addr.encode()),
 			&mut remaining_balance,
 		);
+		assert_ne!(remaining_balance, 0);
 
 		// after migrate
 		let mut migrated_account_info = AccountInfo::default();
@@ -143,6 +145,15 @@ fn evm_account_adjust() {
 		assert_ne!(account_info.data.free, 0);
 		assert_ne!(account_info.data.free_kton_or_misc_frozen, 0);
 
+		let mut remaining_kton = u128::default();
+		tester.solo_state.get_value(
+			b"Ethereum",
+			b"RemainingKtonBalance",
+			&blake2_128_concat_to_string(addr.encode()),
+			&mut remaining_kton,
+		);
+		assert_ne!(remaining_kton, 0);
+
 		// after migrate
 		let migrate_addr: [u8; 20] =
 			hex_n_into_unchecked::<_, _, 20>("0xaef71b03670f1c52cd3d8efc2ced3ad68ad91e33");
@@ -174,7 +185,10 @@ fn evm_account_adjust() {
 			),
 			&mut asset_account,
 		);
-		assert_eq!(asset_account.balance, account_info.data.free_kton_or_misc_frozen * GWEI);
+		assert_eq!(
+			asset_account.balance,
+			account_info.data.free_kton_or_misc_frozen * GWEI + remaining_kton
+		);
 		assert!(!asset_account.is_frozen);
 	});
 }
@@ -213,9 +227,13 @@ fn evm_contract_account_adjust_sufficients() {
 #[test]
 fn ring_total_issuance() {
 	run_test(|tester| {
-		let mut total_issuance = u128::default();
-		tester.solo_state.get_value(b"Balances", b"TotalIssuance", "", &mut total_issuance);
-		assert_ne!(total_issuance, 0);
+		let mut solo_issuance = u128::default();
+		let mut para_issuance = u128::default();
+
+		tester.solo_state.get_value(b"Balances", b"TotalIssuance", "", &mut solo_issuance);
+		assert_ne!(solo_issuance, 0);
+		tester.para_state.get_value(b"Balances", b"TotalIssuance", "", &mut para_issuance);
+		assert_ne!(para_issuance, 0);
 
 		// after migrate
 		let mut migrated_total_issuance = u128::default();
@@ -226,8 +244,7 @@ fn ring_total_issuance() {
 			&mut migrated_total_issuance,
 		);
 
-		// TODO: (2230295244267321287000000000, 2230419970862321271000000000)
-		// assert_eq!(total_issuance * GWEI, migrated_total_issuance);
+		assert!(migrated_total_issuance - (solo_issuance * GWEI + para_issuance) < 200 * GWEI);
 	});
 }
 
@@ -254,12 +271,12 @@ fn kton_total_issuance() {
 			&blake2_128_concat_to_string(KTON_ID.encode()),
 			&mut details,
 		);
-		assert_eq!(details.supply, total_issuance * GWEI);
+		assert!(details.supply - total_issuance * GWEI < 200 * GWEI);
 	});
 }
 
 #[test]
-fn special_accounts() {}
+fn special_accounts_adjust() {}
 
 #[test]
 fn asset_creation() {
@@ -392,7 +409,7 @@ fn evm_account_storage_migrate() {
 // --- Staking ---
 
 #[test]
-fn bounded_migrate() {
+fn bonded_migrate() {
 	run_test(|tester| {
 		// https://crab.subscan.io/account/5FxS8ugbXi4WijFuNS45Wg3Z5QsdN8hLZMmo71afoW8hJP67
 		let addr: [u8; 32] = hex_n_into_unchecked::<_, _, 32>(

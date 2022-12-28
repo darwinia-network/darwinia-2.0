@@ -56,7 +56,7 @@ impl Processor {
 
 		Ok(Self {
 			solo_state: State::from_file("test-data/crab.json")?,
-			para_state: State::from_file("test-data/pangolin-parachain.json")?,
+			para_state: State::from_file("test-data/crab-parachain.json")?,
 			shell_state: State(mem::take(&mut shell_chain_spec.genesis.raw.top)),
 			shell_chain_spec,
 		})
@@ -148,10 +148,10 @@ impl State {
 		D: Decode,
 	{
 		let key = full_key(pallet, item, hash);
-		println!("bear: --- key: {:?}", key);
+		// println!("key: {key}");
 
 		if let Some(v) = self.0.get(&key) {
-			println!("bear: --- value: {:?}", v);
+			// println!("value: {v}");
 			match decode(v) {
 				Ok(v) => *value = v,
 				Err(e) => log::error!(
