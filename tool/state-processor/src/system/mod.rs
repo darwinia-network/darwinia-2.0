@@ -1,14 +1,8 @@
-// crates.io
-use array_bytes::bytes2hex;
 // darwinia
 use crate::*;
-// parity
-use frame_support::{Blake2_128Concat, StorageHasher};
-use sp_core::H160;
 
 #[derive(Debug)]
 pub struct AccountAll {
-	pub key: String,
 	pub nonce: u32,
 	pub consumers: u32,
 	pub providers: u32,
@@ -22,11 +16,9 @@ pub struct AccountAll {
 }
 
 impl Processor {
-	// System storage items.
-	// https://github.com/paritytech/substrate/blob/polkadot-v0.9.16/frame/system/src/lib.rs#L545-L639
-	// Balances storage items.
-	// https://github.com/paritytech/substrate/blob/polkadot-v0.9.16/frame/balances/src/lib.rs#L486-L535
 	pub fn process_system(&mut self) -> &mut Self {
+		// System storage items.
+		// https://github.dev/darwinia-network/substrate/blob/darwinia-v0.12.5/frame/system/src/lib.rs#L545
 		let solo_account_infos = self.process_solo_account_infos();
 		let para_account_infos = self.process_para_account_infos();
 		let (ring_total_issuance_storage, kton_total_issuance_storage) = self.process_balances();
@@ -37,10 +29,13 @@ impl Processor {
 		log::info!("build accounts");
 		log::info!("calculate total issuance");
 		solo_account_infos.into_iter().for_each(|(k, v)| {
+			if v.data.reserved_kton_or_fee_frozen != 0 {
+				log::error!("there shouldn't be any reserved kton on account({k})");
+			}
+
 			accounts.insert(
-				k.clone(),
+				k,
 				AccountAll {
-					key: k,
 					nonce: v.nonce,
 					// ---
 					// TODO: check if we could ignore para's.
@@ -60,18 +55,16 @@ impl Processor {
 			ring_total_issuance += v.data.free;
 			ring_total_issuance += v.data.reserved;
 			kton_total_issuance += v.data.free_kton_or_misc_frozen;
-			kton_total_issuance += v.data.reserved_kton_or_fee_frozen;
 		});
 		para_account_infos.into_iter().for_each(|(k, v)| {
 			accounts
-				.entry(k.clone())
+				.entry(k)
 				.and_modify(|a| {
 					a.nonce = v.nonce.max(a.nonce);
 					a.ring += v.data.free;
 					a.ring_reserved += v.data.reserved;
 				})
 				.or_insert(AccountAll {
-					key: k,
 					nonce: v.nonce,
 					consumers: v.consumers,
 					providers: v.providers,
@@ -88,20 +81,31 @@ impl Processor {
 			ring_total_issuance += v.data.reserved;
 		});
 
+		log::info!("`ring_total_issuance({ring_total_issuance})`");
+		log::info!("`ring_total_issuance_storage({ring_total_issuance_storage})`");
+
 		log::info!("set `Balances::TotalIssuance`");
-		log::info!("ring_total_issuance({ring_total_issuance})");
-		log::info!("ring_total_issuance_storage({ring_total_issuance_storage})");
-		self.shell_state
-			.0
-			.insert(item_key(b"Balances", b"TotalIssuance"), encode_value(ring_total_issuance));
+		self.shell_state.insert_value(b"Balances", b"TotalIssuance", "", ring_total_issuance);
 
-		log::info!("kton_total_issuance({kton_total_issuance})");
-		log::info!("kton_total_issuance_storage({kton_total_issuance_storage})");
-		// TODO: set KTON total issuance
+		log::info!("`kton_total_issuance({kton_total_issuance})`");
+		log::info!("`kton_total_issuance_storage({kton_total_issuance_storage})`");
 
-		log::info!("update ring misc frozen and fee frozen");
-		log::info!("set `System::Account`");
-		log::info!("set `Balances::Locks`");
+		let mut kton_details = AssetDetails {
+			owner: ROOT,
+			issuer: ROOT,
+			admin: ROOT,
+			freezer: ROOT,
+			supply: kton_total_issuance,
+			deposit: 0,
+			min_balance: 1,      // The same as the value in the runtime.
+			is_sufficient: true, // The same as the value in the runtime.
+			sufficients: 0,
+			accounts: 0,
+			approvals: 0,
+			is_frozen: false,
+		};
+
+		log::info!("fix `EVM::AccountCodes`'s `sufficients` and set `Assets::Account`, `System::Account`, `AccountMigration::KtonAccounts` and `AccountMigration::Accounts`");
 		accounts.into_iter().for_each(|(k, v)| {
 			let key = get_last_64(&k);
 			let mut a = AccountInfo {
@@ -117,28 +121,77 @@ impl Processor {
 				},
 			};
 
-			match is_evm_addr(&key) {
-				(true, addr) => {
-					self.shell_state.0.insert(
-						full_key(
-							b"System",
-							b"Account",
-							&bytes2hex("", &Blake2_128Concat::hash(&addr.encode())),
-						),
-						encode_value(a),
-					);
-					// TODO: migrate kton balances.
-				},
-				(false, None) => {
-					a.nonce = 0;
+			if let Some(k) = try_get_evm_address(&key) {
+				// If the evm account is a contract contract with sufficients, then we should
+				// increase the sufficients by one.
+				if self.solo_state.contains_key(&full_key(
+					b"EVM",
+					b"AccountCodes",
+					&blake2_128_concat_to_string(k),
+				)) && a.sufficients == 0
+				{
+					a.sufficients += 1;
+				}
 
-					self.shell_state
-						.0
-						.insert(full_key(b"AccountMigration", b"Accounts", &key), encode_value(a));
-				},
-				_ => unreachable!(),
+				if v.kton != 0 {
+					self.shell_state.insert_value(
+						b"Assets",
+						b"Account",
+						&format!(
+							"{}{}",
+							blake2_128_concat_to_string(KTON_ID.encode()),
+							blake2_128_concat_to_string(k.encode()),
+						),
+						new_kton_account(&mut a, &mut kton_details, v.kton),
+					);
+				}
+
+				self.shell_state.insert_value(
+					b"System",
+					b"Account",
+					&blake2_128_concat_to_string(k),
+					a,
+				);
+			} else {
+				a.nonce = 0;
+
+				if v.kton != 0 {
+					self.shell_state.insert_value(
+						b"AccountMigration",
+						b"KtonAccounts",
+						&k,
+						new_kton_account(&mut a, &mut kton_details, v.kton),
+					);
+				}
+
+				self.shell_state.insert_value(b"AccountMigration", b"Accounts", &k, a);
 			}
 		});
+
+		log::info!("set `Assets::Asset`");
+		log::info!("kton_total_issuance({kton_total_issuance})");
+		log::info!("kton_total_issuance_storage({kton_total_issuance_storage})");
+		self.shell_state.insert_value(
+			b"Assets",
+			b"Asset",
+			&blake2_128_concat_to_string(KTON_ID.encode()),
+			kton_details,
+		);
+
+		log::info!("set `Assets::Metadata`");
+		self.shell_state.insert_value(
+			b"Assets",
+			b"Metadata",
+			&blake2_128_concat_to_string(KTON_ID.encode()),
+			AssetMetadata {
+				deposit: 0,
+				// TODO: different runtime
+				name: b"Darwinia Commitment Token".to_vec(),
+				symbol: b"KTON".to_vec(),
+				decimals: 18,
+				is_frozen: false,
+			},
+		);
 
 		self
 	}
@@ -154,13 +207,8 @@ impl Processor {
 			.take_map(b"Ethereum", b"RemainingRingBalance", &mut remaining_ring, get_hashed_key)
 			.take_map(b"Ethereum", b"RemainingKtonBalance", &mut remaining_kton, get_hashed_key);
 
-		log::info!("adjust solo balance decimals");
-		account_infos.iter_mut().for_each(|(_, v)| {
-			v.data.free *= GWEI;
-			v.data.reserved *= GWEI;
-			v.data.free_kton_or_misc_frozen *= GWEI;
-			v.data.reserved_kton_or_fee_frozen *= GWEI;
-		});
+		log::info!("adjust solo `AccountData`s");
+		account_infos.iter_mut().for_each(|(_, v)| v.data.adjust());
 
 		log::info!("merge solo remaining balances");
 		remaining_ring.into_iter().for_each(|(k, v)| {
@@ -197,28 +245,37 @@ impl Processor {
 	}
 }
 
-// Returns true if the key is an EVM account key and the associated address, otherwise, returns None
-fn is_evm_addr(key: &str) -> (bool, Option<H160>) {
+fn try_get_evm_address(key: &str) -> Option<[u8; 20]> {
 	let k = array_bytes::hex2bytes_unchecked(key);
 
 	if k.starts_with(b"dvm:") && k[1..31].iter().fold(k[0], |checksum, &b| checksum ^ b) == k[31] {
-		return (true, Some(H160::from_slice(&k[11..31])));
+		Some(array_bytes::slice2array_unchecked(&k[11..31]))
+	} else {
+		None
 	}
-	(false, None)
+}
+
+fn new_kton_account(
+	account_info: &mut AccountInfo,
+	asset_details: &mut AssetDetails,
+	balance: u128,
+) -> AssetAccount {
+	account_info.sufficients += 1;
+	asset_details.accounts += 1;
+	asset_details.sufficients += 1;
+
+	AssetAccount { balance, is_frozen: false, reason: ExistenceReason::Sufficient, extra: () }
 }
 
 #[test]
 fn verify_evm_address_checksum_should_work() {
-	// std
-	use std::str::FromStr;
-
 	// subalfred key 5ELRpquT7C3mWtjerpPfdmaGoSh12BL2gFCv2WczEcv6E1zL
 	// sub-seed
 	// public-key 0x64766d3a00000000000000b7de7f8c52ac75e036d05fda53a75cf12714a76973
 	// Substrate 5ELRpquT7C3mWtjerpPfdmaGoSh12BL2gFCv2WczEcv6E1zL
-	assert!(is_evm_addr("0x64766d3a00000000000000b7de7f8c52ac75e036d05fda53a75cf12714a76973").0);
 	assert_eq!(
-		is_evm_addr("0x64766d3a00000000000000b7de7f8c52ac75e036d05fda53a75cf12714a76973").1,
-		H160::from_str("b7de7f8c52ac75e036d05fda53a75cf12714a769").ok(),
+		try_get_evm_address("0x64766d3a00000000000000b7de7f8c52ac75e036d05fda53a75cf12714a76973")
+			.unwrap(),
+		array_bytes::hex2array_unchecked::<_, 20>("0xb7de7f8c52ac75e036d05fda53a75cf12714a769")
 	);
 }

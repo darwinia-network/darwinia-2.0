@@ -97,16 +97,27 @@ impl frame_support::traits::UnixTime for Time {
 		Time::get()
 	}
 }
-pub enum KtonMinting {}
-impl darwinia_deposit::Minting for KtonMinting {
+pub enum KtonAsset {}
+impl darwinia_deposit::SimpleAsset for KtonAsset {
 	type AccountId = u32;
 
 	fn mint(beneficiary: &Self::AccountId, amount: Balance) -> sp_runtime::DispatchResult {
 		Assets::mint(RuntimeOrigin::signed(0), 0, *beneficiary, amount)
 	}
+
+	fn burn(
+		who: &Self::AccountId,
+		amount: Balance,
+	) -> sp_runtime::DispatchResult {
+		if Assets::balance(0, who) < amount {
+			Err(<pallet_assets::Error<Runtime>>::BalanceLow)?;
+		}
+
+		Assets::burn(RuntimeOrigin::signed(0), 0, *who, amount)
+	}
 }
 impl darwinia_deposit::Config for Runtime {
-	type Kton = KtonMinting;
+	type Kton = KtonAsset;
 	type MaxDeposits = frame_support::traits::ConstU32<16>;
 	type MinLockingAmount = frame_support::traits::ConstU128<UNIT>;
 	type Ring = Balances;
@@ -154,7 +165,7 @@ impl pallet_session::SessionHandler<u32> for TestSessionHandler {
 		&[sp_runtime::testing::UintAuthorityId::ID];
 
 	fn on_genesis_session<Ks: sp_runtime::traits::OpaqueKeys>(keys: &[(u32, Ks)]) {
-		SessionHandlerCollators::set(keys.into_iter().map(|(a, _)| *a).collect::<Vec<_>>())
+		SessionHandlerCollators::set(keys.iter().map(|(a, _)| *a).collect::<Vec<_>>())
 	}
 
 	fn on_new_session<Ks: sp_runtime::traits::OpaqueKeys>(
@@ -163,7 +174,7 @@ impl pallet_session::SessionHandler<u32> for TestSessionHandler {
 		_: &[(u32, Ks)],
 	) {
 		SessionChangeBlock::set(System::block_number());
-		SessionHandlerCollators::set(keys.into_iter().map(|(a, _)| *a).collect::<Vec<_>>())
+		SessionHandlerCollators::set(keys.iter().map(|(a, _)| *a).collect::<Vec<_>>())
 	}
 
 	fn on_before_session_ending() {}
