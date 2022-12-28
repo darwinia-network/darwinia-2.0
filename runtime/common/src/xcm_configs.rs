@@ -24,6 +24,7 @@ use codec::Encode;
 use dc_primitives::GWEI;
 // polkadot
 use xcm::latest::{prelude::*, Weight as XCMWeight};
+use xcm_builder::TakeRevenue;
 use xcm_executor::traits::{Convert, ShouldExecute};
 // substrate
 use frame_support::{
@@ -145,10 +146,11 @@ pub struct LocalAssetTrader<
 	AccountId,
 	Currency: CurrencyT<AccountId>,
 	OnUnbalanced: OnUnbalancedT<Currency::NegativeImbalance>,
+	R: TakeRevenue,
 >(
 	Weight,
 	Currency::Balance,
-	PhantomData<(WeightToFee, AssetId, AccountId, Currency, OnUnbalanced)>,
+	PhantomData<(WeightToFee, AssetId, AccountId, Currency, OnUnbalanced, R)>,
 );
 impl<
 		WeightToFee: WeightToFeeT<Balance = Currency::Balance>,
@@ -156,7 +158,8 @@ impl<
 		AccountId,
 		Currency: CurrencyT<AccountId>,
 		OnUnbalanced: OnUnbalancedT<Currency::NegativeImbalance>,
-	> WeightTrader for LocalAssetTrader<WeightToFee, AssetId, AccountId, Currency, OnUnbalanced>
+		R: TakeRevenue
+	> WeightTrader for LocalAssetTrader<WeightToFee, AssetId, AccountId, Currency, OnUnbalanced, R>
 {
 	fn new() -> Self {
 		Self(0, Zero::zero(), PhantomData)
@@ -167,10 +170,11 @@ impl<
 		let amount =
 			WeightToFee::weight_to_fee(&frame_support::weights::Weight::from_ref_time(weight));
 		let u128_amount: u128 = amount.try_into().map_err(|_| XcmError::Overflow)?;
-		let required = (Concrete(AssetId::get()), u128_amount).into();
-		let unused = payment.checked_sub(required).map_err(|_| XcmError::TooExpensive)?;
+		let required: MultiAsset = (Concrete(AssetId::get()), u128_amount).into();
+		let unused = payment.checked_sub(required.clone()).map_err(|_| XcmError::TooExpensive)?;
 		self.0 = self.0.saturating_add(weight);
 		self.1 = self.1.saturating_add(amount);
+		R::take_revenue(required);
 		Ok(unused)
 	}
 
@@ -195,7 +199,8 @@ impl<
 		AccountId,
 		Currency: CurrencyT<AccountId>,
 		OnUnbalanced: OnUnbalancedT<Currency::NegativeImbalance>,
-	> Drop for LocalAssetTrader<WeightToFee, AssetId, AccountId, Currency, OnUnbalanced>
+		R: TakeRevenue,
+	> Drop for LocalAssetTrader<WeightToFee, AssetId, AccountId, Currency, OnUnbalanced, R>
 {
 	fn drop(&mut self) {
 		OnUnbalanced::on_unbalanced(Currency::issue(self.1));

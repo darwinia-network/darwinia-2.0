@@ -21,6 +21,7 @@ bp-darwinia-core = { default-features = false, git = "https://github.com/darwini
 
 # polkadot
 xcm          = { default-features = false, git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.30" }
+xcm-builder  = { default-features = false, git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.30" }
 xcm-executor = { default-features = false, git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.30" }
 
 # substrate
@@ -42,6 +43,7 @@ std = [
 
 	# polkadot
 	"xcm/std",
+	"xcm-builder/std",
 	"xcm-executor/std",
 
 	# substrate
