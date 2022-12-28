@@ -105,7 +105,7 @@ impl Processor {
 			is_frozen: false,
 		};
 
-		log::info!("fix `Evm::AccountCodes` and set `Assets::Account`, `System::Account`, `AccountMigration::KtonAccounts` and `AccountMigration::Accounts`");
+		log::info!("fix `EVM::AccountCodes`'s `sufficients` and set `Assets::Account`, `System::Account`, `AccountMigration::KtonAccounts` and `AccountMigration::Accounts`");
 		accounts.into_iter().for_each(|(k, v)| {
 			let key = get_last_64(&k);
 			let mut a = AccountInfo {
@@ -125,7 +125,7 @@ impl Processor {
 				// If the evm account is a contract contract with sufficients, then we should
 				// increase the sufficients by one.
 				if self.solo_state.contains_key(&full_key(
-					b"Evm",
+					b"EVM",
 					b"AccountCodes",
 					&blake2_128_concat_to_string(k),
 				)) && a.sufficients == 0
@@ -257,12 +257,12 @@ fn try_get_evm_address(key: &str) -> Option<[u8; 20]> {
 
 fn new_kton_account(
 	account_info: &mut AccountInfo,
-	assert_details: &mut AssetDetails,
+	asset_details: &mut AssetDetails,
 	balance: u128,
 ) -> AssetAccount {
 	account_info.sufficients += 1;
-	assert_details.accounts += 1;
-	assert_details.sufficients += 1;
+	asset_details.accounts += 1;
+	asset_details.sufficients += 1;
 
 	AssetAccount { balance, is_frozen: false, reason: ExistenceReason::Sufficient, extra: () }
 }
