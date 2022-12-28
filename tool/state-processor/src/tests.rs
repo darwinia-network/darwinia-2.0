@@ -1,13 +1,8 @@
-// Read the demo items out from the origin crab.json and crab-parachain.json
-// Compared with the data processed.json
-
 use core::panic;
 
-use crate::{
-	full_key, type_registry::StakingLedger, AccountData, AccountInfo, Deposit, Ledger, Map, State,
-	VestingInfo, GWEI,
-};
+use crate::*;
 use array_bytes::{bytes2hex, hex_n_into_unchecked};
+use parity_scale_codec::Encode;
 use primitive_types::H256;
 
 struct Tester {
@@ -35,7 +30,7 @@ where
 	assert!(result.is_ok())
 }
 
-// --- System & Balances ---
+// --- System & Balances & Asset ---
 
 #[test]
 fn account_adjust_solo_chain_account() {
@@ -49,7 +44,7 @@ fn account_adjust_solo_chain_account() {
 		tester.solo_state.get_value(
 			b"System",
 			b"Account",
-			&bytes2hex("", subhasher::blake2_128_concat(&addr)),
+			&blake2_128_concat_to_string(addr.encode()),
 			&mut account_info,
 		);
 		assert_ne!(account_info.nonce, 0);
@@ -64,13 +59,12 @@ fn account_adjust_solo_chain_account() {
 		tester.processed_state.get_value(
 			b"AccountMigration",
 			b"Accounts",
-			&bytes2hex("", subhasher::blake2_128_concat(&addr)),
+			&blake2_128_concat_to_string(addr.encode()),
 			&mut migrated_account_info,
 		);
-		// assert pointer not changes
 		assert_eq!(account_info.consumers, migrated_account_info.consumers);
 		assert_eq!(account_info.providers, migrated_account_info.providers);
-		assert_eq!(account_info.sufficients, migrated_account_info.sufficients);
+		assert_eq!(account_info.sufficients + 1, migrated_account_info.sufficients);
 		// assert nonce reset
 		assert_eq!(migrated_account_info.nonce, 0);
 		// the kton part has been removed.
@@ -93,14 +87,14 @@ fn account_adjust_with_remaining_balance_solo_account() {
 		tester.solo_state.get_value(
 			b"System",
 			b"Account",
-			&bytes2hex("", subhasher::blake2_128_concat(&addr)),
+			&blake2_128_concat_to_string(addr.encode()),
 			&mut account_info,
 		);
 		let mut remaining_balance = u128::default();
 		tester.solo_state.get_value(
 			b"Ethereum",
 			b"RemainingRingBalance",
-			&bytes2hex("", subhasher::blake2_128_concat(&addr)),
+			&blake2_128_concat_to_string(addr.encode()),
 			&mut remaining_balance,
 		);
 
@@ -109,7 +103,7 @@ fn account_adjust_with_remaining_balance_solo_account() {
 		tester.processed_state.get_value(
 			b"AccountMigration",
 			b"Accounts",
-			&bytes2hex("", subhasher::blake2_128_concat(&addr)),
+			&blake2_128_concat_to_string(addr.encode()),
 			&mut migrated_account_info,
 		);
 		assert_eq!(
@@ -131,7 +125,7 @@ fn evm_account_adjust() {
 		tester.solo_state.get_value(
 			b"System",
 			b"Account",
-			&bytes2hex("", subhasher::blake2_128_concat(&addr)),
+			&blake2_128_concat_to_string(addr.encode()),
 			&mut account_info,
 		);
 		assert_ne!(account_info.nonce, 0);
@@ -168,7 +162,7 @@ fn evm_contract_account_adjust_sufficients() {
 		tester.solo_state.get_value(
 			b"System",
 			b"Account",
-			&bytes2hex("", subhasher::blake2_128_concat(&addr)),
+			&blake2_128_concat_to_string(addr.encode()),
 			&mut account_info,
 		);
 		assert_eq!(account_info.sufficients, 0);
@@ -217,6 +211,39 @@ fn kton_total_issuance() {}
 #[test]
 fn special_accounts() {}
 
+#[test]
+fn asset_creation() {
+	run_test(|tester| {
+		let mut details = AssetDetails::default();
+		tester.processed_state.get_value(
+			b"Assets",
+			b"Asset",
+			&blake2_128_concat_to_string(KTON_ID.encode()),
+			&mut details,
+		);
+		assert!(details.accounts > 0);
+		assert!(details.supply != 0);
+		assert_eq!(details.min_balance, 1);
+		assert_eq!(details.sufficients, details.accounts);
+	});
+}
+
+#[test]
+fn asset_metadata() {
+	run_test(|tester| {
+		let mut metadata = AssetMetadata::default();
+		tester.processed_state.get_value(
+			b"Assets",
+			b"Metadata",
+			&blake2_128_concat_to_string(KTON_ID.encode()),
+			&mut metadata,
+		);
+		assert_eq!(metadata.decimals, 18);
+		assert_eq!(metadata.symbol, b"KTON".to_vec());
+		assert_eq!(metadata.name, b"Darwinia Commitment Token".to_vec());
+	});
+}
+
 // --- EVM & Ethereum ---
 
 #[test]
@@ -229,7 +256,7 @@ fn evm_code_migrate() {
 		tester.solo_state.get_value(
 			b"EVM",
 			b"AccountCodes",
-			&bytes2hex("", subhasher::blake2_128_concat(&addr)),
+			&blake2_128_concat_to_string(addr.encode()),
 			&mut code,
 		);
 		assert_ne!(code.len(), 0);
@@ -239,7 +266,7 @@ fn evm_code_migrate() {
 		tester.processed_state.get_value(
 			b"Evm",
 			b"AccountCodes",
-			&bytes2hex("", subhasher::blake2_128_concat(&addr)),
+			&blake2_128_concat_to_string(addr.encode()),
 			&mut migrated_code,
 		);
 		assert_eq!(code, migrated_code);
@@ -257,7 +284,7 @@ fn evm_account_storage_migrate() {
 			if k.starts_with(&full_key(
 				b"EVM",
 				b"AccountStorages",
-				&bytes2hex("", subhasher::blake2_128_concat(&addr)),
+				&blake2_128_concat_to_string(addr.encode()),
 			)) {
 				sum + 1
 			} else {
@@ -275,8 +302,8 @@ fn evm_account_storage_migrate() {
 			b"AccountStorages",
 			&format!(
 				"{}{}",
-				&bytes2hex("", subhasher::blake2_128_concat(&addr)),
-				&bytes2hex("", subhasher::blake2_128_concat(&storage_key)),
+				&blake2_128_concat_to_string(addr.encode()),
+				&blake2_128_concat_to_string(storage_key),
 			),
 			&mut storage_value,
 		);
@@ -288,7 +315,7 @@ fn evm_account_storage_migrate() {
 				if k.starts_with(&full_key(
 					b"Evm",
 					b"AccountStorages",
-					&bytes2hex("", subhasher::blake2_128_concat(&addr)),
+					&blake2_128_concat_to_string(addr.encode()),
 				)) {
 					sum + 1
 				} else {
@@ -303,8 +330,8 @@ fn evm_account_storage_migrate() {
 			b"AccountStorages",
 			&format!(
 				"{}{}",
-				&bytes2hex("", subhasher::blake2_128_concat(&addr)),
-				&bytes2hex("", subhasher::blake2_128_concat(&storage_key)),
+				&blake2_128_concat_to_string(addr.encode()),
+				&blake2_128_concat_to_string(storage_key),
 			),
 			&mut migrated_storage_value,
 		);
@@ -326,7 +353,7 @@ fn bounded_migrate() {
 		tester.solo_state.get_value(
 			b"Staking",
 			b"Bonded",
-			&bytes2hex("", subhasher::twox64_concat(&addr)),
+			&twox64_concat_to_string(addr.encode()),
 			&mut controller,
 		);
 		assert_ne!(controller, [0u8; 32]);
@@ -336,7 +363,7 @@ fn bounded_migrate() {
 		tester.processed_state.get_value(
 			b"AccountMigration",
 			b"Bonded",
-			&bytes2hex("", subhasher::twox64_concat(&addr)),
+			&twox64_concat_to_string(addr.encode()),
 			&mut migrated_controller,
 		);
 		assert_eq!(migrated_controller, controller);
@@ -355,7 +382,7 @@ fn deposit_items_migrate() {
 		tester.solo_state.get_value(
 			b"Staking",
 			b"Ledger",
-			&bytes2hex("", subhasher::blake2_128_concat(&addr)),
+			&blake2_128_concat_to_string(addr.encode()),
 			&mut ledger,
 		);
 		assert_ne!(ledger.deposit_items.len(), 0);
@@ -366,7 +393,7 @@ fn deposit_items_migrate() {
 		tester.processed_state.get_value(
 			b"AccountMigration",
 			b"Deposits",
-			&bytes2hex("", subhasher::blake2_128_concat(&addr)),
+			&blake2_128_concat_to_string(addr.encode()),
 			&mut migrated_deposits,
 		);
 		assert_eq!(migrated_deposits.len(), ledger.deposit_items.len());
@@ -392,7 +419,7 @@ fn ledgers_staked_value_migrate() {
 		tester.solo_state.get_value(
 			b"Staking",
 			b"Ledger",
-			&bytes2hex("", subhasher::blake2_128_concat(&addr)),
+			&blake2_128_concat_to_string(addr.encode()),
 			&mut ledger,
 		);
 		assert_ne!(ledger.active, 0);
@@ -403,7 +430,7 @@ fn ledgers_staked_value_migrate() {
 		tester.processed_state.get_value(
 			b"AccountMigration",
 			b"Ledgers",
-			&bytes2hex("", subhasher::blake2_128_concat(&addr)),
+			&blake2_128_concat_to_string(addr.encode()),
 			&mut migrated_ledger,
 		);
 		assert_eq!(migrated_ledger.staked_ring, ledger.active * GWEI);
@@ -423,7 +450,7 @@ fn ledgers_unbondings_migrate() {
 		tester.solo_state.get_value(
 			b"Staking",
 			b"Ledger",
-			&bytes2hex("", subhasher::blake2_128_concat(&addr)),
+			&blake2_128_concat_to_string(addr.encode()),
 			&mut ledger,
 		);
 		assert_ne!(ledger.ring_staking_lock.unbondings.len(), 0);
@@ -433,7 +460,7 @@ fn ledgers_unbondings_migrate() {
 		tester.processed_state.get_value(
 			b"AccountMigration",
 			b"Ledgers",
-			&bytes2hex("", subhasher::blake2_128_concat(&addr)),
+			&blake2_128_concat_to_string(addr.encode()),
 			&mut migrated_ledger,
 		);
 		ledger
@@ -509,7 +536,7 @@ fn vesting_info_adjust() {
 		tester.solo_state.get_value(
 			b"Vesting",
 			b"Vesting",
-			&bytes2hex("", subhasher::blake2_128_concat(&addr)),
+			&blake2_128_concat_to_string(addr.encode()),
 			&mut vesting_info,
 		);
 		assert_ne!(vesting_info.locked, 0);
@@ -520,7 +547,7 @@ fn vesting_info_adjust() {
 		tester.processed_state.get_value(
 			b"AccountMigration",
 			b"Vestings",
-			&bytes2hex("", subhasher::blake2_128_concat(&addr)),
+			&blake2_128_concat_to_string(addr.encode()),
 			&mut migrated_vesting_info,
 		);
 
@@ -543,7 +570,7 @@ fn indices_adjust() {
 		tester.solo_state.get_value(
 			b"System",
 			b"Account",
-			&bytes2hex("", subhasher::blake2_128_concat(&addr)),
+			&blake2_128_concat_to_string(addr.encode()),
 			&mut account_info,
 		);
 		assert_ne!(account_info.data.reserved, 0);
@@ -553,7 +580,7 @@ fn indices_adjust() {
 		tester.processed_state.get_value(
 			b"System",
 			b"Account",
-			&bytes2hex("", subhasher::blake2_128_concat(&addr)),
+			&blake2_128_concat_to_string(addr.encode()),
 			&mut migrated_account_info,
 		);
 		assert_ne!(

@@ -43,7 +43,7 @@ impl Default for Reasons {
 }
 
 // https://github.dev/paritytech/substrate/blob/polkadot-v0.9.30/frame/assets/src/types.rs#L33
-#[derive(Debug, Encode, Decode)]
+#[derive(Default, Debug, Encode, Decode)]
 pub struct AssetDetails {
 	pub owner: [u8; 20],
 	pub issuer: [u8; 20],
@@ -89,7 +89,7 @@ pub struct Approval {
 }
 
 // https://github.dev/paritytech/substrate/blob/polkadot-v0.9.30/frame/assets/src/types.rs#L127
-#[derive(Clone, Encode, Decode)]
+#[derive(Clone, Encode, Decode, Default)]
 pub struct AssetMetadata {
 	pub deposit: u128,
 	pub name: Vec<u8>,
