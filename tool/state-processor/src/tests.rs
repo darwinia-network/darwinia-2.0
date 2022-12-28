@@ -65,12 +65,23 @@ fn account_adjust_solo_chain_account() {
 		assert_eq!(account_info.consumers, migrated_account_info.consumers);
 		assert_eq!(account_info.providers, migrated_account_info.providers);
 		assert_eq!(account_info.sufficients + 1, migrated_account_info.sufficients);
-		// assert nonce reset
+		// nonce reset
 		assert_eq!(migrated_account_info.nonce, 0);
+		// decimal adjust
+		assert_eq!(account_info.data.free * GWEI, migrated_account_info.data.free);
 		// the kton part has been removed.
 		assert_eq!(migrated_account_info.data.free_kton_or_misc_frozen, 0);
-		// assert decimal adjust
-		assert_eq!(account_info.data.free * GWEI, migrated_account_info.data.free);
+
+		//  the kton part moved to the assert pallet
+		let mut asset_account = AssetAccount::default();
+		tester.processed_state.get_value(
+			b"AccountMigration",
+			b"KtonAccounts",
+			&blake2_128_concat_to_string(addr.encode()),
+			&mut asset_account,
+		);
+		assert_eq!(asset_account.balance, account_info.data.free_kton_or_misc_frozen * GWEI);
+		assert!(!asset_account.is_frozen);
 	});
 }
 

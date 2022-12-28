@@ -60,7 +60,7 @@ pub struct AssetDetails {
 }
 
 // https://github.dev/paritytech/substrate/blob/polkadot-v0.9.30/frame/assets/src/types.rs#L115
-#[derive(Debug, Encode, Decode)]
+#[derive(Default, Debug, Encode, Decode)]
 pub struct AssetAccount {
 	pub balance: u128,
 	pub is_frozen: bool,
@@ -79,6 +79,12 @@ pub enum ExistenceReason {
 	DepositHeld(u128),
 	#[codec(index = 3)]
 	DepositRefunded,
+}
+
+impl Default for ExistenceReason {
+	fn default() -> Self {
+		ExistenceReason::Sufficient
+	}
 }
 
 // https://github.dev/paritytech/substrate/blob/polkadot-v0.9.30/frame/assets/src/types.rs#L73
