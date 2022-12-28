@@ -158,7 +158,7 @@ impl<
 		AccountId,
 		Currency: CurrencyT<AccountId>,
 		OnUnbalanced: OnUnbalancedT<Currency::NegativeImbalance>,
-		R: TakeRevenue
+		R: TakeRevenue,
 	> WeightTrader for LocalAssetTrader<WeightToFee, AssetId, AccountId, Currency, OnUnbalanced, R>
 {
 	fn new() -> Self {
