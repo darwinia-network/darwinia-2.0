@@ -214,7 +214,7 @@ impl Processor {
 		let (mut total_remaining_ring, mut total_remaining_kton) =
 			(u128::default(), u128::default());
 
-		remaining_ring.into_iter().for_each(|(k, v)| {
+		remaining_ring.into_iter().filter(|(_, v)| *v > 0).for_each(|(k, v)| {
 			if let Some(a) = account_infos.get_mut(&k) {
 				total_remaining_ring += v;
 				a.data.free += v;
@@ -225,14 +225,14 @@ impl Processor {
 				);
 			}
 		});
-		remaining_kton.into_iter().for_each(|(k, v)| {
+		remaining_kton.into_iter().filter(|(_, v)| *v > 0).for_each(|(k, v)| {
 			if let Some(a) = account_infos.get_mut(&k) {
 				total_remaining_kton += v;
 				a.data.free_kton_or_misc_frozen += v;
 			} else {
 				log::error!(
 					"`Account({})` not found while merging `RemainingKtonBalance`",
-					get_last_64(&k)
+					get_last_64(&k),
 				);
 			}
 		});
