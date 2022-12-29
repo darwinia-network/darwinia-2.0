@@ -165,8 +165,6 @@ impl pallet_xcm::Config for Runtime {
 	type SendXcmOrigin = xcm_builder::EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;
 	type Weigher = xcm_builder::FixedWeightBounds<UnitWeightCost, RuntimeCall, MaxInstructions>;
 	type XcmExecuteFilter = frame_support::traits::Everything;
-	// ^ Disable dispatchable execute on the XCM pallet.
-	// Needs to be `Everything` for local testing.
 	type XcmExecutor = xcm_executor::XcmExecutor<XcmExecutorConfig>;
 	type XcmReserveTransferFilter = frame_support::traits::Everything;
 	type XcmRouter = XcmRouter;
