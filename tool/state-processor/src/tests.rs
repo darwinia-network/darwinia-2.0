@@ -86,13 +86,12 @@ fn solo_chain_account_adjust() {
 }
 
 #[test]
-#[ignore]
 fn solo_chain_account_adjust_with_remaining_balance() {
 	run_test(|tester| {
 		// This is a pure substrate account_id(not derived one)
-		// https://crab.subscan.io/account/5HakQe5khJMA2iZ99mQy2uAG2pXgub7aAH8k8bTwpNufWsRg
+		// https://crab.subscan.io/account/5HoqYxoqTeyBStp3oBM6aF9p64sFiYiFx9crUdi3XEAfFAW2
 		let addr: [u8; 32] = hex_n_into_unchecked::<_, _, 32>(
-			"0xf4171e1b64c96cc17f601f28d002cb5fcd27eab8b6585e296f4652be5bf05550",
+			"0xfe129f56cc498227acacc4231f70ae15a2f4e8f9ccfa51f4de268c75516fa350",
 		);
 
 		let mut account_info = AccountInfo::default();
