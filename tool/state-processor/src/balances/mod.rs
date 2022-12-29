@@ -27,10 +27,8 @@ impl Processor {
 		prune(&mut solo_kton_locks);
 
 		log::info!("adjust solo total issuances decimals");
-		println!("bear: --- solo_ring_total_issuance before: {solo_ring_total_issuance}");
 		solo_ring_total_issuance.adjust();
 		solo_kton_total_issuance.adjust();
-		println!("bear: --- solo_ring_total_issuance after: {solo_ring_total_issuance}");
 
 		log::info!("take para `Balances::TotalIssuance` and `Balances::Locks`");
 		self.para_state
@@ -43,8 +41,6 @@ impl Processor {
 		check_locks(solo_kton_locks);
 		log::info!("check para locks, there should not be any `para_ring_locks`");
 		check_locks(para_ring_locks);
-
-		println!("bear: --- para_ring_total_issuance: {para_ring_total_issuance}");
 
 		(solo_ring_total_issuance + para_ring_total_issuance, solo_kton_total_issuance)
 	}

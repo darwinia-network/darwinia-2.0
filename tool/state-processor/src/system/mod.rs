@@ -60,7 +60,6 @@ impl Processor {
 			accounts
 				.entry(k.clone())
 				.and_modify(|a| {
-					// log::info!("bear: --- key {:?}, info: {:?}", get_last_64(&k), v);
 					a.nonce = v.nonce.max(a.nonce);
 					a.ring += v.data.free;
 					a.ring_reserved += v.data.reserved;
@@ -214,9 +213,6 @@ impl Processor {
 		log::info!("merge solo remaining balances");
 		let mut total_remaining_ring = u128::default();
 		remaining_ring.into_iter().for_each(|(k, v)| {
-			if v != 0 {
-				log::info!("bear: --- k: {:?}, v: {:?}", get_last_64(&k), v);
-			}
 			if let Some(a) = account_infos.get_mut(&k) {
 				total_remaining_ring += v;
 				a.data.free += v;

@@ -33,7 +33,7 @@ where
 // --- System & Balances & Asset ---
 
 #[test]
-fn solo_chain_account_adjust() {
+fn solo_chain_substrate_account_adjust() {
 	run_test(|tester| {
 		// https://crab.subscan.io/account/5HakQe5khJMA2iZ99mQy2uAG2pXgub7aAH8k8bTwpNufWsRg
 		let addr: [u8; 32] = hex_n_into_unchecked::<_, _, 32>(
@@ -86,7 +86,7 @@ fn solo_chain_account_adjust() {
 }
 
 #[test]
-fn solo_chain_account_adjust_with_remaining_balance() {
+fn solo_chain_substrate_account_adjust_with_remaining_balance() {
 	run_test(|tester| {
 		// This is a pure substrate account_id(not derived one)
 		// https://crab.subscan.io/account/5HoqYxoqTeyBStp3oBM6aF9p64sFiYiFx9crUdi3XEAfFAW2
@@ -122,6 +122,59 @@ fn solo_chain_account_adjust_with_remaining_balance() {
 			migrated_account_info.data.free,
 			account_info.data.free * GWEI + remaining_balance
 		);
+	});
+}
+
+#[test]
+fn combine_solo_account_with_para_account() {
+	run_test(|tester| {
+		// https://crab.subscan.io/account/5D2ZU3QVvebrKu8bLMFntMDEAXyQnhSx7C2Nk9t3gWTchMDS
+		// https://crab-parachain.subscan.io/account/5D2ZU3QVvebrKu8bLMFntMDEAXyQnhSx7C2Nk9t3gWTchMDS
+		let addr: [u8; 32] = hex_n_into_unchecked::<_, _, 32>(
+			"0x2a997fbf3423723ab73fae76567b320de6979664cb3287c0e6ce24099d0eff68",
+		);
+
+		// solo chain state
+		let mut solo_account_info = AccountInfo::default();
+		tester.solo_state.get_value(
+			b"System",
+			b"Account",
+			&blake2_128_concat_to_string(addr.encode()),
+			&mut solo_account_info,
+		);
+		let mut remaining_balance = u128::default();
+		tester.solo_state.get_value(
+			b"Ethereum",
+			b"RemainingRingBalance",
+			&blake2_128_concat_to_string(addr.encode()),
+			&mut remaining_balance,
+		);
+		assert_ne!(solo_account_info.nonce, 0);
+		// para chain state
+		let mut para_account_info = AccountInfo::default();
+		tester.para_state.get_value(
+			b"System",
+			b"Account",
+			&blake2_128_concat_to_string(addr.encode()),
+			&mut para_account_info,
+		);
+		assert_ne!(para_account_info.nonce, 0);
+
+		// after migrate
+		let mut migrated_account_info = AccountInfo::default();
+		tester.processed_state.get_value(
+			b"AccountMigration",
+			b"Accounts",
+			&blake2_128_concat_to_string(addr.encode()),
+			&mut migrated_account_info,
+		);
+
+		assert_eq!(
+			migrated_account_info.data.free,
+			solo_account_info.data.free * GWEI + remaining_balance + para_account_info.data.free
+		);
+		// reset the nonce
+		assert_eq!(migrated_account_info.nonce, 0);
 	});
 }
 
