@@ -148,10 +148,8 @@ impl State {
 		D: Decode,
 	{
 		let key = full_key(pallet, item, hash);
-		// println!("key: {key}");
 
 		if let Some(v) = self.0.get(&key) {
-			// println!("value: {v}");
 			match decode(v) {
 				Ok(v) => *value = v,
 				Err(e) => log::error!(

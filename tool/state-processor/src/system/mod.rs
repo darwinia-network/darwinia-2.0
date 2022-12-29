@@ -58,7 +58,7 @@ impl Processor {
 		});
 		para_account_infos.into_iter().for_each(|(k, v)| {
 			accounts
-				.entry(k.clone())
+				.entry(k)
 				.and_modify(|a| {
 					a.nonce = v.nonce.max(a.nonce);
 					a.ring += v.data.free;
@@ -211,7 +211,9 @@ impl Processor {
 		account_infos.iter_mut().for_each(|(_, v)| v.data.adjust());
 
 		log::info!("merge solo remaining balances");
-		let mut total_remaining_ring = u128::default();
+		let (mut total_remaining_ring, mut total_remaining_kton) =
+			(u128::default(), u128::default());
+
 		remaining_ring.into_iter().for_each(|(k, v)| {
 			if let Some(a) = account_infos.get_mut(&k) {
 				total_remaining_ring += v;
@@ -223,7 +225,6 @@ impl Processor {
 				);
 			}
 		});
-		let mut total_remaining_kton = u128::default();
 		remaining_kton.into_iter().for_each(|(k, v)| {
 			if let Some(a) = account_infos.get_mut(&k) {
 				total_remaining_kton += v;

@@ -48,7 +48,7 @@ impl Processor {
 							.into_iter()
 							.enumerate()
 							.map(|(i, d)| {
-								let id = i as u16;
+								let id = i as _;
 
 								staked_deposits.push(id);
 								deposit_ring += d.value;
