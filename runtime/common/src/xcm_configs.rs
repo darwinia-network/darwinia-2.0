@@ -137,9 +137,8 @@ impl<AccountId: From<[u8; 20]> + Into<[u8; 20]> + Clone> Convert<MultiLocation, 
 	}
 }
 
-/// Weight trader which uses the `TransactionPayment` pallet to set the right price for weight and
-/// then places any weight bought into the right account.
-/// Refer to: https://github.com/paritytech/polkadot/blob/release-v0.9.30/xcm/xcm-builder/src/weight.rs#L242-L305
+/// Weight trader to set the right price for weight and then places any weight bought into the right
+/// account. Refer to: https://github.com/paritytech/polkadot/blob/release-v0.9.30/xcm/xcm-builder/src/weight.rs#L242-L305
 pub struct LocalAssetTrader<
 	WeightToFee: WeightToFeeT<Balance = Currency::Balance>,
 	AssetId: Get<MultiLocation>,
@@ -166,7 +165,7 @@ impl<
 	}
 
 	fn buy_weight(&mut self, weight: Weight, payment: Assets) -> Result<Assets, XcmError> {
-		log::trace!(target: "xcm::weight", "UsingComponents::buy_weight weight: {:?}, payment: {:?}", weight, payment);
+		log::trace!(target: "xcm::weight", "LocalAssetTrader::buy_weight weight: {:?}, payment: {:?}", weight, payment);
 		let amount =
 			WeightToFee::weight_to_fee(&frame_support::weights::Weight::from_ref_time(weight));
 		let u128_amount: u128 = amount.try_into().map_err(|_| XcmError::Overflow)?;
@@ -179,7 +178,7 @@ impl<
 	}
 
 	fn refund_weight(&mut self, weight: Weight) -> Option<MultiAsset> {
-		log::trace!(target: "xcm::weight", "UsingComponents::refund_weight weight: {:?}", weight);
+		log::trace!(target: "xcm::weight", "LocalAssetTrader::refund_weight weight: {:?}", weight);
 		let weight = weight.min(self.0);
 		let amount =
 			WeightToFee::weight_to_fee(&frame_support::weights::Weight::from_ref_time(weight));

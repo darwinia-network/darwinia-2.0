@@ -111,6 +111,7 @@ impl xcm_builder::TakeRevenue for ToTreasury {
 		} = revenue
 		{
 			let _ = Balances::deposit_creating(&DarwiniaTreasuryAccount::get(), amount);
+			frame_support::log::trace!(target: "xcm::weight", "LocalAssetTrader::to_treasury amount: {:?}, treasury: {:?}", amount, &DarwiniaTreasuryAccount::get());
 		}
 	}
 }
