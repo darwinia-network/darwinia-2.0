@@ -285,13 +285,13 @@ impl State {
 		A: AsRef<[u8]>,
 	{
 		let who = who.as_ref();
-		let (p, i) = if is_evm_address(who) {
-			(&b"System"[..], &b"Account"[..])
+		let (p, i, h) = if is_evm_address(who) {
+			(&b"System"[..], &b"Account"[..], blake2_128_concat_to_string(&who[11..31]))
 		} else {
-			(&b"AccountMigration"[..], &b"Accounts"[..])
+			(&b"AccountMigration"[..], &b"Accounts"[..], blake2_128_concat_to_string(who))
 		};
 
-		self.mutate_value(p, i, &blake2_128_concat_to_string(who), |a: &mut AccountInfo| {
+		self.mutate_value(p, i, &h, |a: &mut AccountInfo| {
 			a.data.free += amount;
 			a.data.reserved -= amount;
 		});

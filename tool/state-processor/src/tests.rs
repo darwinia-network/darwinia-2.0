@@ -631,46 +631,57 @@ fn vesting_info_adjust() {
 // --- Indices ---
 
 #[test]
-#[ignore]
 fn indices_adjust_evm_account() {
 	run_test(|tester| {
+		// https://crab.subscan.io/account/5ELRpquT7C3mWtjes9CNUiDpW1x3VwQYK7ZWq3kiH91UMftL
 		let test_addr = "0x64766d3a00000000000000c7912465c55be41bd09325b393f4fbea73f26d473b";
 
 		let solo_account = tester.solo_accounts.get(test_addr).unwrap();
 		let remaining_balance = tester.solo_remaining_ring.get(test_addr).unwrap();
 		assert_ne!(solo_account.data.reserved, 0);
 
+		let mut index = ([0u8; 32], 0u128, false);
+		tester.solo_state.get_value(
+			b"Indices",
+			b"Accounts",
+			&blake2_128_concat_to_string(850_770_432u32.encode()),
+			&mut index,
+		);
+		println!("index: {:?}", index);
+
 		// after migrated
 
 		let migrated_account = "0xc7912465c55be41bd09325b393f4fbea73f26d47";
 		let migrated_account = tester.shell_system_accounts.get(migrated_account).unwrap();
 
-		// TODO: https://github.com/darwinia-network/darwinia-2.0/issues/166
 		assert_eq!(
 			migrated_account.data.free,
-			(solo_account.data.free + solo_account.data.reserved) * GWEI + remaining_balance
+			(solo_account.data.free + index.1) * GWEI + remaining_balance
 		);
-		assert_eq!(migrated_account.data.reserved, 0);
+		assert_eq!(migrated_account.data.reserved, (solo_account.data.reserved - index.1) * GWEI);
 	});
 }
 
 #[test]
-#[ignore]
 fn indices_adjust_substrate_account() {
 	run_test(|tester| {
+		// https://crab.subscan.io/account/5HgCRABJyoNTd1UsRwzErffZPDDfdYL3b1y3fZpG8hBScHC2
 		let test_addr = "0xf83ee607164969887eaecab7e058ab3ba0f64c0cfe3f0b575fe45562cfc36bd5";
 
 		let solo_account = tester.solo_accounts.get(test_addr).unwrap();
 		assert_ne!(solo_account.data.reserved, 0);
 
+		let mut index = ([0u8; 32], 0u128, false);
+		tester.solo_state.get_value(
+			b"Indices",
+			b"Accounts",
+			&blake2_128_concat_to_string(1u32.encode()),
+			&mut index,
+		);
+
 		// after migrated
 		let migrated_account = tester.migration_accounts.get(test_addr).unwrap();
-
-		// TODO: https://github.com/darwinia-network/darwinia-2.0/issues/166
-		assert_eq!(
-			migrated_account.data.free,
-			(solo_account.data.free + solo_account.data.reserved) * GWEI
-		);
-		assert_eq!(migrated_account.data.reserved, 0);
+		assert_eq!(migrated_account.data.free, (solo_account.data.free + index.1) * GWEI);
+		assert_eq!(migrated_account.data.reserved, (solo_account.data.reserved - index.1) * GWEI);
 	});
 }
