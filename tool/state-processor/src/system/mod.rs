@@ -245,6 +245,16 @@ impl Processor {
 	}
 }
 
+fn try_get_evm_address(key: &str) -> Option<[u8; 20]> {
+	let k = array_bytes::hex2bytes_unchecked(key);
+
+	if is_evm_address(&k) {
+		Some(array_bytes::slice2array_unchecked(&k[11..31]))
+	} else {
+		None
+	}
+}
+
 fn new_kton_account(
 	account_info: &mut AccountInfo,
 	asset_details: &mut AssetDetails,
@@ -255,16 +265,6 @@ fn new_kton_account(
 	asset_details.sufficients += 1;
 
 	AssetAccount { balance, is_frozen: false, reason: ExistenceReason::Sufficient, extra: () }
-}
-
-fn try_get_evm_address(key: &str) -> Option<[u8; 20]> {
-	let k = array_bytes::hex2bytes_unchecked(key);
-
-	if is_evm_address(&k) {
-		Some(array_bytes::slice2array_unchecked(&k[11..31]))
-	} else {
-		None
-	}
 }
 
 #[test]
