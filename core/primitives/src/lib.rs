@@ -80,3 +80,11 @@ pub const MINUTES: BlockNumber = 60_000 / (MILLISECS_PER_BLOCK as BlockNumber);
 pub const HOURS: BlockNumber = MINUTES * 60;
 /// 14,400 blocks.
 pub const DAYS: BlockNumber = HOURS * 24;
+
+/// Deposit calculator for Darwinia.
+/// 100 UNIT for the base fee, 102.4 UNIT/MB.
+pub const fn darwinia_deposit(items: u32, bytes: u32) -> Balance {
+	// First try.
+	items as Balance * 100 * UNIT + (bytes as Balance) * 100 * MICROUNIT
+	// items as Balance * 100 * UNIT + (bytes as Balance) * 100 * MILLIUNIT
+}
