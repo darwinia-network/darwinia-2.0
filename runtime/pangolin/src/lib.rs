@@ -111,14 +111,6 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	state_version: 0,
 };
 
-/// Deposit calculator for Darwinia.
-/// 100 UNIT for the base fee, 102.4 UNIT/MB.
-pub const fn darwinia_deposit(items: u32, bytes: u32) -> Balance {
-	// First try.
-	items as Balance * 100 * UNIT + (bytes as Balance) * 100 * MICROUNIT
-	// items as Balance * 100 * UNIT + (bytes as Balance) * 100 * MILLIUNIT
-}
-
 // TODO: move to impl.rs
 pub struct DealWithFees<R>(sp_std::marker::PhantomData<R>);
 impl<R> frame_support::traits::OnUnbalanced<pallet_balances::NegativeImbalance<R>>
