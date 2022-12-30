@@ -328,7 +328,7 @@ fn asset_metadata() {
 	});
 }
 
-// // --- EVM & Ethereum ---
+// --- EVM & Ethereum ---
 
 #[test]
 fn evm_code_migrate() {
