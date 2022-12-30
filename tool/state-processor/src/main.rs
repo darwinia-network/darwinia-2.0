@@ -361,11 +361,3 @@ where
 {
 	array_bytes::bytes2hex("", subhasher::blake2_128_concat(data))
 }
-
-#[allow(unused)]
-fn twox64_concat_to_string<D>(data: D) -> String
-where
-	D: AsRef<[u8]>,
-{
-	array_bytes::bytes2hex("", subhasher::twox64_concat(data))
-}

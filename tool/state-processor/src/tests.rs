@@ -1,5 +1,5 @@
 // crates.io
-use array_bytes::{bytes2hex, hex_n_into_unchecked};
+use array_bytes::hex_n_into_unchecked;
 use parity_scale_codec::Encode;
 use primitive_types::H256;
 // darwinia
@@ -7,78 +7,91 @@ use crate::*;
 
 struct Tester {
 	// solo chain
-	solo_account_infos: Map<AccountInfo>,
-	remaining_ring: Map<u128>,
-	remaining_kton: Map<u128>,
+	solo_accounts: Map<AccountInfo>,
+	solo_remaining_ring: Map<u128>,
+	solo_remaining_kton: Map<u128>,
+	solo_evm_codes: Map<Vec<u8>>,
 	// para chain
-	parachain_accounts: Map<AccountInfo>,
-
+	para_accounts: Map<AccountInfo>,
 	// processed
 	migration_accounts: Map<AccountInfo>,
 	migration_kton_accounts: Map<AssetAccount>,
-	new_system_account: Map<AccountInfo>,
+	shell_system_accounts: Map<AccountInfo>,
+	shell_evm_codes: Map<Vec<u8>>,
+
 	solo_state: State,
 	para_state: State,
-	processed_state: State,
+	shell_state: State,
 }
 
-fn get_last_64_plus(key: &str, _: &str) -> String {
+fn get_last_64(key: &str, _: &str) -> String {
 	format!("0x{}", &key[key.len() - 64..])
 }
 
-fn get_last_40_plus(key: &str, _: &str) -> String {
+fn get_last_40(key: &str, _: &str) -> String {
 	format!("0x{}", &key[key.len() - 40..])
+}
+
+fn twox64_concat_to_string<D>(data: D) -> String
+where
+	D: AsRef<[u8]>,
+{
+	array_bytes::bytes2hex("", subhasher::twox64_concat(data))
 }
 
 impl Tester {
 	fn new() -> Self {
 		let mut solo_state = State::from_file("test-data/crab.json").unwrap();
 		let mut para_state = State::from_file("test-data/crab-parachain.json").unwrap();
-		let mut processed_state = State::from_file("test-data/processed.json").unwrap();
+		let mut shell_state = State::from_file("test-data/processed.json").unwrap();
 
 		// solo chain
-		let mut solo_account_infos = <Map<AccountInfo>>::default();
-		let mut remaining_ring = <Map<u128>>::default();
-		let mut remaining_kton = <Map<u128>>::default();
+		let mut solo_accounts = <Map<AccountInfo>>::default();
+		let mut solo_remaining_ring = <Map<u128>>::default();
+		let mut solo_remaining_kton = <Map<u128>>::default();
+		let mut solo_evm_codes = <Map<Vec<u8>>>::default();
 		solo_state
-			.take_map(b"System", b"Account", &mut solo_account_infos, get_last_64_plus)
-			.take_map(b"Ethereum", b"RemainingRingBalance", &mut remaining_ring, get_last_64_plus)
-			.take_map(b"Ethereum", b"RemainingKtonBalance", &mut remaining_kton, get_last_64_plus);
+			.take_map(b"System", b"Account", &mut solo_accounts, get_last_64)
+			.take_map(b"Ethereum", b"RemainingRingBalance", &mut solo_remaining_ring, get_last_64)
+			.take_map(b"Ethereum", b"RemainingKtonBalance", &mut solo_remaining_kton, get_last_64)
+			.take_map(b"EVM", b"AccountCodes", &mut solo_evm_codes, get_last_40);
 
 		// para chain
-		let mut parachain_accounts = <Map<AccountInfo>>::default();
-		para_state.take_map(b"System", b"Account", &mut parachain_accounts, get_last_64_plus);
+		let mut para_accounts = <Map<AccountInfo>>::default();
+		para_state.take_map(b"System", b"Account", &mut para_accounts, get_last_64);
 
 		// processed
-		let mut new_system_account = <Map<AccountInfo>>::default();
+		let mut shell_system_accounts = <Map<AccountInfo>>::default();
+		let mut shell_evm_codes = <Map<Vec<u8>>>::default();
 		let mut migration_accounts = <Map<AccountInfo>>::default();
 		let mut migration_kton_accounts = <Map<AssetAccount>>::default();
-
-		processed_state.take_map(b"System", b"Account", &mut new_system_account, get_last_40_plus);
-		processed_state.take_map(
-			b"AccountMigration",
-			b"KtonAccounts",
-			&mut migration_kton_accounts,
-			get_last_64_plus,
-		);
-		processed_state.take_map(
-			b"AccountMigration",
-			b"Accounts",
-			&mut migration_accounts,
-			get_last_64_plus,
-		);
+		shell_state
+			.take_map(b"System", b"Account", &mut shell_system_accounts, get_last_40)
+			.take_map(
+				b"AccountMigration",
+				b"KtonAccounts",
+				&mut migration_kton_accounts,
+				get_last_64,
+			)
+			.take_map(b"AccountMigration", b"Accounts", &mut migration_accounts, get_last_64)
+			.take_map(b"Evm", b"AccountCodes", &mut shell_evm_codes, get_last_40);
 
 		Self {
-			solo_account_infos,
-			remaining_ring,
-			remaining_kton,
+			solo_accounts,
+			solo_remaining_ring,
+			solo_remaining_kton,
+			solo_evm_codes,
+
+			para_accounts,
+
 			migration_accounts,
 			migration_kton_accounts,
-			new_system_account,
-			parachain_accounts,
+			shell_system_accounts,
+			shell_evm_codes,
+
 			solo_state,
 			para_state,
-			processed_state,
+			shell_state,
 		}
 	}
 }
@@ -97,56 +110,31 @@ where
 #[test]
 fn solo_chain_substrate_account_adjust() {
 	run_test(|tester| {
-		// https://crab.subscan.io/account/5HakQe5khJMA2iZ99mQy2uAG2pXgub7aAH8k8bTwpNufWsRg
-		// let addr: [u8; 32] = hex_n_into_unchecked::<_, _, 32>(
-		// 	"0xf4171e1b64c96cc17f601f28d002cb5fcd27eab8b6585e296f4652be5bf05550",
-		// );
-		let addr = "0xf4171e1b64c96cc17f601f28d002cb5fcd27eab8b6585e296f4652be5bf05550";
+		let test_addr = "0xf4171e1b64c96cc17f601f28d002cb5fcd27eab8b6585e296f4652be5bf05550";
 
-		// let mut account_info = AccountInfo::default();
-		// tester.solo_state.get_value(
-		// 	b"System",
-		// 	b"Account",
-		// 	&blake2_128_concat_to_string(addr.encode()),
-		// 	&mut account_info,
-		// );
-		let account_info = tester.solo_account_infos.get(addr).unwrap();
-		assert_ne!(account_info.nonce, 0);
-		assert_ne!(account_info.consumers, 0);
-		assert_ne!(account_info.providers, 0);
-		assert_eq!(account_info.sufficients, 0);
-		assert_ne!(account_info.data.free, 0);
-		assert_ne!(account_info.data.free_kton_or_misc_frozen, 0);
+		let solo_account = tester.solo_accounts.get(test_addr).unwrap();
+		assert_ne!(solo_account.nonce, 0);
+		assert_ne!(solo_account.consumers, 0);
+		assert_ne!(solo_account.providers, 0);
+		assert_eq!(solo_account.sufficients, 0);
+		assert_ne!(solo_account.data.free, 0);
+		assert_ne!(solo_account.data.free_kton_or_misc_frozen, 0);
 
-		// // after migrate
-		// let mut migrated_account_info = AccountInfo::default();
-		// tester.processed_state.get_value(
-		// 	b"AccountMigration",
-		// 	b"Accounts",
-		// 	&blake2_128_concat_to_string(addr.encode()),
-		// 	&mut migrated_account_info,
-		// );
-		let migrated_account_info = tester.migration_accounts.get(addr).unwrap();
-		assert_eq!(account_info.consumers, migrated_account_info.consumers);
-		assert_eq!(account_info.providers, migrated_account_info.providers);
-		assert_eq!(account_info.sufficients + 1, migrated_account_info.sufficients);
+		// after migrate
+
+		let migrated_account = tester.migration_accounts.get(test_addr).unwrap();
+		assert_eq!(solo_account.consumers, migrated_account.consumers);
+		assert_eq!(solo_account.providers, migrated_account.providers);
+		assert_eq!(solo_account.sufficients + 1, migrated_account.sufficients);
 		// nonce reset
-		assert_eq!(migrated_account_info.nonce, 0);
+		assert_eq!(migrated_account.nonce, 0);
 		// decimal adjust
-		assert_eq!(account_info.data.free * GWEI, migrated_account_info.data.free);
+		assert_eq!(solo_account.data.free * GWEI, migrated_account.data.free);
 		// the kton part has been removed.
-		assert_eq!(migrated_account_info.data.free_kton_or_misc_frozen, 0);
-
-		// //  the kton part moved to the asset pallet
-		// let mut asset_account = AssetAccount::default();
-		// tester.processed_state.get_value(
-		// 	b"AccountMigration",
-		// 	b"KtonAccounts",
-		// 	&blake2_128_concat_to_string(addr.encode()),
-		// 	&mut asset_account,
-		// );
-		let asset_account = tester.migration_kton_accounts.get(addr).unwrap();
-		assert_eq!(asset_account.balance, account_info.data.free_kton_or_misc_frozen * GWEI);
+		assert_eq!(migrated_account.data.free_kton_or_misc_frozen, 0);
+		//  the kton part moved to the asset pallet
+		let asset_account = tester.migration_kton_accounts.get(test_addr).unwrap();
+		assert_eq!(asset_account.balance, solo_account.data.free_kton_or_misc_frozen * GWEI);
 		assert!(!asset_account.is_frozen);
 	});
 }
@@ -154,151 +142,74 @@ fn solo_chain_substrate_account_adjust() {
 #[test]
 fn solo_chain_substrate_account_adjust_with_remaining_balance() {
 	run_test(|tester| {
-		// This is a pure substrate account_id(not derived one)
-		// https://crab.subscan.io/account/5HoqYxoqTeyBStp3oBM6aF9p64sFiYiFx9crUdi3XEAfFAW2
-		// let addr: [u8; 32] = hex_n_into_unchecked::<_, _, 32>(
-		// 	"0xfe129f56cc498227acacc4231f70ae15a2f4e8f9ccfa51f4de268c75516fa350",
-		// );
-		let addr = "0xfe129f56cc498227acacc4231f70ae15a2f4e8f9ccfa51f4de268c75516fa350";
+		let test_addr = "0xfe129f56cc498227acacc4231f70ae15a2f4e8f9ccfa51f4de268c75516fa350";
 
-		let account_info = tester.solo_account_infos.get(addr).unwrap();
-		// tester.solo_state.get_value(
-		// 	b"System",
-		// 	b"Account",
-		// 	&blake2_128_concat_to_string(addr.encode()),
-		// 	&mut account_info,
-		// );
-		let remaining_balance = tester.remaining_ring.get(addr).unwrap();
-		// tester.solo_state.get_value(
-		// 	b"Ethereum",
-		// 	b"RemainingRingBalance",
-		// 	&blake2_128_concat_to_string(addr.encode()),
-		// 	&mut remaining_balance,
-		// );
+		let solo_account = tester.solo_accounts.get(test_addr).unwrap();
+		let remaining_balance = tester.solo_remaining_ring.get(test_addr).unwrap();
 		assert_ne!(*remaining_balance, 0);
 
 		// after migrate
-		let migrated_account_info = tester.migration_accounts.get(addr).unwrap();
-		// tester.processed_state.get_value(
-		// 	b"AccountMigration",
-		// 	b"Accounts",
-		// 	&blake2_128_concat_to_string(addr.encode()),
-		// 	&mut migrated_account_info,
-		// );
-		assert_eq!(
-			migrated_account_info.data.free,
-			account_info.data.free * GWEI + remaining_balance
-		);
+
+		let migrated_account = tester.migration_accounts.get(test_addr).unwrap();
+		assert_eq!(migrated_account.data.free, solo_account.data.free * GWEI + remaining_balance);
 	});
 }
 
 #[test]
 fn combine_solo_account_with_para_account() {
 	run_test(|tester| {
-		// https://crab.subscan.io/account/5D2ZU3QVvebrKu8bLMFntMDEAXyQnhSx7C2Nk9t3gWTchMDS
-		// https://crab-parachain.subscan.io/account/5D2ZU3QVvebrKu8bLMFntMDEAXyQnhSx7C2Nk9t3gWTchMDS
-		// let addr: [u8; 32] = hex_n_into_unchecked::<_, _, 32>(
-		// 	"0x2a997fbf3423723ab73fae76567b320de6979664cb3287c0e6ce24099d0eff68",
-		// );
-		let addr = "0x2a997fbf3423723ab73fae76567b320de6979664cb3287c0e6ce24099d0eff68";
+		let test_addr = "0x2a997fbf3423723ab73fae76567b320de6979664cb3287c0e6ce24099d0eff68";
 
-		// solo chain state
-		let solo_account_info = tester.solo_account_infos.get(addr).unwrap();
-		// tester.solo_state.get_value(
-		// 	b"System",
-		// 	b"Account",
-		// 	&blake2_128_concat_to_string(addr.encode()),
-		// 	&mut solo_account_info,
-		// );
-		let remaining_balance = tester.remaining_ring.get(addr).unwrap();
-		// tester.solo_state.get_value(
-		// 	b"Ethereum",
-		// 	b"RemainingRingBalance",
-		// 	&blake2_128_concat_to_string(addr.encode()),
-		// 	&mut remaining_balance,
-		// );
-		assert_ne!(solo_account_info.nonce, 0);
-		// para chain state
-		let para_account_info = tester.parachain_accounts.get(addr).unwrap();
-		// tester.para_state.get_value(
-		// 	b"System",
-		// 	b"Account",
-		// 	&blake2_128_concat_to_string(addr.encode()),
-		// 	&mut para_account_info,
-		// );
-		assert_ne!(para_account_info.nonce, 0);
+		// solo
+		let solo_account = tester.solo_accounts.get(test_addr).unwrap();
+		let remaining_balance = tester.solo_remaining_ring.get(test_addr).unwrap();
+		assert_ne!(solo_account.nonce, 0);
+		// para
+		let para_account = tester.para_accounts.get(test_addr).unwrap();
+		assert_ne!(para_account.nonce, 0);
 
 		// after migrate
-		let mut migrated_account_info = tester.migration_accounts.get(addr).unwrap();
-		// tester.processed_state.get_value(
-		// 	b"AccountMigration",
-		// 	b"Accounts",
-		// 	&blake2_128_concat_to_string(addr.encode()),
-		// 	&mut migrated_account_info,
-		// );
 
+		let migrated_account = tester.migration_accounts.get(test_addr).unwrap();
 		assert_eq!(
-			migrated_account_info.data.free,
-			solo_account_info.data.free * GWEI + remaining_balance + para_account_info.data.free
+			migrated_account.data.free,
+			solo_account.data.free * GWEI + remaining_balance + para_account.data.free
 		);
 		// reset the nonce
-		assert_eq!(migrated_account_info.nonce, 0);
+		assert_eq!(migrated_account.nonce, 0);
 	});
 }
 
 #[test]
 fn evm_account_adjust() {
 	run_test(|tester| {
-		// https://crab.subscan.io/account/0xaef71b03670f1c52cd3d8efc2ced3ad68ad91e33(5ELRpquT7C3mWtjerdj1oWyv6QzFuDenZHmtP8jcdgD8A3HC)
-		// let addr: [u8; 32] = hex_n_into_unchecked::<_, _, 32>(
-		// 	"0x64766d3a00000000000000aef71b03670f1c52cd3d8efc2ced3ad68ad91e33f3",
-		// );
-		let addr = "0x64766d3a00000000000000aef71b03670f1c52cd3d8efc2ced3ad68ad91e33f3";
+		let test_addr = "0x64766d3a00000000000000aef71b03670f1c52cd3d8efc2ced3ad68ad91e33f3";
 
-		let mut account_info = tester.solo_account_infos.get(addr).unwrap();
-		// tester.solo_state.get_value(
-		// 	b"System",
-		// 	b"Account",
-		// 	&blake2_128_concat_to_string(addr.encode()),
-		// 	&mut account_info,
-		// );
-		assert_ne!(account_info.nonce, 0);
-		assert_ne!(account_info.data.free, 0);
-		assert_ne!(account_info.data.free_kton_or_misc_frozen, 0);
-
-		let mut remaining_kton = tester.remaining_kton.get(addr).unwrap();
-		// tester.solo_state.get_value(
-		// 	b"Ethereum",
-		// 	b"RemainingKtonBalance",
-		// 	&blake2_128_concat_to_string(addr.encode()),
-		// 	&mut remaining_kton,
-		// );
-		assert_ne!(*remaining_kton, 0);
+		let solo_account = tester.solo_accounts.get(test_addr).unwrap();
+		assert_ne!(solo_account.nonce, 0);
+		assert_ne!(solo_account.data.free, 0);
+		assert_ne!(solo_account.data.free_kton_or_misc_frozen, 0);
+		let solo_remaining_kton = tester.solo_remaining_kton.get(test_addr).unwrap();
+		assert_ne!(*solo_remaining_kton, 0);
 
 		// after migrate
 
 		let migrate_addr = "0xaef71b03670f1c52cd3d8efc2ced3ad68ad91e33";
-		let mut migrated_account_info = tester.new_system_account.get(migrate_addr).unwrap();
-		// tester.processed_state.get_value(
-		// 	b"System",
-		// 	b"Account",
-		// 	&bytes2hex("", subhasher::blake2_128_concat(&migrate_addr)),
-		// 	&mut migrated_account_info,
-		// );
+		let migrated_account = tester.shell_system_accounts.get(migrate_addr).unwrap();
 		// nonce doesn't changed.
-		assert_eq!(migrated_account_info.nonce, account_info.nonce);
-		assert_eq!(migrated_account_info.consumers, account_info.consumers);
-		assert_eq!(migrated_account_info.providers, account_info.providers);
+		assert_eq!(migrated_account.nonce, solo_account.nonce);
+		assert_eq!(migrated_account.consumers, solo_account.consumers);
+		assert_eq!(migrated_account.providers, solo_account.providers);
 		// sufficient increase by one because of the asset pallet.
-		assert_eq!(migrated_account_info.sufficients, account_info.sufficients + 1);
-		assert_eq!(migrated_account_info.data.free, account_info.data.free * GWEI);
-		assert_eq!(migrated_account_info.data.free_kton_or_misc_frozen, 0);
+		assert_eq!(migrated_account.sufficients, solo_account.sufficients + 1);
+		assert_eq!(migrated_account.data.free, solo_account.data.free * GWEI);
+		assert_eq!(migrated_account.data.free_kton_or_misc_frozen, 0);
 
 		//  the kton part moved to the asset pallet
 		let mut asset_account = AssetAccount::default();
 		let migrate_addr: [u8; 20] =
 			hex_n_into_unchecked::<_, _, 20>("0xaef71b03670f1c52cd3d8efc2ced3ad68ad91e33");
-		tester.processed_state.get_value(
+		tester.shell_state.get_value(
 			b"Assets",
 			b"Account",
 			&format!(
@@ -310,7 +221,7 @@ fn evm_account_adjust() {
 		);
 		assert_eq!(
 			asset_account.balance,
-			account_info.data.free_kton_or_misc_frozen * GWEI + remaining_kton
+			solo_account.data.free_kton_or_misc_frozen * GWEI + solo_remaining_kton
 		);
 		assert!(!asset_account.is_frozen);
 	});
@@ -319,37 +230,20 @@ fn evm_account_adjust() {
 #[test]
 fn evm_contract_account_adjust_sufficients() {
 	run_test(|tester| {
-		// https://crab.subscan.io/account/0x0050f880c35c31c13bfd9cbb7d28aafaeca3abd2(5ELRpquT7C3mWtjeo2WC5kAYFWzyRP2h55XDwo8ogDNkjm4h)
-		// let addr: [u8; 32] = hex_n_into_unchecked::<_, _, 32>(
-		// 	"0x64766d3a000000000000000050f880c35c31c13bfd9cbb7d28aafaeca3abd2d0",
-		// );
-		let addr = "0x64766d3a000000000000000050f880c35c31c13bfd9cbb7d28aafaeca3abd2d0";
+		let test_addr = "0x64766d3a000000000000000050f880c35c31c13bfd9cbb7d28aafaeca3abd2d0";
 
-		let mut account_info = tester.solo_account_infos.get(addr).unwrap();
-		// tester.solo_state.get_value(
-		// 	b"System",
-		// 	b"Account",
-		// 	&blake2_128_concat_to_string(addr.encode()),
-		// 	&mut account_info,
-		// );
-		assert_eq!(account_info.sufficients, 0);
+		let solo_account = tester.solo_accounts.get(test_addr).unwrap();
+		assert_eq!(solo_account.sufficients, 0);
 
 		// after migrated
-		// let migrate_addr: [u8; 20] =
-		// 	hex_n_into_unchecked::<_, _, 20>("0x0050f880c35c31c13bfd9cbb7d28aafaeca3abd2");
+
 		let migrate_addr = "0x0050f880c35c31c13bfd9cbb7d28aafaeca3abd2";
-		let mut migrated_account_info = tester.new_system_account.get(migrate_addr).unwrap();
-		// tester.processed_state.get_value(
-		// 	b"System",
-		// 	b"Account",
-		// 	&bytes2hex("", subhasher::blake2_128_concat(&migrate_addr)),
-		// 	&mut migrated_account_info,
-		// );
-		assert_eq!(migrated_account_info.sufficients, 1);
+		let migrated_account = tester.shell_system_accounts.get(migrate_addr).unwrap();
+		assert_eq!(migrated_account.sufficients, 1);
 	});
 }
 
-// #[test]
+#[test]
 fn ring_total_issuance() {
 	run_test(|tester| {
 		let mut solo_issuance = u128::default();
@@ -362,7 +256,7 @@ fn ring_total_issuance() {
 
 		// after migrate
 		let mut migrated_total_issuance = u128::default();
-		tester.processed_state.get_value(
+		tester.shell_state.get_value(
 			b"Balances",
 			b"TotalIssuance",
 			"",
@@ -382,7 +276,7 @@ fn kton_total_issuance() {
 
 		// after migrate
 		let mut migrated_total_issuance = u128::default();
-		tester.processed_state.get_value(
+		tester.shell_state.get_value(
 			b"Balances",
 			b"TotalIssuance",
 			"",
@@ -390,7 +284,7 @@ fn kton_total_issuance() {
 		);
 
 		let mut details = AssetDetails::default();
-		tester.processed_state.get_value(
+		tester.shell_state.get_value(
 			b"Assets",
 			b"Asset",
 			&blake2_128_concat_to_string(KTON_ID.encode()),
@@ -404,7 +298,7 @@ fn kton_total_issuance() {
 fn asset_creation() {
 	run_test(|tester| {
 		let mut details = AssetDetails::default();
-		tester.processed_state.get_value(
+		tester.shell_state.get_value(
 			b"Assets",
 			b"Asset",
 			&blake2_128_concat_to_string(KTON_ID.encode()),
@@ -421,7 +315,7 @@ fn asset_creation() {
 fn asset_metadata() {
 	run_test(|tester| {
 		let mut metadata = AssetMetadata::default();
-		tester.processed_state.get_value(
+		tester.shell_state.get_value(
 			b"Assets",
 			b"Metadata",
 			&blake2_128_concat_to_string(KTON_ID.encode()),
@@ -438,27 +332,15 @@ fn asset_metadata() {
 #[test]
 fn evm_code_migrate() {
 	run_test(|tester| {
-		// https://crab.subscan.io/account/0x0050f880c35c31c13bfd9cbb7d28aafaeca3abd2
-		let addr: [u8; 20] =
-			hex_n_into_unchecked::<_, _, 20>("0x0050f880c35c31c13bfd9cbb7d28aafaeca3abd2");
-		let mut code = Vec::<u8>::new();
-		tester.solo_state.get_value(
-			b"EVM",
-			b"AccountCodes",
-			&blake2_128_concat_to_string(addr.encode()),
-			&mut code,
-		);
+		let test_addr = "0x0050f880c35c31c13bfd9cbb7d28aafaeca3abd2";
+
+		let code = tester.solo_evm_codes.get(test_addr).unwrap();
 		assert_ne!(code.len(), 0);
 
 		// after migrate
-		let mut migrated_code = Vec::<u8>::new();
-		tester.processed_state.get_value(
-			b"Evm",
-			b"AccountCodes",
-			&blake2_128_concat_to_string(addr.encode()),
-			&mut migrated_code,
-		);
-		assert_eq!(code, migrated_code);
+
+		let migrated_code = tester.shell_evm_codes.get(test_addr).unwrap();
+		assert_eq!(*code, *migrated_code);
 	});
 }
 
@@ -466,14 +348,14 @@ fn evm_code_migrate() {
 fn evm_account_storage_migrate() {
 	run_test(|tester| {
 		// https://crab.subscan.io/account/0x0050f880c35c31c13bfd9cbb7d28aafaeca3abd2
-		let addr: [u8; 20] =
+		let test_addr: [u8; 20] =
 			hex_n_into_unchecked::<_, _, 20>("0x0050f880c35c31c13bfd9cbb7d28aafaeca3abd2");
 
 		let storage_item_len = tester.solo_state.0.iter().fold(0u32, |sum, (k, _)| {
 			if k.starts_with(&full_key(
 				b"EVM",
 				b"AccountStorages",
-				&blake2_128_concat_to_string(addr.encode()),
+				&blake2_128_concat_to_string(test_addr.encode()),
 			)) {
 				sum + 1
 			} else {
@@ -491,7 +373,7 @@ fn evm_account_storage_migrate() {
 			b"AccountStorages",
 			&format!(
 				"{}{}",
-				&blake2_128_concat_to_string(addr.encode()),
+				&blake2_128_concat_to_string(test_addr.encode()),
 				&blake2_128_concat_to_string(storage_key),
 			),
 			&mut storage_value,
@@ -499,27 +381,26 @@ fn evm_account_storage_migrate() {
 		assert_ne!(storage_value, H256::zero());
 
 		// after migrate
-		let migrated_storage_item_len =
-			tester.processed_state.0.iter().fold(0u32, |sum, (k, _)| {
-				if k.starts_with(&full_key(
-					b"Evm",
-					b"AccountStorages",
-					&blake2_128_concat_to_string(addr.encode()),
-				)) {
-					sum + 1
-				} else {
-					sum
-				}
-			});
+		let migrated_storage_item_len = tester.shell_state.0.iter().fold(0u32, |sum, (k, _)| {
+			if k.starts_with(&full_key(
+				b"Evm",
+				b"AccountStorages",
+				&blake2_128_concat_to_string(test_addr.encode()),
+			)) {
+				sum + 1
+			} else {
+				sum
+			}
+		});
 		assert_eq!(storage_item_len, migrated_storage_item_len);
 
 		let mut migrated_storage_value = H256::zero();
-		tester.processed_state.get_value(
+		tester.shell_state.get_value(
 			b"Evm",
 			b"AccountStorages",
 			&format!(
 				"{}{}",
-				&blake2_128_concat_to_string(addr.encode()),
+				&blake2_128_concat_to_string(test_addr.encode()),
 				&blake2_128_concat_to_string(storage_key),
 			),
 			&mut migrated_storage_value,
@@ -534,7 +415,7 @@ fn evm_account_storage_migrate() {
 fn bonded_migrate() {
 	run_test(|tester| {
 		// https://crab.subscan.io/account/5FxS8ugbXi4WijFuNS45Wg3Z5QsdN8hLZMmo71afoW8hJP67
-		let addr: [u8; 32] = hex_n_into_unchecked::<_, _, 32>(
+		let test_addr: [u8; 32] = hex_n_into_unchecked::<_, _, 32>(
 			"0xac288b0d41a3dcb69b025f51d9ad76ee088339f1c27708e164f9b019c584897d",
 		);
 
@@ -542,17 +423,17 @@ fn bonded_migrate() {
 		tester.solo_state.get_value(
 			b"Staking",
 			b"Bonded",
-			&twox64_concat_to_string(addr.encode()),
+			&twox64_concat_to_string(test_addr.encode()),
 			&mut controller,
 		);
 		assert_ne!(controller, [0u8; 32]);
 
 		// after migrate
 		let mut migrated_controller = [0u8; 32];
-		tester.processed_state.get_value(
+		tester.shell_state.get_value(
 			b"AccountMigration",
 			b"Bonded",
-			&twox64_concat_to_string(addr.encode()),
+			&twox64_concat_to_string(test_addr.encode()),
 			&mut migrated_controller,
 		);
 		assert_eq!(migrated_controller, controller);
@@ -563,7 +444,7 @@ fn bonded_migrate() {
 fn deposit_items_migrate() {
 	run_test(|tester| {
 		// https://crab.subscan.io/account/5Dfh9agy74KFmdYqxNGEWae9fE9pdzYnyCUJKqK47Ac64zqM
-		let addr: [u8; 32] = hex_n_into_unchecked::<_, _, 32>(
+		let test_addr: [u8; 32] = hex_n_into_unchecked::<_, _, 32>(
 			"0x46eb701bdc7f74ffda9c4335d82b3ae8d4e52c5ac630e50d68ab99822e29b3f6",
 		);
 
@@ -571,7 +452,7 @@ fn deposit_items_migrate() {
 		tester.solo_state.get_value(
 			b"Staking",
 			b"Ledger",
-			&blake2_128_concat_to_string(addr.encode()),
+			&blake2_128_concat_to_string(test_addr.encode()),
 			&mut ledger,
 		);
 		assert_ne!(ledger.deposit_items.len(), 0);
@@ -579,10 +460,10 @@ fn deposit_items_migrate() {
 
 		// after migrate
 		let mut migrated_deposits = Vec::<Deposit>::new();
-		tester.processed_state.get_value(
+		tester.shell_state.get_value(
 			b"AccountMigration",
 			b"Deposits",
-			&blake2_128_concat_to_string(addr.encode()),
+			&blake2_128_concat_to_string(test_addr.encode()),
 			&mut migrated_deposits,
 		);
 		assert_eq!(migrated_deposits.len(), ledger.deposit_items.len());
@@ -600,7 +481,7 @@ fn deposit_items_migrate() {
 fn ledgers_staked_value_migrate() {
 	run_test(|tester| {
 		// https://crab.subscan.io/account/5Dfh9agy74KFmdYqxNGEWae9fE9pdzYnyCUJKqK47Ac64zqM
-		let addr: [u8; 32] = hex_n_into_unchecked::<_, _, 32>(
+		let test_addr: [u8; 32] = hex_n_into_unchecked::<_, _, 32>(
 			"0x46eb701bdc7f74ffda9c4335d82b3ae8d4e52c5ac630e50d68ab99822e29b3f6",
 		);
 
@@ -608,7 +489,7 @@ fn ledgers_staked_value_migrate() {
 		tester.solo_state.get_value(
 			b"Staking",
 			b"Ledger",
-			&blake2_128_concat_to_string(addr.encode()),
+			&blake2_128_concat_to_string(test_addr.encode()),
 			&mut ledger,
 		);
 		assert_ne!(ledger.active, 0);
@@ -616,10 +497,10 @@ fn ledgers_staked_value_migrate() {
 
 		// after migrate
 		let mut migrated_ledger = Ledger::default();
-		tester.processed_state.get_value(
+		tester.shell_state.get_value(
 			b"AccountMigration",
 			b"Ledgers",
-			&blake2_128_concat_to_string(addr.encode()),
+			&blake2_128_concat_to_string(test_addr.encode()),
 			&mut migrated_ledger,
 		);
 		assert_eq!(migrated_ledger.staked_ring, ledger.active * GWEI);
@@ -631,7 +512,7 @@ fn ledgers_staked_value_migrate() {
 fn ledgers_unbondings_migrate() {
 	run_test(|tester| {
 		// https://crab.subscan.io/account/5FGL7pMZFZK4zWX2y3CRABeqMpMjBq77LhfYipWoBAT9gJsa
-		let addr: [u8; 32] = hex_n_into_unchecked::<_, _, 32>(
+		let test_addr: [u8; 32] = hex_n_into_unchecked::<_, _, 32>(
 			"0x8d92774046fd3dc60d41825023506ad5ad91bd0d66e9c1df325fc3cf89c2d317",
 		);
 
@@ -639,17 +520,17 @@ fn ledgers_unbondings_migrate() {
 		tester.solo_state.get_value(
 			b"Staking",
 			b"Ledger",
-			&blake2_128_concat_to_string(addr.encode()),
+			&blake2_128_concat_to_string(test_addr.encode()),
 			&mut ledger,
 		);
 		assert_ne!(ledger.ring_staking_lock.unbondings.len(), 0);
 
 		// after migrate
 		let mut migrated_ledger = Ledger::default();
-		tester.processed_state.get_value(
+		tester.shell_state.get_value(
 			b"AccountMigration",
 			b"Ledgers",
-			&blake2_128_concat_to_string(addr.encode()),
+			&blake2_128_concat_to_string(test_addr.encode()),
 			&mut migrated_ledger,
 		);
 		ledger
@@ -673,7 +554,7 @@ fn ring_pool_migrate() {
 
 		// after migrate
 		let mut migrated_ring_pool = u128::default();
-		tester.processed_state.get_value(b"Staking", b"RingPool", "", &mut migrated_ring_pool);
+		tester.shell_state.get_value(b"Staking", b"RingPool", "", &mut migrated_ring_pool);
 		assert_eq!(migrated_ring_pool, ring_pool * GWEI);
 	});
 }
@@ -687,7 +568,7 @@ fn kton_pool_migrate() {
 
 		// after migrate
 		let mut migrated_kton_pool = u128::default();
-		tester.processed_state.get_value(b"Staking", b"KtonPool", "", &mut migrated_kton_pool);
+		tester.shell_state.get_value(b"Staking", b"KtonPool", "", &mut migrated_kton_pool);
 		assert_eq!(migrated_kton_pool, kton_pool * GWEI);
 	});
 }
@@ -701,12 +582,7 @@ fn elapsed_time_migrate() {
 
 		// after migrate
 		let mut migrated_elapsed_time = u128::default();
-		tester.processed_state.get_value(
-			b"Staking",
-			b"ElapsedTime",
-			"",
-			&mut migrated_elapsed_time,
-		);
+		tester.shell_state.get_value(b"Staking", b"ElapsedTime", "", &mut migrated_elapsed_time);
 		assert_eq!(migrated_elapsed_time, elapsed_time as u128);
 	});
 }
@@ -716,7 +592,7 @@ fn elapsed_time_migrate() {
 fn vesting_info_adjust() {
 	run_test(|tester| {
 		// https://crab.subscan.io/account/5EFJA3K6uRfkLxqjhHyrkJoQjfhmhyVyVEG5XtPPBM6yCCxM
-		let addr: [u8; 32] = hex_n_into_unchecked::<_, _, 32>(
+		let test_addr: [u8; 32] = hex_n_into_unchecked::<_, _, 32>(
 			"0x608c62275934b164899ca6270c4b89c5d84b2390d4316fda980cd1b3acfad525",
 		);
 
@@ -724,7 +600,7 @@ fn vesting_info_adjust() {
 		tester.solo_state.get_value(
 			b"Vesting",
 			b"Vesting",
-			&blake2_128_concat_to_string(addr.encode()),
+			&blake2_128_concat_to_string(test_addr.encode()),
 			&mut vesting_info,
 		);
 		assert_ne!(vesting_info.locked, 0);
@@ -732,10 +608,10 @@ fn vesting_info_adjust() {
 
 		// after migrate
 		let mut migrated_vesting_info = VestingInfo::default();
-		tester.processed_state.get_value(
+		tester.shell_state.get_value(
 			b"AccountMigration",
 			b"Vestings",
-			&blake2_128_concat_to_string(addr.encode()),
+			&blake2_128_concat_to_string(test_addr.encode()),
 			&mut migrated_vesting_info,
 		);
 
@@ -751,37 +627,23 @@ fn vesting_info_adjust() {
 #[ignore]
 fn indices_adjust_evm_account() {
 	run_test(|tester| {
-		// https://crab.subscan.io/account/5ELRpquT7C3mWtjes9CNUiDpW1x3VwQYK7ZWq3kiH91UMftL
-		// let addr: [u8; 32] = hex_n_into_unchecked::<_, _, 32>(
-		// 	"0x64766d3a00000000000000c7912465c55be41bd09325b393f4fbea73f26d473b",
-		// );
-		let addr = "0x64766d3a00000000000000c7912465c55be41bd09325b393f4fbea73f26d473b";
-		let mut account_info = tester.solo_account_infos.get(addr).unwrap();
-		let remaining_balance = tester.remaining_ring.get(addr).unwrap();
-		// tester.solo_state.get_value(
-		// 	b"System",
-		// 	b"Account",
-		// 	&blake2_128_concat_to_string(addr.encode()),
-		// 	&mut account_info,
-		// );
-		assert_ne!(account_info.data.reserved, 0);
+		let test_addr = "0x64766d3a00000000000000c7912465c55be41bd09325b393f4fbea73f26d473b";
+
+		let solo_account = tester.solo_accounts.get(test_addr).unwrap();
+		let remaining_balance = tester.solo_remaining_ring.get(test_addr).unwrap();
+		assert_ne!(solo_account.data.reserved, 0);
 
 		// after migrated
-		let migrated_addr = "0xc7912465c55be41bd09325b393f4fbea73f26d47";
-		let mut migrated_account_info = tester.new_system_account.get(migrated_addr).unwrap();
-		// tester.processed_state.get_value(
-		// 	b"System",
-		// 	b"Account",
-		// 	&blake2_128_concat_to_string(migrated_addr.encode()),
-		// 	&mut migrated_account_info,
-		// );
 
-		// TODO
+		let migrated_account = "0xc7912465c55be41bd09325b393f4fbea73f26d47";
+		let migrated_account = tester.shell_system_accounts.get(migrated_account).unwrap();
+
+		// TODO: https://github.com/darwinia-network/darwinia-2.0/issues/166
 		assert_eq!(
-			migrated_account_info.data.free,
-			(account_info.data.free + account_info.data.reserved) * GWEI + remaining_balance
+			migrated_account.data.free,
+			(solo_account.data.free + solo_account.data.reserved) * GWEI + remaining_balance
 		);
-		assert_eq!(migrated_account_info.data.reserved, 0);
+		assert_eq!(migrated_account.data.reserved, 0);
 	});
 }
 
@@ -789,36 +651,19 @@ fn indices_adjust_evm_account() {
 #[ignore]
 fn indices_adjust_substrate_account() {
 	run_test(|tester| {
-		// hhttps://crab.subscan.io/account/5HgCRABJyoNTd1UsRwzErffZPDDfdYL3b1y3fZpG8hBScHC2
-		// let addr: [u8; 32] = hex_n_into_unchecked::<_, _, 32>(
-		// 	"0xf83ee607164969887eaecab7e058ab3ba0f64c0cfe3f0b575fe45562cfc36bd5",
-		// );
-		let addr = "0xf83ee607164969887eaecab7e058ab3ba0f64c0cfe3f0b575fe45562cfc36bd5";
-		let mut account_info = tester.solo_account_infos.get(addr).unwrap();
-		// let remaining_balance = tester.remaining_ring.get(addr).unwrap();
-		// tester.solo_state.get_value(
-		// 	b"System",
-		// 	b"Account",
-		// 	&blake2_128_concat_to_string(addr.encode()),
-		// 	&mut account_info,
-		// );
-		assert_ne!(account_info.data.reserved, 0);
+		let test_addr = "0xf83ee607164969887eaecab7e058ab3ba0f64c0cfe3f0b575fe45562cfc36bd5";
+
+		let solo_account = tester.solo_accounts.get(test_addr).unwrap();
+		assert_ne!(solo_account.data.reserved, 0);
 
 		// after migrated
-		// let migrated_addr = "0xc7912465c55be41bd09325b393f4fbea73f26d47";
-		let mut migrated_account_info = tester.migration_accounts.get(addr).unwrap();
-		// tester.processed_state.get_value(
-		// 	b"System",
-		// 	b"Account",
-		// 	&blake2_128_concat_to_string(migrated_addr.encode()),
-		// 	&mut migrated_account_info,
-		// );
+		let migrated_account = tester.migration_accounts.get(test_addr).unwrap();
 
-		// TODO
+		// TODO: https://github.com/darwinia-network/darwinia-2.0/issues/166
 		assert_eq!(
-			migrated_account_info.data.free,
-			(account_info.data.free + account_info.data.reserved) * GWEI
+			migrated_account.data.free,
+			(solo_account.data.free + solo_account.data.reserved) * GWEI
 		);
-		assert_eq!(migrated_account_info.data.reserved, 0);
+		assert_eq!(migrated_account.data.reserved, 0);
 	});
 }
