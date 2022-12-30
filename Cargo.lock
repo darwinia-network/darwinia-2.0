@@ -2332,6 +2332,7 @@ dependencies = [
  "frame-system",
  "pallet-collective",
  "parity-scale-codec",
+ "smallvec",
  "sp-io",
  "sp-std",
  "xcm",
