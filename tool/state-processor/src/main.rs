@@ -55,8 +55,8 @@ impl Processor {
 		let mut shell_chain_spec = from_file::<ChainSpec>("test-data/shell.json")?;
 
 		Ok(Self {
-			solo_state: State::from_file("test-data/crab.json")?,
-			para_state: State::from_file("test-data/crab-parachain.json")?,
+			solo_state: State::from_file("test-data/solo.json")?,
+			para_state: State::from_file("test-data/para.json")?,
 			shell_state: State(mem::take(&mut shell_chain_spec.genesis.raw.top)),
 			shell_chain_spec,
 		})

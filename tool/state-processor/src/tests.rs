@@ -41,6 +41,8 @@ where
 
 impl Tester {
 	fn new() -> Self {
+		// This test is only used to ensure the correctness of  the state processor and is only
+		// applicable to Crab, Crab Parachain.
 		let mut solo_state = State::from_file("test-data/crab.json").unwrap();
 		let mut para_state = State::from_file("test-data/crab-parachain.json").unwrap();
 		let mut shell_state = State::from_file("test-data/processed.json").unwrap();
@@ -231,7 +233,6 @@ fn evm_account_adjust() {
 fn evm_contract_account_adjust_sufficients() {
 	run_test(|tester| {
 		let test_addr = "0x64766d3a000000000000000050f880c35c31c13bfd9cbb7d28aafaeca3abd2d0";
-
 		let solo_account = tester.solo_accounts.get(test_addr).unwrap();
 		assert_eq!(solo_account.sufficients, 0);
 
@@ -332,15 +333,21 @@ fn asset_metadata() {
 #[test]
 fn evm_code_migrate() {
 	run_test(|tester| {
-		let test_addr = "0x0050f880c35c31c13bfd9cbb7d28aafaeca3abd2";
+		{
+			let test_addr = "0x0050f880c35c31c13bfd9cbb7d28aafaeca3abd2";
 
-		let code = tester.solo_evm_codes.get(test_addr).unwrap();
-		assert_ne!(code.len(), 0);
+			let code = tester.solo_evm_codes.get(test_addr).unwrap();
+			assert_ne!(code.len(), 0);
 
-		// after migrate
+			// after migrate
 
-		let migrated_code = tester.shell_evm_codes.get(test_addr).unwrap();
-		assert_eq!(*code, *migrated_code);
+			let migrated_code = tester.shell_evm_codes.get(test_addr).unwrap();
+			assert_eq!(*code, *migrated_code);
+		}
+
+		{
+			assert_eq!(tester.solo_evm_codes, tester.shell_evm_codes);
+		}
 	});
 }
 
