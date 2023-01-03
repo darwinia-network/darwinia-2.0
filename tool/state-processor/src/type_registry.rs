@@ -6,7 +6,7 @@ pub const KTON_ID: u64 = 1026;
 // https://github.dev/darwinia-network/darwinia-2.0/blob/c9fdfa170501648102bd0137c0437e367e743770/runtime/common/src/gov_origin.rs#L46
 pub const ROOT: [u8; 20] = [0x72, 0x6f, 0x6f, 0x74, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 
-#[derive(Default, Debug, Encode, Decode, PartialEq, Eq)]
+#[derive(Default, Debug, PartialEq, Eq, Encode, Decode)]
 pub struct AccountInfo {
 	pub nonce: u32,
 	pub consumers: u32,
@@ -14,7 +14,7 @@ pub struct AccountInfo {
 	pub sufficients: u32,
 	pub data: AccountData,
 }
-#[derive(Default, Debug, Encode, Decode, PartialEq, Eq)]
+#[derive(Default, Debug, PartialEq, Eq, Encode, Decode)]
 pub struct AccountData {
 	pub free: u128,
 	pub reserved: u128,
@@ -95,7 +95,7 @@ pub struct Approval {
 }
 
 // https://github.dev/paritytech/substrate/blob/polkadot-v0.9.30/frame/assets/src/types.rs#L127
-#[derive(Default, Clone, Encode, Decode)]
+#[derive(Clone, Default, Encode, Decode)]
 pub struct AssetMetadata {
 	pub deposit: u128,
 	pub name: Vec<u8>,
