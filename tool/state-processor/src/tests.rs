@@ -647,7 +647,6 @@ fn indices_adjust_evm_account() {
 			&blake2_128_concat_to_string(850_770_432u32.encode()),
 			&mut index,
 		);
-		println!("index: {:?}", index);
 
 		// after migrated
 
