@@ -22,21 +22,26 @@ use pangolin_runtime::{Runtime, System};
 // parity
 use sp_io::TestExternalities;
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct ExtBuilder {
 	balances: Vec<(AccountId, Balance)>,
 }
 
 impl ExtBuilder {
-	pub fn build(self) -> TestExternalities {
+	pub fn build(&mut self) -> TestExternalities {
 		let mut t = frame_system::GenesisConfig::default().build_storage::<Runtime>().unwrap();
 
-		pallet_balances::GenesisConfig::<Runtime> { balances: self.balances }
+		pallet_balances::GenesisConfig::<Runtime> { balances: self.balances.clone() }
 			.assimilate_storage(&mut t)
 			.unwrap();
 
 		let mut ext = TestExternalities::new(t);
 		ext.execute_with(|| System::set_block_number(1));
 		ext
+	}
+
+	pub fn with_balances(&mut self, balances: Vec<(AccountId, Balance)>) -> &mut Self {
+		self.balances = balances;
+		self
 	}
 }
