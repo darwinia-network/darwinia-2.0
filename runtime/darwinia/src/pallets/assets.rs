@@ -32,8 +32,7 @@ impl pallet_assets::Config for Runtime {
 	type Balance = Balance;
 	type Currency = Balances;
 	type Extra = ();
-	// TODO: Restrict the create asset origin. https://github.com/paritytech/substrate/pull/12586
-	// type CreateOrigin = EnsureRoot<AccountId>;
+	type CreateOrigin = EnsureRoot<AccountId>;
 	type ForceOrigin = EnsureRoot<AccountId>;
 	type Freezer = ();
 	type MetadataDepositBase = ConstU128<0>;
