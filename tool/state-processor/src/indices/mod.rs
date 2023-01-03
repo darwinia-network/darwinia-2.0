@@ -12,7 +12,7 @@ impl Processor {
 
 		// https://github.dev/darwinia-network/substrate/blob/darwinia-v0.12.5/frame/indices/src/lib.rs#L154
 		log::info!("adjust the reserved's decimals then free solo `Indices` reservations");
-		accounts.into_iter().filter(|(_, (_, v, _))| *v > 0).for_each(|(_, (a, mut v, _))| {
+		accounts.into_iter().for_each(|(_, (a, mut v, _))| {
 			v.adjust();
 			self.shell_state.unreserve(a, v);
 		});
