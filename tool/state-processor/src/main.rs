@@ -1,12 +1,15 @@
 mod balances;
 mod evm;
 mod indices;
+mod proxy;
 mod staking;
 mod system;
 mod vesting;
 
 mod adjust;
 use adjust::*;
+mod configuration;
+use configuration::*;
 
 mod type_registry;
 use type_registry::*;
@@ -19,6 +22,7 @@ use std::{
 	env,
 	fs::File,
 	io::{Read, Write},
+	marker::PhantomData,
 	mem,
 	sync::RwLock,
 };
@@ -39,37 +43,48 @@ fn main() -> Result<()> {
 	env::set_var("RUST_LOG", "state_processor");
 	pretty_env_logger::init();
 
-	Processor::new()?.process()?;
+	<Processor<Darwinia>>::new()?.process()?;
 
 	Ok(())
 }
 
-struct Processor {
-	solo_state: State,
-	para_state: State,
-	shell_state: State,
+struct Processor<S> {
+	solo_state: State<S>,
+	para_state: State<()>,
+	shell_state: State<()>,
 	shell_chain_spec: ChainSpec,
 }
-impl Processor {
+impl<S> Processor<S> {
 	fn new() -> Result<Self> {
 		let mut shell_chain_spec = from_file::<ChainSpec>("test-data/shell.json")?;
 
 		Ok(Self {
 			solo_state: State::from_file("test-data/solo.json")?,
 			para_state: State::from_file("test-data/para.json")?,
-			shell_state: State(mem::take(&mut shell_chain_spec.genesis.raw.top)),
+			shell_state: State {
+				map: mem::take(&mut shell_chain_spec.genesis.raw.top),
+				_runtime: Default::default(),
+			},
 			shell_chain_spec,
 		})
 	}
 
-	fn process(mut self) -> Result<()> {
+	fn process(mut self) -> Result<()>
+	where
+		S: Configurable,
+	{
 		self.solo_state.get_value(b"System", b"Number", "", &mut *NOW.write().unwrap());
 
 		let _guard = NOW.read().unwrap();
 
 		assert!(*_guard != 0);
 
-		self.process_system().process_indices().process_vesting().process_staking().process_evm();
+		self.process_system()
+			.process_indices()
+			.process_vesting()
+			.process_proxy()
+			.process_staking()
+			.process_evm();
 
 		self.save()
 	}
@@ -77,7 +92,7 @@ impl Processor {
 	fn save(mut self) -> Result<()> {
 		log::info!("saving processed chain spec");
 
-		mem::swap(&mut self.shell_state.0, &mut self.shell_chain_spec.genesis.raw.top);
+		mem::swap(&mut self.shell_state.map, &mut self.shell_chain_spec.genesis.raw.top);
 
 		let mut f = File::create("test-data/processed.json")?;
 		let v = serde_json::to_vec(&self.shell_chain_spec)?;
@@ -88,14 +103,20 @@ impl Processor {
 	}
 }
 
-pub struct State(Map<String>);
-impl State {
+pub struct State<R> {
+	map: Map<String>,
+	_runtime: PhantomData<R>,
+}
+impl<R> State<R> {
 	fn from_file(path: &str) -> Result<Self> {
-		Ok(Self(from_file::<ChainSpec>(path)?.genesis.raw.top))
+		Ok(Self {
+			map: from_file::<ChainSpec>(path)?.genesis.raw.top,
+			_runtime: Default::default(),
+		})
 	}
 
 	fn insert_raw_key_raw_value(&mut self, key: String, value: String) -> &mut Self {
-		self.0.insert(key, value);
+		self.map.insert(key, value);
 
 		self
 	}
@@ -104,7 +125,7 @@ impl State {
 	where
 		E: Encode,
 	{
-		self.0.insert(key, encode_value(value));
+		self.map.insert(key, encode_value(value));
 
 		self
 	}
@@ -118,7 +139,7 @@ impl State {
 	where
 		F: Fn(&str, &str) -> String,
 	{
-		self.0.retain(|k, v| {
+		self.map.retain(|k, v| {
 			if k.starts_with(prefix) {
 				buffer.insert(process_key(k, prefix), v.to_owned());
 
@@ -133,11 +154,11 @@ impl State {
 
 	fn insert_raw_key_map(&mut self, pairs: Map<String>) -> &mut Self {
 		pairs.into_iter().for_each(|(k, v)| {
-			if self.0.contains_key(&k) {
+			if self.map.contains_key(&k) {
 				log::error!("key({k}) has already existed, overriding");
 			}
 
-			self.0.insert(k, v);
+			self.map.insert(k, v);
 		});
 
 		self
@@ -149,7 +170,7 @@ impl State {
 	{
 		let key = full_key(pallet, item, hash);
 
-		if let Some(v) = self.0.get(&key) {
+		if let Some(v) = self.map.get(&key) {
 			match decode(v) {
 				Ok(v) => *value = v,
 				Err(e) => log::error!(
@@ -175,7 +196,7 @@ impl State {
 	{
 		let key = full_key(pallet, item, hash);
 
-		if let Some(v) = self.0.remove(&key) {
+		if let Some(v) = self.map.remove(&key) {
 			match decode(&v) {
 				Ok(v) => *value = v,
 				Err(e) => log::error!(
@@ -199,7 +220,7 @@ impl State {
 	where
 		E: Encode,
 	{
-		self.0.insert(full_key(pallet, item, hash), encode_value(value));
+		self.map.insert(full_key(pallet, item, hash), encode_value(value));
 
 		self
 	}
@@ -234,7 +255,7 @@ impl State {
 		let len = buffer.len();
 		let prefix = item_key(pallet, item);
 
-		self.0.retain(|full_key, v| {
+		self.map.retain(|full_key, v| {
 			if full_key.starts_with(&prefix) {
 				match decode(v) {
 					Ok(v) => {
@@ -266,14 +287,14 @@ impl State {
 		F: Fn(&str) -> String,
 	{
 		pairs.into_iter().for_each(|(k, v)| {
-			self.0.insert(process_key(&k), encode_value(v));
+			self.map.insert(process_key(&k), encode_value(v));
 		});
 
 		self
 	}
 
 	fn contains_key(&self, key: &str) -> bool {
-		self.0.contains_key(key)
+		self.map.contains_key(key)
 	}
 
 	// fn inc_consumers(&mut self, who: &str) {}
