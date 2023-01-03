@@ -100,7 +100,7 @@ sp-timestamp                   = { git = "https://github.com/paritytech/substrat
 sp-transaction-pool            = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33" }
 substrate-frame-rpc-system     = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33" }
 substrate-prometheus-endpoint  = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33" }
-try-runtime-cli                = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33" }
+try-runtime-cli                = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33", optional = true}
 
 [features]
 default = []
@@ -118,6 +118,9 @@ runtime-benchmarks = [
 try-runtime = [
 	# darwinia
 	"darwinia-runtime/try-runtime",
+
+	# substrate
+	"try-runtime-cli/try-runtime",
 ]
 
 all-native = [

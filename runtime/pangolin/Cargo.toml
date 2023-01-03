@@ -341,5 +341,5 @@ try-runtime = [
 	"pallet-utility/try-runtime",
 	"pallet-vesting/try-runtime",
 	# substrate optional
-	"frame-try-runtime",
+	"frame-try-runtime/try-runtime",
 ]
