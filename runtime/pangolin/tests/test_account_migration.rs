@@ -24,7 +24,7 @@ use mock::*;
 
 // darwinia
 use dc_primitives::AccountId;
-use pangolin_runtime::{AccountMigration, Runtime, RuntimeCall, RuntimeOrigin};
+use pangolin_runtime::{AccountMigration, Runtime, RuntimeCall, RuntimeOrigin, System};
 // substrate
 use frame_support::{
 	assert_err, assert_ok, migration, traits::Get, Blake2_128Concat, StorageHasher,
@@ -108,7 +108,7 @@ fn validate_evm_account_already_exist() {
 
 		assert_err!(
 			migrate(
-				pair,
+				pair.clone(),
 				to,
 				<<Runtime as pallet_evm::Config>::ChainId as Get<u64>>::get(),
 				<<Runtime as frame_system::Config>::Version as Get<RuntimeVersion>>::get()
@@ -116,6 +116,29 @@ fn validate_evm_account_already_exist() {
 					.as_bytes()
 			),
 			DispatchError::Other("err code: 0") // To account has been used.
+		);
+	});
+}
+
+#[test]
+fn validate_evm_account_already_exist_and_invalid_sig() {
+	let to = H160::from_low_u64_be(33).into();
+	ExtBuilder::default().build().execute_with(|| {
+		let pair = Pair::from_seed(b"00000000000000000000000000000001");
+
+		// Mocked account data
+		let account = AccountInfo {
+			nonce: 100,
+			consumers: 1,
+			providers: 1,
+			sufficients: 1,
+			data: AccountData { free: 100_000, reserved: 100, ..Default::default() },
+		};
+		migration::put_storage_value(
+			b"AccountMigration",
+			b"Accounts",
+			&Blake2_128Concat::hash(&pair.public().0),
+			account.encode(),
 		);
 
 		assert_err!(
@@ -129,5 +152,39 @@ fn validate_evm_account_already_exist() {
 			),
 			DispatchError::Other("err code: 2") // Invalid signature
 		);
+	});
+}
+
+#[test]
+fn migrate_accounts() {
+	let to = H160::from_low_u64_be(255).into();
+	ExtBuilder::default().build().execute_with(|| {
+		let pair = Pair::from_seed(b"00000000000000000000000000000001");
+		let account_id = AccountId32::new(pair.public().0);
+
+		let account = AccountInfo {
+			nonce: 100u32,
+			consumers: 1_u32,
+			providers: 1_u32,
+			sufficients: 1_u32,
+			data: AccountData { free: 100_000u128, reserved: 100, ..Default::default() },
+		};
+		migration::put_storage_value(
+			b"AccountMigration",
+			b"Accounts",
+			&Blake2_128Concat::hash(&pair.public().0),
+			account.encode(),
+		);
+
+		assert_ok!(migrate(
+			pair,
+			to,
+			<<Runtime as pallet_evm::Config>::ChainId as Get<u64>>::get(),
+			<<Runtime as frame_system::Config>::Version as Get<RuntimeVersion>>::get()
+				.spec_name
+				.as_bytes()
+		));
+		assert_eq!(AccountMigration::account_of(account_id), None);
+		assert_eq!(System::account(to), account);
 	});
 }
