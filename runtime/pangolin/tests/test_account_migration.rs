@@ -71,19 +71,15 @@ fn prepare_accounts(storage: bool) -> Pair {
 	let account_id = AccountId32::new(pair.public().0);
 
 	if storage {
-		let account = AccountInfo {
-			nonce: 100,
-			consumers: 1,
-			providers: 1,
-			sufficients: 1,
-			data: AccountData { free: 100, reserved: 100, ..Default::default() },
-		};
-
-		migration::put_storage_value(
-			b"AccountMigration",
-			b"Accounts",
-			&Blake2_128Concat::hash(&pair.public().0),
-			account,
+		<darwinia_account_migration::Accounts<Runtime>>::insert(
+			account_id.clone(),
+			AccountInfo {
+				nonce: 100,
+				consumers: 1,
+				providers: 1,
+				sufficients: 1,
+				data: AccountData { free: 100, reserved: 100, ..Default::default() },
+			},
 		);
 		assert!(AccountMigration::account_of(account_id).is_some());
 	}
@@ -94,7 +90,7 @@ fn prepare_accounts(storage: bool) -> Pair {
 fn validate_substrate_account_not_found() {
 	ExtBuilder::default().build().execute_with(|| {
 		let to = H160::default();
-		let pair = Pair::from_seed(b"00000000000000000000000000000001");
+		let pair = prepare_accounts(false);
 
 		assert_err!(
 			migrate(
@@ -114,21 +110,7 @@ fn validate_substrate_account_not_found() {
 fn validate_evm_account_already_exist() {
 	let to = H160::from_low_u64_be(33).into();
 	ExtBuilder::default().with_balances(vec![(to, 100)]).build().execute_with(|| {
-		let pair = Pair::from_seed(b"00000000000000000000000000000001");
-		let account = AccountInfo {
-			nonce: 100,
-			consumers: 1,
-			providers: 1,
-			sufficients: 1,
-			data: AccountData { free: 100_000, reserved: 100, ..Default::default() },
-		};
-
-		migration::put_storage_value(
-			b"AccountMigration",
-			b"Accounts",
-			&Blake2_128Concat::hash(&pair.public().0),
-			account.clone(),
-		);
+		let pair = prepare_accounts(true);
 
 		assert_err!(
 			migrate(
@@ -148,21 +130,7 @@ fn validate_evm_account_already_exist() {
 fn validate_invalid_sig() {
 	let to = H160::from_low_u64_be(33).into();
 	ExtBuilder::default().build().execute_with(|| {
-		let pair = Pair::from_seed(b"00000000000000000000000000000001");
-		let account = AccountInfo {
-			nonce: 100,
-			consumers: 1,
-			providers: 1,
-			sufficients: 1,
-			data: AccountData { free: 100_000, reserved: 100, ..Default::default() },
-		};
-
-		migration::put_storage_value(
-			b"AccountMigration",
-			b"Accounts",
-			&Blake2_128Concat::hash(&pair.public().0),
-			account.clone(),
-		);
+		let pair = prepare_accounts(true);
 
 		assert_err!(
 			migrate(
@@ -182,26 +150,8 @@ fn validate_invalid_sig() {
 fn migrate_accounts() {
 	let to = H160::from_low_u64_be(255).into();
 	ExtBuilder::default().build().execute_with(|| {
-		let pair = Pair::from_seed(b"00000000000000000000000000000001");
+		let pair = prepare_accounts(true);
 		let account_id = AccountId32::new(pair.public().0);
-		let account = AccountInfo {
-			nonce: 100,
-			consumers: 1,
-			providers: 1,
-			sufficients: 1,
-			data: AccountData { free: 100, reserved: 100, ..Default::default() },
-		};
-
-		// migration::put_storage_value(
-		// 	b"AccountMigration",
-		// 	b"Accounts",
-		// 	&Blake2_128Concat::hash(&pair.public().0),
-		// 	account.clone(),
-		// );
-		// <AccountMigration::Accounts<Runtime>>::insert(account_id, account);
-		<darwinia_account_migration::Accounts<Runtime>>::insert(account_id, account);
-		// <Runtime as darwinia_account_migration::Config>::Accounts::insert(account_id, account);
-
 
 		assert_ok!(migrate(
 			pair,
@@ -229,22 +179,7 @@ fn migrate_accounts() {
 fn migrate_kton_accounts() {
 	let to = H160::from_low_u64_be(255).into();
 	ExtBuilder::default().build().execute_with(|| {
-		let pair = Pair::from_seed(b"00000000000000000000000000000001");
-		let account_id = AccountId32::new(pair.public().0);
-		let account = AccountInfo {
-			nonce: 100,
-			consumers: 1,
-			providers: 1,
-			sufficients: 1,
-			data: AccountData { free: 100_000, reserved: 100, ..Default::default() },
-		};
-
-		migration::put_storage_value(
-			b"AccountMigration",
-			b"Accounts",
-			&Blake2_128Concat::hash(&pair.public().0),
-			account.clone(),
-		);
+		let pair = prepare_accounts(true);
 
 		assert_ok!(migrate(
 			pair,
