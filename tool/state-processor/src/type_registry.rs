@@ -80,7 +80,6 @@ pub enum ExistenceReason {
 	#[codec(index = 3)]
 	DepositRefunded,
 }
-
 impl Default for ExistenceReason {
 	fn default() -> Self {
 		ExistenceReason::Sufficient
