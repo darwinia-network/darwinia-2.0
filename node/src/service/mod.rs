@@ -219,18 +219,8 @@ async fn build_relay_chain_interface(
 	Option<polkadot_service::CollatorPair>,
 )> {
 	match collator_options.relay_chain_rpc_url {
-		Some(relay_chain_url) => {
-			let client = cumulus_relay_chain_rpc_interface::create_client_and_start_worker(
-				relay_chain_url,
-				task_manager,
-			)
-			.await?;
-			Ok((
-				Arc::new(cumulus_relay_chain_rpc_interface::RelayChainRpcInterface::new(client))
-					as Arc<_>,
-				None,
-			))
-		},
+		Some(relay_chain_url) =>
+			build_minimal_relay_chain_node(polkadot_config, task_manager, relay_chain_url).await,
 		None => cumulus_relay_chain_inprocess_interface::build_inprocess_relay_chain(
 			polkadot_config,
 			parachain_config,
@@ -439,7 +429,6 @@ where
 		)?;
 
 		let spawner = task_manager.spawn_handle();
-
 		let params = cumulus_client_service::StartCollatorParams {
 			para_id: id,
 			block_status: client.clone(),
@@ -464,7 +453,6 @@ where
 			relay_chain_interface,
 			relay_chain_slot_duration,
 			import_queue,
-			collator_options,
 		};
 
 		cumulus_client_service::start_full_node(params)?;
