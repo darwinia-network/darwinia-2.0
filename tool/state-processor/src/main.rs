@@ -54,13 +54,17 @@ struct Processor<S> {
 	shell_state: State<()>,
 	shell_chain_spec: ChainSpec,
 }
-impl<S> Processor<S> {
+impl<S> Processor<S>
+where
+	S: Configurable,
+{
 	fn new() -> Result<Self> {
-		let mut shell_chain_spec = from_file::<ChainSpec>("test-data/shell.json")?;
+		let mut shell_chain_spec =
+			from_file::<ChainSpec>(&format!("test-data/{}-shell.json", S::NAME))?;
 
 		Ok(Self {
-			solo_state: State::from_file("test-data/solo.json")?,
-			para_state: State::from_file("test-data/para.json")?,
+			solo_state: State::from_file(&format!("test-data/{}-solo.json", S::NAME))?,
+			para_state: State::from_file(&format!("test-data/{}-para.json", S::NAME))?,
 			shell_state: State {
 				map: mem::take(&mut shell_chain_spec.genesis.raw.top),
 				_runtime: Default::default(),
@@ -69,10 +73,7 @@ impl<S> Processor<S> {
 		})
 	}
 
-	fn process(mut self) -> Result<()>
-	where
-		S: Configurable,
-	{
+	fn process(mut self) -> Result<()> {
 		self.solo_state.get_value(b"System", b"Number", "", &mut *NOW.write().unwrap());
 
 		let _guard = NOW.read().unwrap();
@@ -94,7 +95,7 @@ impl<S> Processor<S> {
 
 		mem::swap(&mut self.shell_state.map, &mut self.shell_chain_spec.genesis.raw.top);
 
-		let mut f = File::create("test-data/processed.json")?;
+		let mut f = File::create(format!("test-data/{}-processed.json", S::NAME))?;
 		let v = serde_json::to_vec(&self.shell_chain_spec)?;
 
 		f.write_all(&v)?;
@@ -111,7 +112,7 @@ impl<R> State<R> {
 	fn from_file(path: &str) -> Result<Self> {
 		Ok(Self {
 			map: from_file::<ChainSpec>(path)?.genesis.raw.top,
-			_runtime: Default::default(),
+			_runtime: <PhantomData<R>>::default(),
 		})
 	}
 

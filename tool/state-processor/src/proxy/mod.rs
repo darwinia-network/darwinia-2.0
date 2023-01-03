@@ -8,8 +8,8 @@ impl<S> Processor<S> {
 		// Skip the `Announcements`.
 		// Need to make sure the storage is empty.
 		//
-		// The size of `pallet_proxy::ProxyDefinition` is 40 bytes.
-		let mut proxies = <Map<([u8; 40], u128)>>::default();
+		// The size of encoded `pallet_proxy::ProxyDefinition` is 37 bytes.
+		let mut proxies = <Map<(Vec<[u8; 37]>, u128)>>::default();
 
 		log::info!("take solo `Proxy::Proxies`");
 		self.solo_state.take_map(b"Proxy", b"Proxies", &mut proxies, get_identity_key);
