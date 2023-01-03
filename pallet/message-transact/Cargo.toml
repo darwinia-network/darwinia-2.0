@@ -40,13 +40,13 @@ pallet-bridge-dispatch = { git = "https://github.com/darwinia-network/darwinia-m
 
 # frontier
 fp-self-contained = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v0.9.30" }
+pallet-ethereum   = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v0.9.30" }
 
 # moonbeam
 precompile-utils = { git = "https://github.com/darwinia-network/moonbeam.git", branch = "polkadot-v0.9.30", features = ["testing"] }
 
 # substrate
 pallet-balances  = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
-pallet-ethereum  = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v0.9.30" }
 pallet-timestamp = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
 sp-io            = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
 
