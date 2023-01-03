@@ -31,6 +31,9 @@ mod weights;
 
 pub use darwinia_common_runtime::*;
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
+#[cfg(any(feature = "std", test))]
+pub use sp_runtime::BuildStorage;
+pub use sp_runtime::{MultiAddress, Perbill, Permill};
 
 // cumulus
 use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
@@ -49,15 +52,12 @@ use frame_support::{
 };
 use frame_system::EnsureRoot;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata, H160, H256, U256};
-#[cfg(any(feature = "std", test))]
-pub use sp_runtime::BuildStorage;
 use sp_runtime::{
 	generic,
 	traits::Block as BlockT,
 	transaction_validity::{TransactionSource, TransactionValidity},
 	ApplyExtrinsicResult,
 };
-pub use sp_runtime::{MultiAddress, Perbill, Permill};
 use sp_std::prelude::*;
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
