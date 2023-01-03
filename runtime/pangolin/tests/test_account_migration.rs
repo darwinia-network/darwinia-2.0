@@ -22,8 +22,8 @@ mod mock;
 use mock::*;
 
 // darwinia
-use dc_primitives::*;
-use pangolin_runtime::*;
+use dc_primitives::AccountId;
+use pangolin_runtime::{AccountMigration, Runtime, RuntimeCall, RuntimeOrigin, System};
 // substrate
 use frame_support::{
 	assert_err, assert_ok, migration, traits::Get, Blake2_128Concat, StorageHasher,
@@ -40,7 +40,6 @@ use sp_runtime::{
 use sp_version::RuntimeVersion;
 
 fn migrate(pair: Pair, to: AccountId, chain_id: u64, spec_name: &[u8]) -> DispatchResult {
-	// let spec_name = b"Pangolin2".as_slice();
 	let account_id = AccountId32::new(pair.public().0);
 
 	let message = blake2_256(
@@ -65,11 +64,34 @@ fn migrate(pair: Pair, to: AccountId, chain_id: u64, spec_name: &[u8]) -> Dispat
 	AccountMigration::migrate(RuntimeOrigin::none(), account_id, to, sig)
 }
 
+fn prepare_accounts(storage: bool) -> Pair {
+	let pair = Pair::from_seed(b"00000000000000000000000000000001");
+	let account_id = AccountId32::new(pair.public().0);
+
+	if storage {
+		migration::put_storage_value(
+			b"AccountMigration",
+			b"Accounts",
+			&Blake2_128Concat::hash(&pair.public().0),
+			AccountInfo {
+				nonce: 255,
+				consumers: 1,
+				providers: 1,
+				sufficients: 1,
+				data: AccountData { free: 100, reserved: 100, ..Default::default() },
+			},
+		);
+		assert!(AccountMigration::account_of(account_id).is_some());
+	}
+
+	pair
+}
+
 #[test]
 fn validate_substrate_account_not_found() {
 	ExtBuilder::default().build().execute_with(|| {
-		let pair = Pair::from_seed(b"00000000000000000000000000000001");
 		let to = H160::default();
+		let pair = prepare_accounts(false);
 
 		assert_err!(
 			migrate(
@@ -89,22 +111,7 @@ fn validate_substrate_account_not_found() {
 fn validate_evm_account_already_exist() {
 	let to = H160::from_low_u64_be(33).into();
 	ExtBuilder::default().with_balances(vec![(to, 100)]).build().execute_with(|| {
-		let pair = Pair::from_seed(b"00000000000000000000000000000001");
-
-		// Mocked account data
-		let account = AccountInfo {
-			nonce: 100,
-			consumers: 1,
-			providers: 1,
-			sufficients: 1,
-			data: AccountData { free: 100_000, reserved: 100, ..Default::default() },
-		};
-		migration::put_storage_value(
-			b"AccountMigration",
-			b"Accounts",
-			&Blake2_128Concat::hash(&pair.public().0),
-			account.encode(),
-		);
+		let pair = prepare_accounts(true);
 
 		assert_err!(
 			migrate(
@@ -121,25 +128,10 @@ fn validate_evm_account_already_exist() {
 }
 
 #[test]
-fn validate_evm_account_already_exist_and_invalid_sig() {
+fn validate_invalid_sig() {
 	let to = H160::from_low_u64_be(33).into();
 	ExtBuilder::default().build().execute_with(|| {
-		let pair = Pair::from_seed(b"00000000000000000000000000000001");
-		// Mocked account data
-		let account = AccountInfo {
-			nonce: 100,
-			consumers: 1,
-			providers: 1,
-			sufficients: 1,
-			data: AccountData { free: 100_000, reserved: 100, ..Default::default() },
-		};
-
-		migration::put_storage_value(
-			b"AccountMigration",
-			b"Accounts",
-			&Blake2_128Concat::hash(&pair.public().0),
-			account,
-		);
+		let pair = prepare_accounts(true);
 
 		assert_err!(
 			migrate(
@@ -160,23 +152,8 @@ fn validate_evm_account_already_exist_and_invalid_sig() {
 fn migrate_accounts() {
 	let to = H160::from_low_u64_be(255).into();
 	ExtBuilder::default().build().execute_with(|| {
-		let pair = Pair::from_seed(b"00000000000000000000000000000001");
+		let pair = prepare_accounts(true);
 		let account_id = AccountId32::new(pair.public().0);
-		let account = AccountInfo {
-			nonce: 100,
-			consumers: 1,
-			providers: 1,
-			sufficients: 1,
-			data: AccountData { free: 100_000, reserved: 100, ..Default::default() },
-		};
-
-		migration::put_storage_value(
-			b"AccountMigration",
-			b"Accounts",
-			&Blake2_128Concat::hash(&pair.public().0),
-			account.clone(),
-		);
-		assert_eq!(AccountMigration::account_of(account_id.clone()).unwrap(), account);
 
 		assert_ok!(migrate(
 			pair,
@@ -187,7 +164,16 @@ fn migrate_accounts() {
 				.as_bytes()
 		));
 		assert_eq!(AccountMigration::account_of(account_id), None);
-		assert_eq!(System::account(to), account);
+		assert_eq!(
+			System::account(to),
+			AccountInfo {
+				nonce: 255,
+				consumers: 1,
+				providers: 1,
+				sufficients: 1,
+				data: AccountData { free: 100, reserved: 100, ..Default::default() },
+			}
+		);
 	});
 }
 
@@ -195,8 +181,7 @@ fn migrate_accounts() {
 fn migrate_kton_accounts() {
 	let to = H160::from_low_u64_be(255).into();
 	ExtBuilder::default().build().execute_with(|| {
-		let pair = Pair::from_seed(b"00000000000000000000000000000001");
-		let account_id = AccountId32::new(pair.public().0);
+		let pair = prepare_accounts(true);
 
 		assert_ok!(migrate(
 			pair,

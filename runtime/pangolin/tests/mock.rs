@@ -21,7 +21,7 @@ use darwinia_common_runtime::gov_origin::ROOT;
 use dc_primitives::{AccountId, Balance};
 use pangolin_runtime::{AssetIds, Runtime, System};
 // parity
-use frame_support::traits::GenesisBuild;
+use frame_support::{migration, traits::GenesisBuild, Blake2_128Concat, StorageHasher};
 use sp_io::TestExternalities;
 
 #[derive(Default, Clone)]
