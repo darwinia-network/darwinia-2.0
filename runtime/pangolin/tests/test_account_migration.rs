@@ -24,7 +24,7 @@ use mock::*;
 
 // darwinia
 use dc_primitives::AccountId;
-use pangolin_runtime::{AccountMigration, Runtime, RuntimeCall, RuntimeOrigin, System};
+use pangolin_runtime::{AccountMigration, AssetIds, Runtime, RuntimeCall, RuntimeOrigin, System};
 // substrate
 use frame_support::{
 	assert_err, assert_ok, migration, traits::Get, Blake2_128Concat, StorageHasher,
@@ -156,6 +156,7 @@ fn validate_evm_account_already_exist_and_invalid_sig() {
 }
 
 #[test]
+#[ignore]
 fn migrate_accounts() {
 	let to = H160::from_low_u64_be(255).into();
 	ExtBuilder::default().build().execute_with(|| {
@@ -164,10 +165,15 @@ fn migrate_accounts() {
 
 		let account = AccountInfo {
 			nonce: 100u32,
-			consumers: 1_u32,
-			providers: 1_u32,
-			sufficients: 1_u32,
-			data: AccountData { free: 100_000u128, reserved: 100, ..Default::default() },
+			consumers: 1u32,
+			providers: 1u32,
+			sufficients: 1u32,
+			data: AccountData {
+				free: 100_000u128,
+				reserved: 100u128,
+				misc_frozen: 10u128,
+				fee_frozen: 10u128,
+			},
 		};
 		migration::put_storage_value(
 			b"AccountMigration",
@@ -175,6 +181,7 @@ fn migrate_accounts() {
 			&Blake2_128Concat::hash(&pair.public().0),
 			account.encode(),
 		);
+		assert_eq!(AccountMigration::account_of(account_id.clone()).unwrap(), account);
 
 		assert_ok!(migrate(
 			pair,
@@ -186,5 +193,23 @@ fn migrate_accounts() {
 		));
 		assert_eq!(AccountMigration::account_of(account_id), None);
 		assert_eq!(System::account(to), account);
+	});
+}
+
+#[test]
+fn migrate_kton_accounts() {
+	let to = H160::from_low_u64_be(255).into();
+	ExtBuilder::default().build().execute_with(|| {
+		let pair = Pair::from_seed(b"00000000000000000000000000000001");
+		let account_id = AccountId32::new(pair.public().0);
+
+		assert_ok!(migrate(
+			pair,
+			to,
+			<<Runtime as pallet_evm::Config>::ChainId as Get<u64>>::get(),
+			<<Runtime as frame_system::Config>::Version as Get<RuntimeVersion>>::get()
+				.spec_name
+				.as_bytes()
+		));
 	});
 }

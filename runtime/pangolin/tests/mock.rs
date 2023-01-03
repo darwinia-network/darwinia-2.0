@@ -17,9 +17,11 @@
 // along with Darwinia. If not, see <https://www.gnu.org/licenses/>.
 
 // darwinia
+use darwinia_common_runtime::gov_origin::ROOT;
 use dc_primitives::{AccountId, Balance};
-use pangolin_runtime::{Runtime, System};
+use pangolin_runtime::{AssetIds, Runtime, System};
 // parity
+use frame_support::traits::GenesisBuild;
 use sp_io::TestExternalities;
 
 #[derive(Default, Clone)]
@@ -34,6 +36,19 @@ impl ExtBuilder {
 		pallet_balances::GenesisConfig::<Runtime> { balances: self.balances.clone() }
 			.assimilate_storage(&mut t)
 			.unwrap();
+
+		pallet_assets::GenesisConfig::<Runtime> {
+			assets: vec![(AssetIds::PKton as _, ROOT, true, 1)],
+			metadata: vec![(
+				AssetIds::PKton as _,
+				b"Pangolin Commitment Token".to_vec(),
+				b"PKTON".to_vec(),
+				18,
+			)],
+			accounts: vec![],
+		}
+		.assimilate_storage(&mut t)
+		.unwrap();
 
 		let mut ext = TestExternalities::new(t);
 		ext.execute_with(|| System::set_block_number(1));
