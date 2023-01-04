@@ -22,6 +22,8 @@ mod mock;
 use mock::*;
 
 // darwinia
+use darwinia_deposit::Deposit;
+use darwinia_staking::Ledger;
 use dc_primitives::AccountId;
 use pangolin_runtime::*;
 // substrate
@@ -77,8 +79,21 @@ fn prepare_accounts(storage: bool) -> Pair {
 				consumers: 1,
 				providers: 1,
 				sufficients: 1,
-				data: AccountData { free: 100, reserved: 100, ..Default::default() },
+				data: AccountData { free: 100, reserved: 0, fee_frozen: 100, misc_frozen: 0 },
 			},
+		);
+
+		let asset_account = AssetAccount {
+			balance: 100,
+			is_frozen: false,
+			reason: ExistenceReason::<u128>::Sufficient,
+			extra: (),
+		};
+		migration::put_storage_value(
+			b"AccountMigration",
+			b"KtonAccounts",
+			&Blake2_128Concat::hash(account_id.as_ref()),
+			asset_account.clone(),
 		);
 		assert!(AccountMigration::account_of(account_id).is_some());
 	}
@@ -168,7 +183,7 @@ fn migrate_accounts() {
 				consumers: 1,
 				providers: 1,
 				sufficients: 1,
-				data: AccountData { free: 100, reserved: 100, ..Default::default() },
+				data: AccountData { free: 100, reserved: 0, fee_frozen: 100, misc_frozen: 0 },
 			}
 		);
 	});
@@ -182,7 +197,7 @@ fn migrate_kton_accounts() {
 		let account_id = AccountId32::new(pair.public().0);
 
 		// The struct in the upstream repo is not accessible due to viable.
-		#[derive(Encode)]
+		#[derive(Clone, Encode)]
 		pub struct AssetAccount {
 			pub balance: u128,
 			pub is_frozen: bool,
@@ -261,22 +276,30 @@ fn vesting() {
 }
 
 #[test]
-#[ignore]
 fn staking() {
 	let to = H160::from_low_u64_be(255).into();
 	ExtBuilder::default().build().execute_with(|| {
-		let pair1 = prepare_accounts(true);
-		let pair2 = Pair::from_seed(b"00000000000000000000000000000002");
-		let account_id1 = AccountId32::new(pair1.public().0);
-		let account_id2 = AccountId32::new(pair2.public().0);
+		let pair = prepare_accounts(true);
+		let account_id = AccountId32::new(pair.public().0);
 
-		<darwinia_account_migration::Bonded<Runtime>>::insert(
-			account_id1.clone(),
-			account_id2.clone(),
-		);
 		<darwinia_account_migration::Deposits<Runtime>>::insert(
-			account_id1.clone(),
-			account_id2.clone(),
+			account_id.clone(),
+			vec![
+				Deposit { id: 1, value: 10, start_time: 1000, expired_time: 2000, in_use: true },
+				Deposit { id: 2, value: 10, start_time: 1000, expired_time: 2000, in_use: true },
+			],
+		);
+
+		<darwinia_account_migration::Ledgers<Runtime>>::insert(
+			account_id.clone(),
+			Ledger {
+				staked_ring: 20,
+				staked_kton: 20,
+				staked_deposits: vec![].try_into().unwrap(),
+				unstaking_ring: vec![].try_into().unwrap(),
+				unstaking_kton: vec![].try_into().unwrap(),
+				unstaking_deposits: vec![].try_into().unwrap(),
+			},
 		);
 
 		assert_ok!(migrate(
@@ -287,5 +310,23 @@ fn staking() {
 				.spec_name
 				.as_bytes()
 		));
+
+		// 100 - 10 - 10 - 20
+		assert_eq!(Balances::free_balance(to), 60);
+		assert_eq!(Balances::free_balance(&darwinia_deposit::account_id::<AccountId>()), 20);
+		assert_eq!(Balances::free_balance(&darwinia_staking::account_id::<AccountId>()), 20);
+
+		assert_eq!(pangolin_runtime::Deposit::deposit_of(to).unwrap().len(), 2);
+		// assert_eq!(Assets::maybe_balance(AssetIds::PKton as u64, to).unwrap(), 80);
+		// assert_eq!(
+		// 	Assets::maybe_balance(
+		// 		AssetIds::PKton as u64,
+		// 		darwinia_staking::account_id::<AccountId>()
+		// 	)
+		// 	.unwrap(),
+		// 	20
+		// );
+		assert_eq!(pangolin_runtime::Staking::ledger_of(to).unwrap().staked_ring, 20);
+		assert_eq!(pangolin_runtime::Staking::ledger_of(to).unwrap().staked_kton, 20);
 	});
 }

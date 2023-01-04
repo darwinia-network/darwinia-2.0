@@ -145,13 +145,6 @@ pub mod pallet {
 	#[pallet::getter(fn deposit_of)]
 	pub type Deposits<T: Config> = StorageMap<_, Blake2_128Concat, AccountId32, Vec<Deposit>>;
 
-	/// [`darwinia_staking::Bonded`] data.
-	///
-	/// <https://github.dev/darwinia-network/darwinia-common/blob/6a9392cfb9fe2c99b1c2b47d0c36125d61991bb7/frame/staking/src/lib.rs#L592>
-	#[pallet::storage]
-	#[pallet::getter(fn bonded)]
-	pub type Bonded<T: Config> = StorageMap<_, Twox64Concat, AccountId32, AccountId32>;
-
 	/// [`darwinia_staking::Ledgers`] data.
 	#[pallet::storage]
 	#[pallet::getter(fn ledger_of)]
@@ -189,7 +182,7 @@ pub mod pallet {
 					a,
 				);
 			}
-			if let Some(v) = <Vestings<T>>::get(&from) {
+			if let Some(v) = <Vestings<T>>::take(&from) {
 				let locked = v.iter().map(|v| v.locked()).sum();
 
 				<pallet_vesting::Vesting<T>>::insert(
@@ -203,8 +196,8 @@ pub mod pallet {
 				// https://github.dev/paritytech/substrate/blob/19162e43be45817b44c7d48e50d03f074f60fbf4/frame/vesting/src/lib.rs#L86
 				<pallet_balances::Pallet<T>>::set_lock(*b"vesting ", &to, locked, reasons);
 			}
-			if let Some(l) = <Bonded<T>>::get(&from).and_then(<Ledgers<T>>::get) {
-				if let Some(ds) = <Deposits<T>>::get(&from) {
+			if let Some(l) = <Ledgers<T>>::take(&from) {
+				if let Some(ds) = <Deposits<T>>::take(&from) {
 					<pallet_balances::Pallet<T> as Currency<_>>::transfer(
 						&to,
 						&darwinia_deposit::account_id(),
@@ -225,12 +218,12 @@ pub mod pallet {
 					l.staked_ring + l.unstaking_ring.iter().map(|(r, _)| r).sum::<Balance>(),
 					KeepAlive,
 				)?;
-				<pallet_assets::Pallet<T>>::transfer(
-					RawOrigin::Signed(to).into(),
-					1026_u64,
-					staking_pot,
-					l.staked_kton + l.unstaking_kton.iter().map(|(k, _)| k).sum::<Balance>(),
-				)?;
+				// <pallet_assets::Pallet<T>>::transfer(
+				// 	RawOrigin::Signed(to).into(),
+				// 	1026_u64,
+				// 	staking_pot,
+				// 	l.staked_kton + l.unstaking_kton.iter().map(|(k, _)| k).sum::<Balance>(),
+				// )?;
 				<darwinia_staking::Ledgers<T>>::insert(to, l);
 			}
 
