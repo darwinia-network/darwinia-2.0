@@ -75,3 +75,11 @@ impl WeightToFeePolynomial for WeightToFee {
 		}]
 	}
 }
+
+/// Deposit calculator for Darwinia.
+/// 100 UNIT for the base fee, 102.4 UNIT/MB.
+pub const fn darwinia_deposit(items: u32, bytes: u32) -> Balance {
+	// First try.
+	items as Balance * 100 * UNIT + (bytes as Balance) * 100 * MICROUNIT
+	// items as Balance * 100 * UNIT + (bytes as Balance) * 100 * MILLIUNIT
+}
