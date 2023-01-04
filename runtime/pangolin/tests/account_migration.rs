@@ -23,12 +23,10 @@ use mock::*;
 
 // darwinia
 use dc_primitives::AccountId;
-use pangolin_runtime::{AccountMigration, AssetIds, Assets, Runtime, RuntimeOrigin, System};
+use pangolin_runtime::*;
 // substrate
 use frame_support::{
-	assert_err, assert_ok, migration,
-	traits::{Get, OnFinalize},
-	Blake2_128Concat, StorageHasher,
+	assert_err, assert_ok, migration, traits::Get, Blake2_128Concat, StorageHasher,
 };
 use frame_system::AccountInfo;
 use pallet_assets::ExistenceReason;
@@ -184,7 +182,7 @@ fn migrate_kton_accounts() {
 		let account_id = AccountId32::new(pair.public().0);
 
 		// The struct in the upstream repo is not accessible due to viable.
-		#[derive(Clone, Encode, Eq, PartialEq)]
+		#[derive(Encode)]
 		pub struct AssetAccount {
 			pub balance: u128,
 			pub is_frozen: bool,
@@ -199,13 +197,6 @@ fn migrate_kton_accounts() {
 			extra: (),
 		};
 		assert_eq!(asset_account.encode().len(), 18);
-		// TODO
-		// let mut account = &[0u8; 18];
-		// account.copy_from_slice(&asset_account.encode());
-		// <darwinia_account_migration::KtonAccounts<Runtime>>::insert(
-		// 	account_id.clone(),
-		// 	&asset_account,
-		// );
 		migration::put_storage_value(
 			b"AccountMigration",
 			b"KtonAccounts",
@@ -226,5 +217,75 @@ fn migrate_kton_accounts() {
 			Assets::maybe_balance(AssetIds::PKton as u64, to).unwrap(),
 			asset_account.balance
 		);
+	});
+}
+
+#[test]
+fn vesting() {
+	let to = H160::from_low_u64_be(255).into();
+	ExtBuilder::default().build().execute_with(|| {
+		let pair = prepare_accounts(true);
+		let account_id = AccountId32::new(pair.public().0);
+
+		// The struct in the upstream repo is not accessible due to viable.
+		#[derive(Encode)]
+		pub struct VestingInfo {
+			locked: u128,
+			per_block: u128,
+			starting_block: u32,
+		}
+
+		let vests = vec![
+			VestingInfo { locked: 100, per_block: 5, starting_block: 0 },
+			VestingInfo { locked: 100, per_block: 5, starting_block: 0 },
+		];
+		migration::put_storage_value(
+			b"AccountMigration",
+			b"Vestings",
+			&Blake2_128Concat::hash(account_id.as_ref()),
+			vests,
+		);
+
+		assert_ok!(migrate(
+			pair,
+			to,
+			<<Runtime as pallet_evm::Config>::ChainId as Get<u64>>::get(),
+			<<Runtime as frame_system::Config>::Version as Get<RuntimeVersion>>::get()
+				.spec_name
+				.as_bytes()
+		));
+
+		assert_eq!(Vesting::vesting(to).unwrap().len(), 2);
+		assert_eq!(Balances::locks(to).len(), 1);
+	});
+}
+
+#[test]
+#[ignore]
+fn staking() {
+	let to = H160::from_low_u64_be(255).into();
+	ExtBuilder::default().build().execute_with(|| {
+		let pair1 = prepare_accounts(true);
+		let pair2 = Pair::from_seed(b"00000000000000000000000000000002");
+		let account_id1 = AccountId32::new(pair1.public().0);
+		let account_id2 = AccountId32::new(pair2.public().0);
+
+		<darwinia_account_migration::Bonded<Runtime>>::insert(
+			account_id1.clone(),
+			account_id2.clone(),
+		);
+		<darwinia_account_migration::Deposits<Runtime>>::insert(
+			account_id1.clone(),
+			account_id2.clone(),
+		);
+
+		assert_ok!(migrate(
+			pair,
+			to,
+			<<Runtime as pallet_evm::Config>::ChainId as Get<u64>>::get(),
+			<<Runtime as frame_system::Config>::Version as Get<RuntimeVersion>>::get()
+				.spec_name
+				.as_bytes()
+		));
 	});
 }
