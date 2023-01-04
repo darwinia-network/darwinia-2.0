@@ -1,12 +1,7 @@
 // crates.io
 use parity_scale_codec::{Decode, Encode};
 
-pub const GWEI: u128 = 1_000_000_000;
-pub const KTON_ID: u64 = 1026;
-// https://github.dev/darwinia-network/darwinia-2.0/blob/c9fdfa170501648102bd0137c0437e367e743770/runtime/common/src/gov_origin.rs#L46
-pub const ROOT: [u8; 20] = [0x72, 0x6f, 0x6f, 0x74, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-
-#[derive(Default, Debug, Encode, Decode)]
+#[derive(Default, Debug, PartialEq, Eq, Encode, Decode)]
 pub struct AccountInfo {
 	pub nonce: u32,
 	pub consumers: u32,
@@ -14,7 +9,7 @@ pub struct AccountInfo {
 	pub sufficients: u32,
 	pub data: AccountData,
 }
-#[derive(Default, Debug, Encode, Decode)]
+#[derive(Default, Debug, PartialEq, Eq, Encode, Decode)]
 pub struct AccountData {
 	pub free: u128,
 	pub reserved: u128,
@@ -43,7 +38,7 @@ impl Default for Reasons {
 }
 
 // https://github.dev/paritytech/substrate/blob/polkadot-v0.9.30/frame/assets/src/types.rs#L33
-#[derive(Debug, Encode, Decode)]
+#[derive(Default, Debug, Encode, Decode)]
 pub struct AssetDetails {
 	pub owner: [u8; 20],
 	pub issuer: [u8; 20],
@@ -60,7 +55,7 @@ pub struct AssetDetails {
 }
 
 // https://github.dev/paritytech/substrate/blob/polkadot-v0.9.30/frame/assets/src/types.rs#L115
-#[derive(Debug, Encode, Decode)]
+#[derive(Default, Debug, Encode, Decode)]
 pub struct AssetAccount {
 	pub balance: u128,
 	pub is_frozen: bool,
@@ -80,6 +75,11 @@ pub enum ExistenceReason {
 	#[codec(index = 3)]
 	DepositRefunded,
 }
+impl Default for ExistenceReason {
+	fn default() -> Self {
+		ExistenceReason::Sufficient
+	}
+}
 
 // https://github.dev/paritytech/substrate/blob/polkadot-v0.9.30/frame/assets/src/types.rs#L73
 #[derive(Debug, Encode, Decode)]
@@ -89,7 +89,7 @@ pub struct Approval {
 }
 
 // https://github.dev/paritytech/substrate/blob/polkadot-v0.9.30/frame/assets/src/types.rs#L127
-#[derive(Clone, Encode, Decode)]
+#[derive(Clone, Default, Encode, Decode)]
 pub struct AssetMetadata {
 	pub deposit: u128,
 	pub name: Vec<u8>,
