@@ -50,13 +50,18 @@ where
 	DecodeLimit: Get<u32>,
 {
 	#[precompile::public("execute(bytes)")]
-	fn execute(handle: &mut impl PrecompileHandle) -> EvmResult<bool> {
-		let input = handle.input();
+	fn execute(
+		handle: &mut impl PrecompileHandle,
+		encoded_call: UnboundedBytes,
+	) -> EvmResult<bool> {
 		let target_gas = handle.gas_limit();
 		let context = handle.context();
 
-		let call = T::RuntimeCall::decode_with_depth_limit(DecodeLimit::get(), &mut &*input)
-			.map_err(|_| revert("decode failed"))?;
+		let call = T::RuntimeCall::decode_with_depth_limit(
+			DecodeLimit::get(),
+			&mut encoded_call.as_bytes(),
+		)
+		.map_err(|_| revert("decode failed"))?;
 		let info = call.get_dispatch_info();
 
 		let valid_call = info.pays_fee == Pays::Yes && info.class == DispatchClass::Normal;
