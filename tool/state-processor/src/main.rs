@@ -60,11 +60,11 @@ where
 {
 	fn new() -> Result<Self> {
 		let mut shell_chain_spec =
-			from_file::<ChainSpec>(&format!("test-data/{}-shell.json", S::NAME))?;
+			from_file::<ChainSpec>(&format!("data/{}-shell.json", S::NAME))?;
 
 		Ok(Self {
-			solo_state: State::from_file(&format!("test-data/{}-solo.json", S::NAME))?,
-			para_state: State::from_file(&format!("test-data/{}-para.json", S::NAME))?,
+			solo_state: State::from_file(&format!("data/{}-solo.json", S::NAME))?,
+			para_state: State::from_file(&format!("data/{}-para.json", S::NAME))?,
 			shell_state: State {
 				map: mem::take(&mut shell_chain_spec.genesis.raw.top),
 				_runtime: Default::default(),
