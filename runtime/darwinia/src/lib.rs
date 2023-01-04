@@ -53,7 +53,7 @@ use sp_runtime::{
 	generic,
 	traits::Block as BlockT,
 	transaction_validity::{TransactionSource, TransactionValidity},
-	ApplyExtrinsicResult, MultiAddress, Perbill, Permill,
+	ApplyExtrinsicResult, Perbill, Permill,
 };
 use sp_std::prelude::*;
 #[cfg(feature = "std")]
