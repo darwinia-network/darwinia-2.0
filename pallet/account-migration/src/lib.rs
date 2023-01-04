@@ -127,10 +127,10 @@ pub mod pallet {
 	/// [`pallet_asset::AssetAccount`] data.
 	///
 	/// https://github.dev/paritytech/substrate/blob/polkadot-v0.9.30/frame/assets/src/types.rs#L115
-	// The size of `pallet_asset::AssetAccount` is 64 bytes.
+	// The size of `pallet_asset::AssetAccount` is 18 bytes.
 	#[pallet::storage]
 	#[pallet::getter(fn kton_account_of)]
-	pub type KtonAccounts<T: Config> = StorageMap<_, Blake2_128Concat, AccountId32, [u8; 64]>;
+	pub type KtonAccounts<T: Config> = StorageMap<_, Blake2_128Concat, AccountId32, [u8; 18]>;
 
 	/// [`pallet_vesting::Vesting`] data.
 	///

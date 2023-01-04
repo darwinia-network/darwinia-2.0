@@ -23,7 +23,7 @@ use mock::*;
 
 // darwinia
 use dc_primitives::AccountId;
-use pangolin_runtime::{AccountMigration, Runtime, RuntimeOrigin, System};
+use pangolin_runtime::{AccountMigration, AssetIds, Assets, Runtime, RuntimeOrigin, System};
 // substrate
 use frame_support::{
 	assert_err, assert_ok, migration,
@@ -31,8 +31,9 @@ use frame_support::{
 	Blake2_128Concat, StorageHasher,
 };
 use frame_system::AccountInfo;
+use pallet_assets::ExistenceReason;
 use pallet_balances::AccountData;
-use sp_core::{sr25519::Pair, Pair as PairT, H160};
+use sp_core::{sr25519::Pair, Encode, Pair as PairT, H160};
 use sp_io::hashing::blake2_256;
 use sp_runtime::{
 	traits::ValidateUnsigned,
@@ -180,6 +181,37 @@ fn migrate_kton_accounts() {
 	let to = H160::from_low_u64_be(255).into();
 	ExtBuilder::default().build().execute_with(|| {
 		let pair = prepare_accounts(true);
+		let account_id = AccountId32::new(pair.public().0);
+
+		// The struct in the upstream repo is not accessible due to viable.
+		#[derive(Clone, Encode, Eq, PartialEq)]
+		pub struct AssetAccount {
+			pub balance: u128,
+			pub is_frozen: bool,
+			pub reason: ExistenceReason<u128>,
+			pub extra: (),
+		}
+
+		let asset_account = AssetAccount {
+			balance: 100,
+			is_frozen: false,
+			reason: ExistenceReason::<u128>::Sufficient,
+			extra: (),
+		};
+		assert_eq!(asset_account.encode().len(), 18);
+		// TODO
+		// let mut account = &[0u8; 18];
+		// account.copy_from_slice(&asset_account.encode());
+		// <darwinia_account_migration::KtonAccounts<Runtime>>::insert(
+		// 	account_id.clone(),
+		// 	&asset_account,
+		// );
+		migration::put_storage_value(
+			b"AccountMigration",
+			b"KtonAccounts",
+			&Blake2_128Concat::hash(account_id.as_ref()),
+			asset_account.clone(),
+		);
 
 		assert_ok!(migrate(
 			pair,
@@ -189,5 +221,10 @@ fn migrate_kton_accounts() {
 				.spec_name
 				.as_bytes()
 		));
+
+		assert_eq!(
+			Assets::maybe_balance(AssetIds::PKton as u64, to).unwrap(),
+			asset_account.balance
+		);
 	});
 }
