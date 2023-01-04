@@ -32,7 +32,7 @@ use frame_support::{
 	traits::{
 		tokens::currency::Currency as CurrencyT, ConstU128, Get, OnUnbalanced as OnUnbalancedT,
 	},
-	weights::WeightToFee as WeightToFeeT,
+	weights::{WeightToFee as WeightToFeeT, Weight},
 };
 use sp_io::hashing::blake2_256;
 use sp_runtime::traits::{SaturatedConversion, Saturating, Zero};
@@ -167,7 +167,7 @@ impl<
 	fn buy_weight(&mut self, weight: Weight, payment: Assets) -> Result<Assets, XcmError> {
 		log::trace!(target: "xcm::weight", "LocalAssetTrader::buy_weight weight: {:?}, payment: {:?}", weight, payment);
 		let amount =
-			WeightToFee::weight_to_fee(&frame_support::weights::Weight::from_ref_time(weight));
+			WeightToFee::weight_to_fee(&Weight::from_ref_time(weight));
 		let u128_amount: u128 = amount.try_into().map_err(|_| XcmError::Overflow)?;
 		let required: MultiAsset = (Concrete(AssetId::get()), u128_amount).into();
 		let unused = payment.checked_sub(required.clone()).map_err(|_| XcmError::TooExpensive)?;
@@ -181,7 +181,7 @@ impl<
 		log::trace!(target: "xcm::weight", "LocalAssetTrader::refund_weight weight: {:?}", weight);
 		let weight = weight.min(self.0);
 		let amount =
-			WeightToFee::weight_to_fee(&frame_support::weights::Weight::from_ref_time(weight));
+			WeightToFee::weight_to_fee(&Weight::from_ref_time(weight));
 		self.0 -= weight;
 		self.1 = self.1.saturating_sub(amount);
 		let amount: u128 = amount.saturated_into();
