@@ -43,7 +43,7 @@ fn main() -> Result<()> {
 	env::set_var("RUST_LOG", "state_processor");
 	pretty_env_logger::init();
 
-	<Processor<Darwinia>>::new()?.process()?;
+	<Processor<Crab>>::new()?.process()?;
 
 	Ok(())
 }
