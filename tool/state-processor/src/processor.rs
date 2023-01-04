@@ -32,6 +32,8 @@ where
 	S: Configurable,
 {
 	pub fn new() -> Result<Self> {
+		build_spec(S::NAME)?;
+
 		let mut shell_chain_spec = from_file::<ChainSpec>(&format!("data/{}-shell.json", S::NAME))?;
 
 		Ok(Self {
@@ -67,7 +69,7 @@ where
 
 		mem::swap(&mut self.shell_state.map, &mut self.shell_chain_spec.genesis.raw.top);
 
-		let mut f = File::create(format!("test-data/{}-processed.json", S::NAME))?;
+		let mut f = File::create(format!("data/{}-processed.json", S::NAME))?;
 		let v = serde_json::to_vec(&self.shell_chain_spec)?;
 
 		f.write_all(&v)?;

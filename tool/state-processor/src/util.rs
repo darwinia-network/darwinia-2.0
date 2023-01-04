@@ -1,3 +1,8 @@
+// std
+use std::{
+	fs::File,
+	process::{Command, Stdio},
+};
 // crates.io
 use parity_scale_codec::{Decode, Encode};
 // darwinia
@@ -58,4 +63,13 @@ where
 pub fn is_evm_address(address: &[u8]) -> bool {
 	address.starts_with(b"dvm:")
 		&& address[1..31].iter().fold(address[0], |checksum, &b| checksum ^ b) == address[31]
+}
+
+pub fn build_spec(chain: &str) -> Result<()> {
+	Command::new("../../target/release/darwinia")
+		.args(&["build-spec", "--chain", &format!("{chain}-genesis")])
+		.stdout(Stdio::from(File::create(format!("data/{chain}-shell.json"))?))
+		.output()?;
+
+	Ok(())
 }
