@@ -33,6 +33,7 @@ where
 {
 	pub fn new() -> Result<Self> {
 		build_spec(S::NAME)?;
+		download_specs(S::NAME)?;
 
 		let mut shell_chain_spec = from_file::<ChainSpec>(&format!("data/{}-shell.json", S::NAME))?;
 

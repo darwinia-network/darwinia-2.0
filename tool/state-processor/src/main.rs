@@ -24,6 +24,7 @@ mod vesting;
 #[cfg(test)]
 mod tests;
 
+pub type StdResult<T, E> = std::result::Result<T, E>;
 pub type Result<T> = anyhow::Result<T>;
 
 fn main() -> Result<()> {

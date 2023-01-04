@@ -5,6 +5,8 @@ use std::{
 };
 // crates.io
 use parity_scale_codec::{Decode, Encode};
+use tar::Archive;
+use zstd::Decoder;
 // darwinia
 use crate::*;
 
@@ -67,9 +69,27 @@ pub fn is_evm_address(address: &[u8]) -> bool {
 
 pub fn build_spec(chain: &str) -> Result<()> {
 	Command::new("../../target/release/darwinia")
-		.args(&["build-spec", "--chain", &format!("{chain}-genesis")])
+		.args(["build-spec", "--chain", &format!("{chain}-genesis")])
 		.stdout(Stdio::from(File::create(format!("data/{chain}-shell.json"))?))
 		.output()?;
+
+	Ok(())
+}
+
+pub fn download_specs(chain: &str) -> Result<()> {
+	let decoder = Decoder::new(
+		ureq::get(&format!(
+			"https://github.com/darwinia-network/darwinia-2.0/releases/download/{chain}2/{chain}-state.tar.zst"
+		))
+		.call()?
+		.into_reader(),
+	)?;
+
+	for e in Archive::new(decoder).entries()? {
+		let mut e = e?;
+
+		e.unpack(format!("data/{}", e.path()?.to_string_lossy()))?;
+	}
 
 	Ok(())
 }
