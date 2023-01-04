@@ -151,7 +151,6 @@ pub mod pallet {
 	pub type Ledgers<T: Config> = StorageMap<_, Blake2_128Concat, AccountId32, Ledger<T>>;
 
 	// TODO: identity storages
-	// TODO: proxy storages
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
