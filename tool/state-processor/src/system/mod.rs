@@ -211,8 +211,12 @@ impl Processor {
 		account_infos.iter_mut().for_each(|(_, v)| v.data.adjust());
 
 		log::info!("merge solo remaining balances");
+		let (mut total_remaining_ring, mut total_remaining_kton) =
+			(u128::default(), u128::default());
+
 		remaining_ring.into_iter().for_each(|(k, v)| {
 			if let Some(a) = account_infos.get_mut(&k) {
+				total_remaining_ring += v;
 				a.data.free += v;
 			} else {
 				log::error!(
@@ -223,14 +227,17 @@ impl Processor {
 		});
 		remaining_kton.into_iter().for_each(|(k, v)| {
 			if let Some(a) = account_infos.get_mut(&k) {
+				total_remaining_kton += v;
 				a.data.free_kton_or_misc_frozen += v;
 			} else {
 				log::error!(
 					"`Account({})` not found while merging `RemainingKtonBalance`",
-					get_last_64(&k)
+					get_last_64(&k),
 				);
 			}
 		});
+		log::info!("total_remaining_ring({total_remaining_ring})");
+		log::info!("total_remaining_kton({total_remaining_kton})");
 
 		account_infos
 	}
@@ -248,7 +255,7 @@ impl Processor {
 fn try_get_evm_address(key: &str) -> Option<[u8; 20]> {
 	let k = array_bytes::hex2bytes_unchecked(key);
 
-	if k.starts_with(b"dvm:") && k[1..31].iter().fold(k[0], |checksum, &b| checksum ^ b) == k[31] {
+	if is_evm_address(&k) {
 		Some(array_bytes::slice2array_unchecked(&k[11..31]))
 	} else {
 		None
