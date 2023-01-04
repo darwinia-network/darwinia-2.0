@@ -43,9 +43,9 @@ impl Tester {
 	fn new() -> Self {
 		// This test is only used to ensure the correctness of  the state processor and is only
 		// applicable to Crab, Crab Parachain.
-		let mut solo_state = State::from_file("test-data/crab.json").unwrap();
-		let mut para_state = State::from_file("test-data/crab-parachain.json").unwrap();
-		let mut shell_state = State::from_file("test-data/processed.json").unwrap();
+		let mut solo_state = State::from_file("test-data/crab-solo.json").unwrap();
+		let mut para_state = State::from_file("test-data/crab-para.json").unwrap();
+		let mut shell_state = State::from_file("test-data/crab-processed.json").unwrap();
 
 		// solo chain
 		let mut solo_accounts = <Map<AccountInfo>>::default();
@@ -323,8 +323,8 @@ fn asset_metadata() {
 			&mut metadata,
 		);
 		assert_eq!(metadata.decimals, 18);
-		assert_eq!(metadata.symbol, b"KTON".to_vec());
-		assert_eq!(metadata.name, b"Darwinia Commitment Token".to_vec());
+		assert_eq!(metadata.symbol, b"CKTON".to_vec());
+		assert_eq!(metadata.name, b"Crab Commitment Token".to_vec());
 	});
 }
 
