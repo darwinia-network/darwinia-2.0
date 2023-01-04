@@ -181,7 +181,7 @@ pub mod pallet {
 					a,
 				);
 			}
-			if let Some(v) = <Vestings<T>>::get(&from) {
+			if let Some(v) = <Vestings<T>>::take(&from) {
 				let locked = v.iter().map(|v| v.locked()).sum();
 
 				<pallet_vesting::Vesting<T>>::insert(
@@ -195,8 +195,8 @@ pub mod pallet {
 				// https://github.dev/paritytech/substrate/blob/19162e43be45817b44c7d48e50d03f074f60fbf4/frame/vesting/src/lib.rs#L86
 				<pallet_balances::Pallet<T>>::set_lock(*b"vesting ", &to, locked, reasons);
 			}
-			if let Some(l) = <Ledgers<T>>::get(&from) {
-				if let Some(ds) = <Deposits<T>>::get(&from) {
+			if let Some(l) = <Ledgers<T>>::take(&from) {
+				if let Some(ds) = <Deposits<T>>::take(&from) {
 					<pallet_balances::Pallet<T> as Currency<_>>::transfer(
 						&to,
 						&darwinia_deposit::account_id(),
