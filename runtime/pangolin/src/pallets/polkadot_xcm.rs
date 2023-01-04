@@ -20,7 +20,6 @@
 use crate::*;
 // substrate
 use frame_support::traits::Currency;
-use sp_runtime::traits::AccountIdConversion;
 
 /// Means for transacting assets on this chain.
 pub type LocalAssetTransactor = xcm_builder::CurrencyAdapter<
@@ -99,7 +98,6 @@ frame_support::parameter_types! {
 	// One XCM operation is 1_000_000_000 weight - almost certainly a conservative estimate.
 	pub Ancestry: xcm::latest::prelude::MultiLocation = xcm::latest::prelude::Parachain(ParachainInfo::parachain_id().into()).into();
 	pub UnitWeightCost: u64 = 1_000_000_000;
-	pub DarwiniaTreasuryAccount: AccountId = TreasuryPalletId::get().into_account_truncating();
 }
 
 pub struct ToTreasury;
@@ -110,8 +108,13 @@ impl xcm_builder::TakeRevenue for ToTreasury {
 			fun: xcm::latest::prelude::Fungible(amount),
 		} = revenue
 		{
-			let _ = Balances::deposit_creating(&DarwiniaTreasuryAccount::get(), amount);
-			frame_support::log::trace!(target: "xcm::weight", "LocalAssetTrader::to_treasury amount: {:?}, treasury: {:?}", amount, &DarwiniaTreasuryAccount::get());
+			let treasury_account = Treasury::account_id();
+			let _ = Balances::deposit_creating(&treasury_account, amount);
+
+			frame_support::log::trace!(
+				target: "xcm::weight",
+				"LocalAssetTrader::to_treasury amount: {amount:?}, treasury: {treasury_account:?}"
+			);
 		}
 	}
 }

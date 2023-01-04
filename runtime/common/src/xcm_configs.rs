@@ -23,22 +23,23 @@ use codec::Encode;
 // darwinia
 use dc_primitives::GWEI;
 // polkadot
-use xcm::latest::{prelude::*, Weight as XCMWeight};
+use xcm::latest::{prelude::*, Weight as XcmWeight};
 use xcm_builder::TakeRevenue;
-use xcm_executor::traits::{Convert, ShouldExecute};
+use xcm_executor::{
+	traits::{Convert, ShouldExecute, WeightTrader},
+	Assets,
+};
 // substrate
 use frame_support::{
 	log,
 	traits::{
 		tokens::currency::Currency as CurrencyT, ConstU128, Get, OnUnbalanced as OnUnbalancedT,
 	},
-	weights::{WeightToFee as WeightToFeeT, Weight},
+	weights::{Weight, WeightToFee as WeightToFeeT},
 };
 use sp_io::hashing::blake2_256;
 use sp_runtime::traits::{SaturatedConversion, Saturating, Zero};
 use sp_std::{borrow::Borrow, result::Result};
-use xcm::latest::Weight;
-use xcm_executor::{traits::WeightTrader, Assets};
 
 /// Base balance required for the XCM unit weight.
 pub type XcmBaseWeightFee = ConstU128<GWEI>;
@@ -70,8 +71,8 @@ where
 	fn should_execute<RuntimeCall>(
 		origin: &MultiLocation,
 		message: &mut Xcm<RuntimeCall>,
-		max_weight: XCMWeight,
-		weight_credit: &mut XCMWeight,
+		max_weight: XcmWeight,
+		weight_credit: &mut XcmWeight,
 	) -> Result<(), ()> {
 		Deny::should_execute(origin, message, max_weight, weight_credit)?;
 		Allow::should_execute(origin, message, max_weight, weight_credit)
@@ -85,8 +86,8 @@ impl ShouldExecute for DenyReserveTransferToRelayChain {
 		origin: &MultiLocation,
 
 		message: &mut Xcm<RuntimeCall>,
-		_max_weight: XCMWeight,
-		_weight_credit: &mut XCMWeight,
+		_max_weight: XcmWeight,
+		_weight_credit: &mut XcmWeight,
 	) -> Result<(), ()> {
 		if message.0.iter().any(|inst| {
 			matches!(
@@ -147,7 +148,7 @@ pub struct LocalAssetTrader<
 	OnUnbalanced: OnUnbalancedT<Currency::NegativeImbalance>,
 	R: TakeRevenue,
 >(
-	Weight,
+	XcmWeight,
 	Currency::Balance,
 	PhantomData<(WeightToFee, AssetId, AccountId, Currency, OnUnbalanced, R)>,
 );
@@ -164,10 +165,9 @@ impl<
 		Self(0, Zero::zero(), PhantomData)
 	}
 
-	fn buy_weight(&mut self, weight: Weight, payment: Assets) -> Result<Assets, XcmError> {
+	fn buy_weight(&mut self, weight: XcmWeight, payment: Assets) -> Result<Assets, XcmError> {
 		log::trace!(target: "xcm::weight", "LocalAssetTrader::buy_weight weight: {:?}, payment: {:?}", weight, payment);
-		let amount =
-			WeightToFee::weight_to_fee(&Weight::from_ref_time(weight));
+		let amount = WeightToFee::weight_to_fee(&Weight::from_ref_time(weight));
 		let u128_amount: u128 = amount.try_into().map_err(|_| XcmError::Overflow)?;
 		let required: MultiAsset = (Concrete(AssetId::get()), u128_amount).into();
 		let unused = payment.checked_sub(required.clone()).map_err(|_| XcmError::TooExpensive)?;
@@ -177,11 +177,10 @@ impl<
 		Ok(unused)
 	}
 
-	fn refund_weight(&mut self, weight: Weight) -> Option<MultiAsset> {
+	fn refund_weight(&mut self, weight: XcmWeight) -> Option<MultiAsset> {
 		log::trace!(target: "xcm::weight", "LocalAssetTrader::refund_weight weight: {:?}", weight);
 		let weight = weight.min(self.0);
-		let amount =
-			WeightToFee::weight_to_fee(&Weight::from_ref_time(weight));
+		let amount = WeightToFee::weight_to_fee(&Weight::from_ref_time(weight));
 		self.0 -= weight;
 		self.1 = self.1.saturating_sub(amount);
 		let amount: u128 = amount.saturated_into();
