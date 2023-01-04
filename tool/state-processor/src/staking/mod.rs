@@ -5,7 +5,6 @@ impl<S> Processor<S> {
 	pub fn process_staking(&mut self) -> &mut Self {
 		// Storage items.
 		// https://github.dev/darwinia-network/darwinia-common/blob/darwinia-v0.12.5/frame/staking/src/lib.rs#L560
-		let mut bonded = <Map<String>>::default();
 		let mut ledgers = <Map<StakingLedger>>::default();
 		let mut ring_pool_storage = u128::default();
 		let mut kton_pool_storage = u128::default();
@@ -13,15 +12,12 @@ impl<S> Processor<S> {
 		let mut kton_pool = u128::default();
 		let mut elapsed_time = u64::default();
 
-		log::info!("take solo `Staking::Bonded`, `Staking::Ledger`, `Staking::RingPool`, `Staking::KtonPool` and `Staking::LivingTime`");
+		log::info!("take solo `Staking::Ledger`, `Staking::RingPool`, `Staking::KtonPool` and `Staking::LivingTime`");
 		self.solo_state
 			.take_map(b"Staking", b"Ledger", &mut ledgers, get_identity_key)
 			.take_value(b"Staking", b"RingPool", "", &mut ring_pool_storage)
 			.take_value(b"Staking", b"KtonPool", "", &mut kton_pool_storage)
 			.take_value(b"Staking", b"LivingTime", "", &mut elapsed_time);
-
-		log::info!("set `Staking::Bonded`");
-		self.shell_state.insert_raw_key_map(bonded);
 
 		log::info!("adjust decimals and block number, convert ledger, adjust unstaking duration then set `AccountMigration::Ledgers` and `AccountMigration::Deposits`");
 		{
