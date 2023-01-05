@@ -23,9 +23,9 @@ use mock::*;
 
 // darwinia
 use darwinia_deposit::Deposit;
+use darwinia_runtime::*;
 use darwinia_staking::Ledger;
 use dc_primitives::AccountId;
-use pangolin_runtime::*;
 // substrate
 use frame_support::{
 	assert_err, assert_ok, migration, traits::Get, Blake2_128Concat, StorageHasher,
@@ -315,7 +315,7 @@ fn staking() {
 			assert_eq!(Balances::free_balance(&darwinia_deposit::account_id::<AccountId>()), 20);
 			assert_eq!(Balances::free_balance(&darwinia_staking::account_id::<AccountId>()), 20);
 
-			assert_eq!(pangolin_runtime::Deposit::deposit_of(to).unwrap().len(), 2);
+			assert_eq!(darwinia_runtime::Deposit::deposit_of(to).unwrap().len(), 2);
 
 			assert_eq!(Assets::maybe_balance(KTON_ID, to).unwrap(), 80);
 			assert_eq!(
@@ -324,7 +324,7 @@ fn staking() {
 				20
 			);
 
-			assert_eq!(pangolin_runtime::Staking::ledger_of(to).unwrap().staked_ring, 20);
-			assert_eq!(pangolin_runtime::Staking::ledger_of(to).unwrap().staked_kton, 20);
+			assert_eq!(darwinia_runtime::Staking::ledger_of(to).unwrap().staked_ring, 20);
+			assert_eq!(darwinia_runtime::Staking::ledger_of(to).unwrap().staked_kton, 20);
 		});
 }

@@ -17,9 +17,9 @@
 // along with Darwinia. If not, see <https://www.gnu.org/licenses/>.
 
 // darwinia
+use crab_runtime::{Runtime, System};
 use darwinia_common_runtime::gov_origin::ROOT;
 use dc_primitives::{AccountId, Balance};
-use pangolin_runtime::{Runtime, System};
 // parity
 use frame_support::traits::GenesisBuild;
 use sp_io::TestExternalities;
