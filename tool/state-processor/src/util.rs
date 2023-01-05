@@ -69,20 +69,16 @@ pub fn is_evm_address(address: &[u8]) -> bool {
 }
 
 pub fn build_spec(chain: &str) -> Result<()> {
-	let path_0 = "../../target/release/darwinia";
-	let path_1 = "../../target/x86_64-unknown-linux-gnu/release/darwinia";
+	let mut path = "../../target/release/darwinia";
 
-	if Path::new(path_0).is_file() {
-		Command::new(path_0)
-			.args(["build-spec", "--chain", &format!("{chain}-genesis")])
-			.stdout(Stdio::from(File::create(format!("data/{chain}-shell.json"))?))
-			.output()?;
-	} else {
-		Command::new(path_1)
-			.args(["build-spec", "--chain", &format!("{chain}-genesis")])
-			.stdout(Stdio::from(File::create(format!("data/{chain}-shell.json"))?))
-			.output()?;
+	if !Path::new(path).is_file() {
+		path = "../../target/x86_64-unknown-linux-gnu/release/darwinia";
 	}
+
+	Command::new(path)
+		.args(["build-spec", "--raw", "--chain", &format!("{chain}-genesis")])
+		.stdout(Stdio::from(File::create(format!("data/{chain}-shell.json"))?))
+		.output()?;
 
 	Ok(())
 }
