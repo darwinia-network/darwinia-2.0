@@ -1,6 +1,6 @@
 // This file is part of Darwinia.
 //
-// Copyright (C) 2018-2022 Darwinia Network
+// Copyright (C) 2018-2023 Darwinia Network
 // SPDX-License-Identifier: GPL-3.0
 //
 // Darwinia is free software: you can redistribute it and/or modify
@@ -91,20 +91,20 @@ pub mod pallet {
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
 		/// Authorities changed. Collecting authorities change signatures.
-		CollectingAuthoritiesChangeSignatures { message: Message },
+		CollectingAuthoritiesChangeSignatures { message: Hash },
 		/// Collected enough authorities change signatures.
 		CollectedEnoughAuthoritiesChangeSignatures {
 			operation: Operation<T::AccountId>,
 			new_threshold: Option<u32>,
-			message: Message,
+			message: Hash,
 			signatures: Vec<(T::AccountId, Signature)>,
 		},
 		/// New message root found. Collecting new message root signatures.
-		CollectingNewMessageRootSignatures { message: Message },
+		CollectingNewMessageRootSignatures { message: Hash },
 		/// Collected enough new message root signatures.
 		CollectedEnoughNewMessageRootSignatures {
 			commitment: Commitment,
-			message: Message,
+			message: Hash,
 			signatures: Vec<(T::AccountId, Signature)>,
 		},
 	}
@@ -157,7 +157,7 @@ pub mod pallet {
 		(
 			Operation<T::AccountId>,
 			Option<u32>,
-			Message,
+			Hash,
 			BoundedVec<(T::AccountId, Signature), T::MaxAuthorities>,
 		),
 		OptionQuery,
@@ -169,7 +169,7 @@ pub mod pallet {
 	pub type NewMessageRootToSign<T: Config> = StorageValue<
 		_,
 		// TODO: use struct
-		(Commitment, Message, BoundedVec<(T::AccountId, Signature), T::MaxAuthorities>),
+		(Commitment, Hash, BoundedVec<(T::AccountId, Signature), T::MaxAuthorities>),
 		OptionQuery,
 	>;
 
@@ -332,7 +332,10 @@ pub mod pallet {
 
 			Self::ensure_not_submitted(&who, collected)?;
 
-			ensure!(Sign::verify_signature(&signature, message, &who.0), <Error<T>>::BadSignature);
+			ensure!(
+				Sign::verify_signature(&signature.0, &message.0, &who.0),
+				<Error<T>>::BadSignature
+			);
 
 			collected.try_push((who, signature)).map_err(|_| <Error<T>>::TooManyAuthorities)?;
 
@@ -378,7 +381,10 @@ pub mod pallet {
 
 			Self::ensure_not_submitted(&who, collected)?;
 
-			ensure!(Sign::verify_signature(&signature, message, &who.0), <Error<T>>::BadSignature);
+			ensure!(
+				Sign::verify_signature(&signature.0, &message.0, &who.0),
+				<Error<T>>::BadSignature
+			);
 
 			collected.try_push((who, signature)).map_err(|_| <Error<T>>::TooManyAuthorities)?;
 
@@ -425,7 +431,7 @@ pub mod pallet {
 			Ok(())
 		}
 
-		pub(crate) fn calculate_threshold(x: u32) -> u32 {
+		pub fn calculate_threshold(x: u32) -> u32 {
 			T::SignThreshold::get().mul_ceil(x)
 		}
 
@@ -490,7 +496,7 @@ pub mod pallet {
 			Perbill::from_rational(p, q) >= T::SignThreshold::get()
 		}
 
-		pub(crate) fn apply_next_authorities() {
+		pub fn apply_next_authorities() {
 			<AuthoritiesChangeToSign<T>>::kill();
 			<Authorities<T>>::put(<NextAuthorities<T>>::get());
 			<Nonce<T>>::mutate(|nonce| *nonce += 1);

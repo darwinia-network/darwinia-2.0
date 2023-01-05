@@ -2365,16 +2365,19 @@ dependencies = [
 name = "darwinia-ecdsa-authority"
 version = "2.10.1"
 dependencies = [
+ "array-bytes 6.0.0",
  "dc-primitives",
  "ethabi",
  "frame-support",
  "frame-system",
+ "libsecp256k1 0.7.1",
  "parity-scale-codec",
  "scale-info",
  "sp-core",
  "sp-io",
  "sp-runtime",
  "sp-std",
+ "sp-version",
 ]
 
 [[package]]

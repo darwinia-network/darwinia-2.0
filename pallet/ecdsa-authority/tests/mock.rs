@@ -1,6 +1,6 @@
 // This file is part of Darwinia.
 //
-// Copyright (C) 2018-2022 Darwinia Network
+// Copyright (C) 2018-2023 Darwinia Network
 // SPDX-License-Identifier: GPL-3.0
 //
 // Darwinia is free software: you can redistribute it and/or modify
@@ -16,57 +16,45 @@
 // You should have received a copy of the GNU General Public License
 // along with Darwinia. If not, see <https://www.gnu.org/licenses/>.
 
-// --- core ---
-use core::iter;
-// --- crates.io ---
-use libsecp256k1::{PublicKey, SecretKey};
-// --- paritytech ---
-use frame_support::traits::{ConstU32, Everything, GenesisBuild, OnInitialize};
-use frame_system::mocking::*;
+// std
+use std::iter;
+// crates.io
+use libsecp256k1::{Message, PublicKey, SecretKey};
+// darwinia
+use darwinia_ecdsa_authority::{primitives::*, *};
+use dc_primitives::AccountId;
+// substrate
+use frame_support::traits::{GenesisBuild, OnInitialize};
 use sp_io::{hashing, TestExternalities};
-use sp_runtime::{
-	testing::Header,
-	traits::{BlakeTwo256, IdentityLookup},
-	RuntimeString,
-};
-use sp_version::RuntimeVersion;
-// --- darwinia-network ---
-use crate::{self as darwinia_ecdsa_authority, *};
-
-pub(crate) type EcdsaAuthorityError = Error<Test>;
-
-type Block = MockBlock<Test>;
-type UncheckedExtrinsic = MockUncheckedExtrinsic<Test>;
-
-type BlockNumber = u64;
-type AccountId = u64;
-type Index = u64;
 
 frame_support::parameter_types! {
-	pub Version: RuntimeVersion = RuntimeVersion { spec_name: RuntimeString::Owned("Darwinia".into()), ..Default::default() };
+	pub Version: sp_version::RuntimeVersion = sp_version::RuntimeVersion {
+		spec_name: sp_runtime::RuntimeString::Owned("Darwinia".into()),
+		..Default::default()
+	};
 }
-impl frame_system::Config for Test {
+impl frame_system::Config for Runtime {
 	type AccountData = ();
 	type AccountId = AccountId;
-	type BaseCallFilter = Everything;
+	type BaseCallFilter = frame_support::traits::Everything;
 	type BlockHashCount = ();
 	type BlockLength = ();
-	type BlockNumber = BlockNumber;
+	type BlockNumber = u64;
 	type BlockWeights = ();
-	type Call = Call;
 	type DbWeight = ();
-	type Event = Event;
-	type Hash = Hash;
-	type Hashing = BlakeTwo256;
-	type Header = Header;
-	type Index = Index;
-	type Lookup = IdentityLookup<Self::AccountId>;
-	type MaxConsumers = ConstU32<16>;
+	type Hash = sp_core::H256;
+	type Hashing = sp_runtime::traits::BlakeTwo256;
+	type Header = sp_runtime::testing::Header;
+	type Index = u64;
+	type Lookup = sp_runtime::traits::IdentityLookup<Self::AccountId>;
+	type MaxConsumers = frame_support::traits::ConstU32<16>;
 	type OnKilledAccount = ();
 	type OnNewAccount = ();
 	type OnSetCode = ();
-	type Origin = Origin;
 	type PalletInfo = PalletInfo;
+	type RuntimeCall = RuntimeCall;
+	type RuntimeEvent = RuntimeEvent;
+	type RuntimeOrigin = RuntimeOrigin;
 	type SS58Prefix = ();
 	type SystemWeightInfo = ();
 	type Version = Version;
@@ -75,54 +63,53 @@ impl frame_system::Config for Test {
 frame_support::parameter_types! {
 	pub const ChainId: &'static [u8] = b"46";
 	pub const MaxAuthorities: u32 = 3;
-	pub const MaxPendingPeriod: BlockNumber = 5;
-	pub const SignThreshold: Perbill = Perbill::from_percent(60);
-	pub const SyncInterval: BlockNumber = 3;
-	pub static MessageRoot: Option<Hash> = Some(Default::default());
+	pub const MaxPendingPeriod: u32 = 5;
+	pub const SignThreshold: sp_runtime::Perbill = sp_runtime::Perbill::from_percent(60);
+	pub const SyncInterval: u32 = 3;
+	pub static MessageRoot: Option<darwinia_ecdsa_authority::primitives::Hash> = Some(Default::default());
 }
-impl Config for Test {
+impl Config for Runtime {
 	type ChainId = ChainId;
-	type Event = Event;
 	type MaxAuthorities = MaxAuthorities;
 	type MaxPendingPeriod = MaxPendingPeriod;
 	type MessageRoot = MessageRoot;
+	type RuntimeEvent = RuntimeEvent;
 	type SignThreshold = SignThreshold;
 	type SyncInterval = SyncInterval;
 	type WeightInfo = ();
 }
 
 frame_support::construct_runtime! {
-	pub enum Test
+	pub enum Runtime
 	where
-		Block = Block,
-		NodeBlock = Block,
-		UncheckedExtrinsic = UncheckedExtrinsic
+		Block = frame_system::mocking::MockBlock<Runtime>,
+		NodeBlock = frame_system::mocking::MockBlock<Runtime>,
+		UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Runtime>,
 	{
-		System: frame_system::{Pallet, Call, Storage, Config, Event<T>},
-		EcdsaAuthority: darwinia_ecdsa_authority::{Pallet, Call, Storage, Config, Event<T>}
+		System: frame_system,
+		EcdsaAuthority: darwinia_ecdsa_authority,
 	}
 }
 
 #[derive(Default)]
-pub(crate) struct ExtBuilder {
-	authorities: Vec<Address>,
+pub struct ExtBuilder {
+	authorities: Vec<AccountId>,
 }
 impl ExtBuilder {
-	pub(crate) fn authorities(mut self, authorities: Vec<Address>) -> Self {
+	pub fn authorities(mut self, authorities: Vec<AccountId>) -> Self {
 		self.authorities = authorities;
 
 		self
 	}
 
-	pub(crate) fn build(self) -> TestExternalities {
+	pub fn build(self) -> TestExternalities {
 		let Self { authorities } = self;
-		let mut storage = frame_system::GenesisConfig::default().build_storage::<Test>().unwrap();
+		let mut storage =
+			frame_system::GenesisConfig::default().build_storage::<Runtime>().unwrap();
 
-		<darwinia_ecdsa_authority::GenesisConfig as GenesisBuild<Test>>::assimilate_storage(
-			&darwinia_ecdsa_authority::GenesisConfig { authorities },
-			&mut storage,
-		)
-		.unwrap();
+		darwinia_ecdsa_authority::GenesisConfig::<Runtime> { authorities }
+			.assimilate_storage(&mut storage)
+			.unwrap();
 
 		let mut ext = TestExternalities::from(storage);
 
@@ -135,17 +122,18 @@ impl ExtBuilder {
 	}
 }
 
-pub(crate) fn gen_pair(byte: u8) -> (SecretKey, Address) {
+pub fn gen_pair(byte: u8) -> (SecretKey, AccountId) {
 	let seed = iter::repeat(byte).take(32).collect::<Vec<_>>();
 	let secret_key = SecretKey::parse_slice(&seed).unwrap();
 	let public_key = PublicKey::from_secret_key(&secret_key).serialize();
-	let address = Address::from_slice(&hashing::keccak_256(&public_key[1..65])[12..]);
+	let address =
+		array_bytes::slice_n_into_unchecked(&hashing::keccak_256(&public_key[1..65])[12..]);
 
 	(secret_key, address)
 }
 
-pub(crate) fn sign(secret_key: &SecretKey, message: &Message) -> Signature {
-	let (sig, recovery_id) = libsecp256k1::sign(&libsecp256k1::Message::parse(message), secret_key);
+pub fn sign(secret_key: &SecretKey, message: &[u8; 32]) -> Signature {
+	let (sig, recovery_id) = libsecp256k1::sign(&Message::parse(message), secret_key);
 	let mut signature = [0u8; 65];
 
 	signature[0..64].copy_from_slice(&sig.serialize()[..]);
@@ -154,27 +142,27 @@ pub(crate) fn sign(secret_key: &SecretKey, message: &Message) -> Signature {
 	Signature(signature)
 }
 
-pub(crate) fn presume_authority_change_succeed() {
+pub fn presume_authority_change_succeed() {
 	EcdsaAuthority::apply_next_authorities();
 }
 
-pub(crate) fn message_root_of(byte: u8) -> Hash {
+pub fn message_root_of(byte: u8) -> Hash {
 	Hash::repeat_byte(byte)
 }
 
-pub(crate) fn new_message_root(byte: u8) {
+pub fn new_message_root(byte: u8) {
 	MESSAGE_ROOT.with(|v| *v.borrow_mut() = Some(message_root_of(byte)));
 }
 
-pub(crate) fn run_to_block(n: BlockNumber) {
+pub fn run_to_block(n: u64) {
 	for b in System::block_number() + 1..=n {
 		System::set_block_number(b);
 		<EcdsaAuthority as OnInitialize<_>>::on_initialize(b);
 	}
 }
 
-pub(crate) fn ecdsa_authority_events() -> Vec<crate::Event<Test>> {
-	fn events() -> Vec<Event> {
+pub fn ecdsa_authority_events() -> Vec<Event<Runtime>> {
+	fn events() -> Vec<RuntimeEvent> {
 		let events = System::events().into_iter().map(|evt| evt.event).collect::<Vec<_>>();
 
 		System::reset_events();
@@ -185,7 +173,7 @@ pub(crate) fn ecdsa_authority_events() -> Vec<crate::Event<Test>> {
 	events()
 		.into_iter()
 		.filter_map(|e| match e {
-			Event::EcdsaAuthority(e) => Some(e),
+			RuntimeEvent::EcdsaAuthority(e) => Some(e),
 			_ => None,
 		})
 		.collect::<Vec<_>>()

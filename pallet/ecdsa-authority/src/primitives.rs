@@ -1,56 +1,52 @@
-pub(crate) use sp_core::ecdsa::Signature;
+pub use sp_core::{ecdsa::Signature, H160 as Address, H256 as Hash};
 
-// --- crates.io ---
+// crates.io
 use codec::{Decode, Encode};
 use scale_info::TypeInfo;
-// --- paritytech ---
+// substrate
 use sp_io::{crypto, hashing};
 use sp_runtime::RuntimeDebug;
 
-pub(crate) type Address = [u8; 20];
-pub(crate) type Hash = [u8; 32];
-pub(crate) type Message = [u8; 32];
-
 // address(0x1)
-pub(crate) const AUTHORITY_SENTINEL: Address =
+pub(crate) const AUTHORITY_SENTINEL: [u8; 20] =
 	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1];
 // keccak256("ChangeRelayer(bytes4 sig,bytes params,uint256 nonce)");
 // 0x30a82982a8d5050d1c83bbea574aea301a4d317840a8c4734a308ffaa6a63bc8
-pub(crate) const RELAY_TYPE_HASH: Hash = [
+pub(crate) const RELAY_TYPE_HASH: [u8; 32] = [
 	48, 168, 41, 130, 168, 213, 5, 13, 28, 131, 187, 234, 87, 74, 234, 48, 26, 77, 49, 120, 64,
 	168, 196, 115, 74, 48, 143, 250, 166, 166, 59, 200,
 ];
 // keccak256("Commitment(uint32 block_number,bytes32 message_root,uint256 nonce)");
 // 0xaca824a0c4edb3b2c17f33fea9cb21b33c7ee16c8e634c36b3bf851c9de7a223
-pub(crate) const COMMIT_TYPE_HASH: Hash = [
+pub(crate) const COMMIT_TYPE_HASH: [u8; 32] = [
 	172, 168, 36, 160, 196, 237, 179, 178, 193, 127, 51, 254, 169, 203, 33, 179, 60, 126, 225, 108,
 	142, 99, 76, 54, 179, 191, 133, 28, 157, 231, 162, 35,
 ];
 
 pub(crate) enum Sign {}
 impl Sign {
-	fn hash(data: &[u8]) -> Hash {
+	fn hash(data: &[u8]) -> [u8; 32] {
 		hashing::keccak_256(data)
 	}
 
-	pub(crate) fn eth_signable_message(chain_id: &[u8], spec_name: &[u8], data: &[u8]) -> Message {
+	pub(crate) fn eth_signable_message(chain_id: &[u8], spec_name: &[u8], data: &[u8]) -> Hash {
 		// \x19\x01 + keccack256(ChainIDSpecName::ecdsa-authority) + struct_hash
-		Self::hash(
+		Hash(Self::hash(
 			&[
 				b"\x19\x01".as_slice(),
 				&Self::hash(&[chain_id, spec_name, b"::ecdsa-authority"].concat()),
 				&Self::hash(data),
 			]
 			.concat(),
-		)
+		))
 	}
 
 	pub(crate) fn verify_signature(
-		signature: &Signature,
-		message: &Message,
+		signature: &[u8; 65],
+		message: &[u8; 32],
 		address: &[u8],
 	) -> bool {
-		if let Ok(public_key) = crypto::secp256k1_ecdsa_recover(signature.as_ref(), message) {
+		if let Ok(public_key) = crypto::secp256k1_ecdsa_recover(signature, message) {
 			&Self::hash(&public_key)[12..] == address
 		} else {
 			false
@@ -113,9 +109,9 @@ fn eth_signable_message() {
 		ethabi::Token::FixedBytes(RELAY_TYPE_HASH.into()),
 		ethabi::Token::FixedBytes(operation.id().into()),
 		ethabi::Token::Bytes(ethabi::encode(&[
-			ethabi::Token::Address(AUTHORITY_SENTINEL),
-			ethabi::Token::Address(AUTHORITY_SENTINEL),
-			ethabi::Token::Address(AUTHORITY_SENTINEL),
+			ethabi::Token::Address(AUTHORITY_SENTINEL.into()),
+			ethabi::Token::Address(AUTHORITY_SENTINEL.into()),
+			ethabi::Token::Address(AUTHORITY_SENTINEL.into()),
 		])),
 		ethabi::Token::Uint(0.into()),
 	]);
