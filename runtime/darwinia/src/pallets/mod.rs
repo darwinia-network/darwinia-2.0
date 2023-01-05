@@ -58,6 +58,8 @@ mod aura;
 
 mod aura_ext;
 
+mod message_gadget;
+
 // Governance stuff.
 mod democracy;
 
