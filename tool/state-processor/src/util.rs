@@ -1,6 +1,7 @@
 // std
 use std::{
 	fs::File,
+	path::Path,
 	process::{Command, Stdio},
 };
 // crates.io
@@ -68,10 +69,20 @@ pub fn is_evm_address(address: &[u8]) -> bool {
 }
 
 pub fn build_spec(chain: &str) -> Result<()> {
-	Command::new("../../target/release/darwinia")
-		.args(["build-spec", "--chain", &format!("{chain}-genesis")])
-		.stdout(Stdio::from(File::create(format!("data/{chain}-shell.json"))?))
-		.output()?;
+	let path_0 = "../../target/release/darwinia";
+	let path_1 = "../../target/x86_64-unknown-linux-gnu/release/darwinia";
+
+	if Path::new(path_0).is_file() {
+		Command::new(path_0)
+			.args(["build-spec", "--chain", &format!("{chain}-genesis")])
+			.stdout(Stdio::from(File::create(format!("data/{chain}-shell.json"))?))
+			.output()?;
+	} else {
+		Command::new(path_1)
+			.args(["build-spec", "--chain", &format!("{chain}-genesis")])
+			.stdout(Stdio::from(File::create(format!("data/{chain}-shell.json"))?))
+			.output()?;
+	}
 
 	Ok(())
 }
