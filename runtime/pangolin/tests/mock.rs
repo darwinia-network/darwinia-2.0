@@ -27,6 +27,7 @@ use sp_io::TestExternalities;
 #[derive(Default, Clone)]
 pub struct ExtBuilder {
 	balances: Vec<(AccountId, Balance)>,
+	assets_accounts: Vec<(u64, AccountId, Balance)>,
 }
 
 impl ExtBuilder {
@@ -45,7 +46,7 @@ impl ExtBuilder {
 				b"PKTON".to_vec(),
 				18,
 			)],
-			accounts: vec![],
+			accounts: self.assets_accounts.clone(),
 		}
 		.assimilate_storage(&mut t)
 		.unwrap();
@@ -57,6 +58,11 @@ impl ExtBuilder {
 
 	pub fn with_balances(&mut self, balances: Vec<(AccountId, Balance)>) -> &mut Self {
 		self.balances = balances;
+		self
+	}
+
+	pub fn with_assets_accounts(&mut self, accounts: Vec<(u64, AccountId, Balance)>) -> &mut Self {
+		self.assets_accounts = accounts;
 		self
 	}
 }
