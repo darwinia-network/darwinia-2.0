@@ -74,7 +74,6 @@ where
 			.process_indices()
 			.process_vesting()
 			.process_proxy()
-			.process_sudo()
 			.process_staking()
 			.process_evm();
 
