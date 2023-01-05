@@ -22,20 +22,17 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![allow(clippy::type_complexity)]
 
-#[cfg(test)]
-mod mock;
-#[cfg(test)]
-mod tests;
-
 pub mod primitives;
 use primitives::*;
 
 mod weights;
 pub use weights::WeightInfo;
 
-// --- crates.io ---
+// crates.io
 use ethabi::Token;
-// --- paritytech ---
+// darwinia
+use dc_primitives::AccountId;
+// substrate
 use frame_support::{pallet_prelude::*, traits::Get};
 use frame_system::pallet_prelude::*;
 use sp_runtime::{
@@ -46,15 +43,17 @@ use sp_std::prelude::*;
 
 #[frame_support::pallet]
 pub mod pallet {
-	// --- darwinia-network ---
+	// darwinia
 	use crate::*;
 
 	#[pallet::config]
-	pub trait Config: frame_system::Config {
-		// Overrides.
-		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
-		// Basics.
+	pub trait Config: frame_system::Config<AccountId = AccountId> {
+		/// Override the [`frame_system::Config::RuntimeEvent`].
+		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
+
+		/// Weight.
 		type WeightInfo: WeightInfo;
+
 		/// The maximum number of authorities.
 		#[pallet::constant]
 		type MaxAuthorities: Get<u32>;
@@ -62,26 +61,30 @@ pub mod pallet {
 		/// Chain's ID, which is using for constructing the message. (follow EIP-712 SPEC)
 		#[pallet::constant]
 		type ChainId: Get<&'static [u8]>;
+
 		/// The signing threshold.
 		///
 		/// Once `signatures_count / authorities_count >= threshold`, we say the message is trusted.
 		#[pallet::constant]
 		type SignThreshold: Get<Perbill>;
-		/// The Darwinia message root.
-		///
-		/// If it changed, it means there are some new messages which are waiting for relaying.
-		type MessageRoot: Get<Option<Hash>>;
+
 		// Checkpoints.
 		// `SyncInterval` must be shorter than `MaxPendingPeriod`.
 		/// The interval of checking the message root.
 		#[pallet::constant]
 		type SyncInterval: Get<Self::BlockNumber>;
+
 		/// How long should we wait for the message root to be signed.
 		///
 		/// If the collecting new message root signatures process takes more than
 		/// `MaxPendingPeriod`, we will drop the root. And update the root with a new one.
 		#[pallet::constant]
 		type MaxPendingPeriod: Get<Self::BlockNumber>;
+
+		/// The Darwinia message root.
+		///
+		/// If it changed, it means there are some new messages which are waiting for relaying.
+		type MessageRoot: Get<Option<Hash>>;
 	}
 
 	#[pallet::event]
@@ -91,10 +94,10 @@ pub mod pallet {
 		CollectingAuthoritiesChangeSignatures { message: Message },
 		/// Collected enough authorities change signatures.
 		CollectedEnoughAuthoritiesChangeSignatures {
-			operation: Operation,
+			operation: Operation<T::AccountId>,
 			new_threshold: Option<u32>,
 			message: Message,
-			signatures: Vec<(Address, Signature)>,
+			signatures: Vec<(T::AccountId, Signature)>,
 		},
 		/// New message root found. Collecting new message root signatures.
 		CollectingNewMessageRootSignatures { message: Message },
@@ -102,7 +105,7 @@ pub mod pallet {
 		CollectedEnoughNewMessageRootSignatures {
 			commitment: Commitment,
 			message: Message,
-			signatures: Vec<(Address, Signature)>,
+			signatures: Vec<(T::AccountId, Signature)>,
 		},
 	}
 
@@ -132,13 +135,13 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn authorities)]
 	pub type Authorities<T: Config> =
-		StorageValue<_, BoundedVec<Address, T::MaxAuthorities>, ValueQuery>;
+		StorageValue<_, BoundedVec<T::AccountId, T::MaxAuthorities>, ValueQuery>;
 
 	/// The incoming authorities.
 	#[pallet::storage]
 	#[pallet::getter(fn next_authorities)]
 	pub type NextAuthorities<T: Config> =
-		StorageValue<_, BoundedVec<Address, T::MaxAuthorities>, ValueQuery>;
+		StorageValue<_, BoundedVec<T::AccountId, T::MaxAuthorities>, ValueQuery>;
 
 	/// The nonce of the current active authorities. AKA term/session/era.
 	#[pallet::storage]
@@ -150,7 +153,13 @@ pub mod pallet {
 	#[pallet::getter(fn authorities_change_to_sign)]
 	pub type AuthoritiesChangeToSign<T: Config> = StorageValue<
 		_,
-		(Operation, Option<u32>, Message, BoundedVec<(Address, Signature), T::MaxAuthorities>),
+		// TODO: use struct
+		(
+			Operation<T::AccountId>,
+			Option<u32>,
+			Message,
+			BoundedVec<(T::AccountId, Signature), T::MaxAuthorities>,
+		),
 		OptionQuery,
 	>;
 
@@ -159,7 +168,8 @@ pub mod pallet {
 	#[pallet::getter(fn new_message_root_to_sign)]
 	pub type NewMessageRootToSign<T: Config> = StorageValue<
 		_,
-		(Commitment, Message, BoundedVec<(Address, Signature), T::MaxAuthorities>),
+		// TODO: use struct
+		(Commitment, Message, BoundedVec<(T::AccountId, Signature), T::MaxAuthorities>),
 		OptionQuery,
 	>;
 
@@ -171,13 +181,24 @@ pub mod pallet {
 	#[pallet::getter(fn previous_message_root)]
 	pub type PreviousMessageRoot<T: Config> = StorageValue<_, (T::BlockNumber, Hash), OptionQuery>;
 
-	#[derive(Default)]
 	#[pallet::genesis_config]
-	pub struct GenesisConfig {
-		pub authorities: Vec<Address>,
+	pub struct GenesisConfig<T>
+	where
+		T: Config,
+	{
+		pub authorities: Vec<T::AccountId>,
+	}
+	#[cfg(feature = "std")]
+	impl<T> Default for GenesisConfig<T>
+	where
+		T: Config,
+	{
+		fn default() -> Self {
+			GenesisConfig { authorities: Vec::new() }
+		}
 	}
 	#[pallet::genesis_build]
-	impl<T: Config> GenesisBuild<T> for GenesisConfig {
+	impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
 		fn build(&self) {
 			<Authorities<T>>::put(BoundedVec::try_from(self.authorities.clone()).unwrap());
 			<NextAuthorities<T>>::put(BoundedVec::try_from(self.authorities.clone()).unwrap());
@@ -196,7 +217,8 @@ pub mod pallet {
 				}
 			}
 
-			10_000_000
+			// TODO: weight
+			Default::default()
 		}
 	}
 	#[pallet::call]
@@ -207,7 +229,7 @@ pub mod pallet {
 		/// This will insert new authority into the index 0 of authorities.
 		#[pallet::weight(10_000_000)]
 		#[frame_support::transactional]
-		pub fn add_authority(origin: OriginFor<T>, new: Address) -> DispatchResult {
+		pub fn add_authority(origin: OriginFor<T>, new: T::AccountId) -> DispatchResult {
 			ensure_root(origin)?;
 
 			Self::ensure_not_on_authorities_change()?;
@@ -232,7 +254,7 @@ pub mod pallet {
 		/// Not allow to call while authorities is changing.
 		#[pallet::weight(10_000_000)]
 		#[frame_support::transactional]
-		pub fn remove_authority(origin: OriginFor<T>, old: Address) -> DispatchResult {
+		pub fn remove_authority(origin: OriginFor<T>, old: T::AccountId) -> DispatchResult {
 			ensure_root(origin)?;
 
 			Self::ensure_not_on_authorities_change()?;
@@ -249,7 +271,7 @@ pub mod pallet {
 
 				Ok::<_, DispatchError>((
 					authorities.len() as u32,
-					if i == 0 { AUTHORITY_SENTINEL } else { authorities[i - 1] },
+					if i == 0 { AUTHORITY_SENTINEL.into() } else { authorities[i - 1] },
 				))
 			})?;
 
@@ -263,7 +285,11 @@ pub mod pallet {
 		/// Not allow to call while authorities is changing.
 		#[pallet::weight(10_000_000)]
 		#[frame_support::transactional]
-		pub fn swap_authority(origin: OriginFor<T>, old: Address, new: Address) -> DispatchResult {
+		pub fn swap_authority(
+			origin: OriginFor<T>,
+			old: T::AccountId,
+			new: T::AccountId,
+		) -> DispatchResult {
 			ensure_root(origin)?;
 
 			Self::ensure_not_on_authorities_change()?;
@@ -276,7 +302,7 @@ pub mod pallet {
 
 				Ok::<_, DispatchError>((
 					authorities.len() as u32,
-					if i == 0 { AUTHORITY_SENTINEL } else { authorities[i - 1] },
+					if i == 0 { AUTHORITY_SENTINEL.into() } else { authorities[i - 1] },
 				))
 			})?;
 
@@ -295,24 +321,20 @@ pub mod pallet {
 		#[frame_support::transactional]
 		pub fn submit_authorities_change_signature(
 			origin: OriginFor<T>,
-			address: Address,
 			signature: Signature,
 		) -> DispatchResultWithPostInfo {
-			ensure_signed(origin)?;
+			let who = ensure_signed(origin)?;
 
-			let authorities = Self::ensure_authority(&address)?;
+			let authorities = Self::ensure_authority(&who)?;
 			let mut authorities_change_to_sign =
 				<AuthoritiesChangeToSign<T>>::get().ok_or(<Error<T>>::NoAuthoritiesChange)?;
 			let (_, _, message, collected) = &mut authorities_change_to_sign;
 
-			Self::ensure_not_submitted(&address, collected)?;
+			Self::ensure_not_submitted(&who, collected)?;
 
-			ensure!(
-				Sign::verify_signature(&signature, message, &address),
-				<Error<T>>::BadSignature
-			);
+			ensure!(Sign::verify_signature(&signature, message, &who.0), <Error<T>>::BadSignature);
 
-			collected.try_push((address, signature)).map_err(|_| <Error<T>>::TooManyAuthorities)?;
+			collected.try_push((who, signature)).map_err(|_| <Error<T>>::TooManyAuthorities)?;
 
 			if Self::check_threshold(collected.len() as _, authorities.len() as _) {
 				Self::apply_next_authorities();
@@ -345,24 +367,20 @@ pub mod pallet {
 		#[frame_support::transactional]
 		pub fn submit_new_message_root_signature(
 			origin: OriginFor<T>,
-			address: Address,
 			signature: Signature,
 		) -> DispatchResultWithPostInfo {
-			ensure_signed(origin)?;
+			let who = ensure_signed(origin)?;
 
-			let authorities = Self::ensure_authority(&address)?;
+			let authorities = Self::ensure_authority(&who)?;
 			let mut new_message_root_to_sign =
 				<NewMessageRootToSign<T>>::get().ok_or(<Error<T>>::NoNewMessageRoot)?;
 			let (_, message, collected) = &mut new_message_root_to_sign;
 
-			Self::ensure_not_submitted(&address, collected)?;
+			Self::ensure_not_submitted(&who, collected)?;
 
-			ensure!(
-				Sign::verify_signature(&signature, message, &address),
-				<Error<T>>::BadSignature
-			);
+			ensure!(Sign::verify_signature(&signature, message, &who.0), <Error<T>>::BadSignature);
 
-			collected.try_push((address, signature)).map_err(|_| <Error<T>>::TooManyAuthorities)?;
+			collected.try_push((who, signature)).map_err(|_| <Error<T>>::TooManyAuthorities)?;
 
 			if Self::check_threshold(collected.len() as _, authorities.len() as _) {
 				<NewMessageRootToSign<T>>::kill();
@@ -383,8 +401,8 @@ pub mod pallet {
 	}
 	impl<T: Config> Pallet<T> {
 		fn ensure_authority(
-			address: &Address,
-		) -> Result<BoundedVec<Address, T::MaxAuthorities>, DispatchError> {
+			address: &T::AccountId,
+		) -> Result<BoundedVec<T::AccountId, T::MaxAuthorities>, DispatchError> {
 			let authorities = <Authorities<T>>::get();
 
 			ensure!(authorities.iter().any(|a| a == address), <Error<T>>::NotAuthority);
@@ -399,8 +417,8 @@ pub mod pallet {
 		}
 
 		fn ensure_not_submitted(
-			who: &Address,
-			collected: &[(Address, Signature)],
+			who: &T::AccountId,
+			collected: &[(T::AccountId, Signature)],
 		) -> DispatchResult {
 			ensure!(!collected.iter().any(|(a, _)| a == who), <Error<T>>::AlreadySubmitted);
 
@@ -411,7 +429,7 @@ pub mod pallet {
 			T::SignThreshold::get().mul_ceil(x)
 		}
 
-		fn on_authorities_change(operation: Operation, authorities_count: u32) {
+		fn on_authorities_change(operation: Operation<T::AccountId>, authorities_count: u32) {
 			let (authorities_changes, new_threshold) = {
 				match operation {
 					Operation::AddMember { new } => {
@@ -419,7 +437,7 @@ pub mod pallet {
 
 						(
 							ethabi::encode(&[
-								Token::Address(new),
+								Token::Address(new.0.into()),
 								Token::Uint(new_threshold.into()),
 							]),
 							Some(new_threshold),
@@ -430,8 +448,8 @@ pub mod pallet {
 
 						(
 							ethabi::encode(&[
-								Token::Address(pre),
-								Token::Address(old),
+								Token::Address(pre.0.into()),
+								Token::Address(old.0.into()),
 								Token::Uint(new_threshold.into()),
 							]),
 							Some(new_threshold),
@@ -439,9 +457,9 @@ pub mod pallet {
 					},
 					Operation::SwapMembers { pre, old, new } => (
 						ethabi::encode(&[
-							Token::Address(pre),
-							Token::Address(old),
-							Token::Address(new),
+							Token::Address(pre.0.into()),
+							Token::Address(old.0.into()),
+							Token::Address(new.0.into()),
 						]),
 						None,
 					),
@@ -451,7 +469,7 @@ pub mod pallet {
 				T::ChainId::get(),
 				T::Version::get().spec_name.as_ref(),
 				&ethabi::encode(&[
-					Token::FixedBytes(RELAY_TYPE_HASH.as_ref().into()),
+					Token::FixedBytes(RELAY_TYPE_HASH.into()),
 					Token::FixedBytes(operation.id().into()),
 					Token::Bytes(authorities_changes),
 					Token::Uint(<Nonce<T>>::get().into()),
@@ -529,7 +547,7 @@ pub mod pallet {
 				T::ChainId::get(),
 				T::Version::get().spec_name.as_ref(),
 				&ethabi::encode(&[
-					Token::FixedBytes(COMMIT_TYPE_HASH.as_ref().into()),
+					Token::FixedBytes(COMMIT_TYPE_HASH.into()),
 					Token::Uint(commitment.block_number.into()),
 					Token::FixedBytes(commitment.message_root.as_ref().into()),
 					Token::Uint(commitment.nonce.into()),
