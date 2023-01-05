@@ -60,8 +60,8 @@ where
 			.process_vesting()
 			.process_proxy()
 			.process_sudo()
-			.process_staking();
-			// .process_evm();
+			.process_staking()
+			.process_evm();
 
 		self.save()
 	}
