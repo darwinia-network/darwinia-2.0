@@ -44,7 +44,7 @@ pub use assets::*;
 
 mod deposit;
 
-mod migrate;
+mod account_migration;
 
 // Consensus stuff.
 mod authorship;
@@ -59,6 +59,8 @@ mod aura;
 mod aura_ext;
 
 mod message_gadget;
+
+mod ecdsa_authority;
 
 // Governance stuff.
 mod democracy;

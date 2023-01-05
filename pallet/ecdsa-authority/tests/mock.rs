@@ -61,21 +61,17 @@ impl frame_system::Config for Runtime {
 }
 
 frame_support::parameter_types! {
-	pub const ChainId: &'static [u8] = b"46";
-	pub const MaxAuthorities: u32 = 3;
-	pub const MaxPendingPeriod: u32 = 5;
 	pub const SignThreshold: sp_runtime::Perbill = sp_runtime::Perbill::from_percent(60);
-	pub const SyncInterval: u32 = 3;
 	pub static MessageRoot: Option<darwinia_ecdsa_authority::primitives::Hash> = Some(Default::default());
 }
 impl Config for Runtime {
-	type ChainId = ChainId;
-	type MaxAuthorities = MaxAuthorities;
-	type MaxPendingPeriod = MaxPendingPeriod;
+	type ChainId = frame_support::traits::ConstU64<46>;
+	type MaxAuthorities = frame_support::traits::ConstU32<3>;
+	type MaxPendingPeriod = frame_support::traits::ConstU64<5>;
 	type MessageRoot = MessageRoot;
 	type RuntimeEvent = RuntimeEvent;
 	type SignThreshold = SignThreshold;
-	type SyncInterval = SyncInterval;
+	type SyncInterval = frame_support::traits::ConstU64<3>;
 	type WeightInfo = ();
 }
 

@@ -1,3 +1,21 @@
+// This file is part of Darwinia.
+//
+// Copyright (C) 2018-2023 Darwinia Network
+// SPDX-License-Identifier: GPL-3.0
+//
+// Darwinia is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Darwinia is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Darwinia. If not, see <https://www.gnu.org/licenses/>.
+
 mod mock;
 use mock::*;
 
@@ -7,6 +25,7 @@ use darwinia_ecdsa_authority::{primitives::*, *};
 use frame_support::{
 	assert_noop, assert_ok,
 	dispatch::{Pays, PostDispatchInfo},
+	traits::Get,
 	BoundedVec,
 };
 use sp_runtime::DispatchError;
@@ -32,11 +51,9 @@ fn add_authority() {
 		assert!(EcdsaAuthority::authorities().is_empty());
 		assert_eq!(EcdsaAuthority::next_authorities(), vec![a_0]);
 		assert_eq!(EcdsaAuthority::nonce(), 0);
-		let message = [
-			167, 135, 21, 62, 159, 236, 10, 205, 140, 44, 190, 61, 63, 168, 9, 26, 88, 230, 156,
-			27, 40, 48, 231, 120, 254, 96, 184, 174, 192, 153, 29, 246,
-		]
-		.into();
+		let message = array_bytes::hex_n_into_unchecked(
+			"0x5c883184c9c53c59857253454df1b4813e8b3fb28648beb85555d58d1e801e14",
+		);
 		assert_eq!(
 			EcdsaAuthority::authorities_change_to_sign(),
 			Some((Operation::AddMember { new: a_0 }, Some(1), message, Default::default()))
@@ -68,7 +85,7 @@ fn add_authority() {
 		);
 
 		// Case 4.
-		(1..MaxAuthorities::get()).for_each(|i| {
+		(1..<Runtime as Config>::MaxAuthorities::get()).for_each(|i| {
 			assert_ok!(EcdsaAuthority::add_authority(RuntimeOrigin::root(), account_id_of(i as _)));
 			presume_authority_change_succeed();
 			assert_eq!(EcdsaAuthority::nonce(), 1 + i);
@@ -76,7 +93,7 @@ fn add_authority() {
 		assert_noop!(
 			EcdsaAuthority::add_authority(
 				RuntimeOrigin::root(),
-				account_id_of(MaxAuthorities::get() as _)
+				account_id_of(<<Runtime as Config>::MaxAuthorities as Get<u32>>::get() as _)
 			),
 			<Error<Runtime>>::TooManyAuthorities
 		);
@@ -84,7 +101,10 @@ fn add_authority() {
 		// Check order.
 		assert_eq!(
 			EcdsaAuthority::authorities(),
-			(0..MaxAuthorities::get()).rev().map(|i| account_id_of(i as _)).collect::<Vec<_>>()
+			(0..<Runtime as Config>::MaxAuthorities::get())
+				.rev()
+				.map(|i| account_id_of(i as _))
+				.collect::<Vec<_>>()
 		);
 	});
 }
@@ -102,11 +122,9 @@ fn remove_authority() {
 		assert_eq!(EcdsaAuthority::authorities(), vec![a_1, a_2]);
 		assert_eq!(EcdsaAuthority::next_authorities(), vec![a_2]);
 		assert_eq!(EcdsaAuthority::nonce(), 0);
-		let message = [
-			11, 46, 204, 51, 51, 180, 179, 70, 172, 1, 88, 222, 62, 26, 21, 152, 145, 128, 202,
-			144, 70, 40, 78, 207, 37, 176, 142, 60, 182, 133, 206, 20,
-		]
-		.into();
+		let message = array_bytes::hex_n_into_unchecked(
+			"0x76139aa9d1c7b35fc744b10444898ee5703e3f77406b926f903006436b7930c7",
+		);
 		assert_eq!(
 			EcdsaAuthority::authorities_change_to_sign(),
 			Some((
@@ -163,11 +181,9 @@ fn swap_authority() {
 		assert_eq!(EcdsaAuthority::authorities(), vec![a_1]);
 		assert_eq!(EcdsaAuthority::next_authorities(), vec![a_2]);
 		assert_eq!(EcdsaAuthority::nonce(), 0);
-		let message = [
-			124, 233, 77, 172, 154, 1, 15, 166, 69, 156, 210, 158, 156, 177, 115, 47, 205, 200,
-			106, 117, 44, 240, 90, 198, 83, 248, 26, 138, 37, 9, 105, 204,
-		]
-		.into();
+		let message = array_bytes::hex_n_into_unchecked(
+			"0x30effc17a3fcf9b3079168c2c2be54b6d9fbdfd7077c9d844ec241dd70dd0507",
+		);
 		assert_eq!(
 			EcdsaAuthority::authorities_change_to_sign(),
 			Some((
@@ -209,16 +225,14 @@ fn swap_authority() {
 fn sync_interval_and_max_pending_period() {
 	ExtBuilder::default().build().execute_with(|| {
 		// Check new message root while reaching the sync interval checkpoint.
-		(2..SyncInterval::get()).for_each(|i| {
+		(2..<Runtime as Config>::SyncInterval::get()).for_each(|i| {
 			run_to_block(i as _);
 			assert!(EcdsaAuthority::new_message_root_to_sign().is_none());
 		});
-		run_to_block(SyncInterval::get() as _);
-		let message = [
-			159, 247, 43, 185, 157, 74, 126, 205, 108, 104, 253, 73, 176, 246, 156, 154, 97, 206,
-			211, 254, 16, 3, 191, 15, 171, 104, 151, 60, 37, 145, 208, 225,
-		]
-		.into();
+		run_to_block(<Runtime as Config>::SyncInterval::get());
+		let message = array_bytes::hex_n_into_unchecked(
+			"0x742776a31e49b3f5a2a15a6781eb99f96e8116bfc67aae652a08b9b1235146d2",
+		);
 		assert_eq!(
 			EcdsaAuthority::new_message_root_to_sign(),
 			Some((
@@ -239,23 +253,23 @@ fn sync_interval_and_max_pending_period() {
 		// Use a new message root while exceeding the max pending period.
 		new_message_root(1);
 		let offset = System::block_number() + 1;
-		(offset..offset + MaxPendingPeriod::get() as u64).for_each(|i| {
-			run_to_block(i);
-			assert_eq!(
-				EcdsaAuthority::new_message_root_to_sign(),
-				Some((
-					Commitment { block_number: 3, message_root: Default::default(), nonce: 0 },
-					message,
-					Default::default()
-				))
-			);
-		});
-		run_to_block(offset + MaxPendingPeriod::get() as u64);
-		let message = [
-			171, 2, 58, 75, 46, 20, 234, 199, 81, 136, 133, 190, 195, 28, 247, 156, 105, 23, 147,
-			237, 231, 40, 180, 127, 138, 138, 21, 158, 23, 116, 176, 7,
-		]
-		.into();
+		(offset..offset + <<Runtime as Config>::MaxPendingPeriod as Get<u64>>::get()).for_each(
+			|i| {
+				run_to_block(i);
+				assert_eq!(
+					EcdsaAuthority::new_message_root_to_sign(),
+					Some((
+						Commitment { block_number: 3, message_root: Default::default(), nonce: 0 },
+						message,
+						Default::default()
+					))
+				);
+			},
+		);
+		run_to_block(offset + <<Runtime as Config>::MaxPendingPeriod as Get<u64>>::get());
+		let message = array_bytes::hex_n_into_unchecked(
+			"0xafd9fc3dc135079be23746b4beb27255e5d3b4c5f3d05db766af751c0ed97920",
+		);
 		assert_eq!(
 			EcdsaAuthority::new_message_root_to_sign(),
 			Some((
@@ -269,17 +283,19 @@ fn sync_interval_and_max_pending_period() {
 		assert_ok!(EcdsaAuthority::add_authority(RuntimeOrigin::root(), Default::default()));
 		new_message_root(2);
 		let offset = System::block_number() + 1;
-		(offset..=offset + MaxPendingPeriod::get() as u64).for_each(|i| {
-			run_to_block(i);
-			assert_eq!(
-				EcdsaAuthority::new_message_root_to_sign(),
-				Some((
-					Commitment { block_number: 9, message_root: message_root_of(1), nonce: 0 },
-					message,
-					Default::default()
-				))
-			);
-		});
+		(offset..=offset + <<Runtime as Config>::MaxPendingPeriod as Get<u64>>::get()).for_each(
+			|i| {
+				run_to_block(i);
+				assert_eq!(
+					EcdsaAuthority::new_message_root_to_sign(),
+					Some((
+						Commitment { block_number: 9, message_root: message_root_of(1), nonce: 0 },
+						message,
+						Default::default()
+					))
+				);
+			},
+		);
 	});
 }
 
@@ -301,11 +317,9 @@ fn submit_authorities_change_signature() {
 
 		assert_ok!(EcdsaAuthority::add_authority(RuntimeOrigin::root(), a_3));
 		let operation = Operation::AddMember { new: a_3 };
-		let message = [
-			180, 255, 102, 4, 68, 26, 118, 112, 154, 67, 234, 112, 236, 182, 231, 173, 135, 87,
-			117, 122, 184, 129, 63, 49, 218, 224, 39, 39, 44, 240, 100, 255,
-		]
-		.into();
+		let message = array_bytes::hex_n_into_unchecked(
+			"0x3ad89c7824d6e83c180482c888a0af99baa95ce17a39285d6f943df5d95e7759",
+		);
 		assert_eq!(
 			EcdsaAuthority::authorities_change_to_sign(),
 			Some((operation.clone(), Some(2), message, Default::default()))
@@ -358,11 +372,9 @@ fn submit_authorities_change_signature() {
 					signatures: vec![(a_1, s_1), (a_2, s_2)]
 				},
 				Event::CollectingNewMessageRootSignatures {
-					message: [
-						154, 219, 45, 185, 181, 249, 194, 236, 54, 17, 201, 121, 48, 58, 30, 38,
-						23, 204, 118, 118, 94, 117, 242, 172, 64, 251, 245, 74, 235, 49, 46, 132
-					]
-					.into()
+					message: array_bytes::hex_n_into_unchecked(
+						"0xe7bded73843f446f46b42ee0e0cc435f4f66fbcedf36c635c437a4d63bb44696"
+					)
 				}
 			]
 		);
@@ -385,12 +397,10 @@ fn submit_new_message_root_signature() {
 			<Error<Runtime>>::NoNewMessageRoot
 		);
 
-		run_to_block(SyncInterval::get() as _);
-		let message = [
-			159, 247, 43, 185, 157, 74, 126, 205, 108, 104, 253, 73, 176, 246, 156, 154, 97, 206,
-			211, 254, 16, 3, 191, 15, 171, 104, 151, 60, 37, 145, 208, 225,
-		]
-		.into();
+		run_to_block(<<Runtime as Config>::SyncInterval as Get<u64>>::get());
+		let message = array_bytes::hex_n_into_unchecked(
+			"0x742776a31e49b3f5a2a15a6781eb99f96e8116bfc67aae652a08b9b1235146d2",
+		);
 		assert_eq!(
 			EcdsaAuthority::new_message_root_to_sign(),
 			Some((
@@ -472,12 +482,11 @@ fn tx_fee() {
 	let (_, a_2) = gen_pair(2);
 
 	ExtBuilder::default().authorities(vec![a_1, a_2]).build().execute_with(|| {
-		(2..SyncInterval::get()).for_each(|n| run_to_block(n as _));
-		run_to_block(SyncInterval::get() as _);
-		let message = [
-			159, 247, 43, 185, 157, 74, 126, 205, 108, 104, 253, 73, 176, 246, 156, 154, 97, 206,
-			211, 254, 16, 3, 191, 15, 171, 104, 151, 60, 37, 145, 208, 225,
-		];
+		(2..<Runtime as Config>::SyncInterval::get()).for_each(|n| run_to_block(n as _));
+		run_to_block(<<Runtime as Config>::SyncInterval as Get<u64>>::get());
+		let message = array_bytes::hex_n_into_unchecked(
+			"0x742776a31e49b3f5a2a15a6781eb99f96e8116bfc67aae652a08b9b1235146d2",
+		);
 
 		// Free for first-correct signature.
 		assert_eq!(
@@ -498,10 +507,9 @@ fn tx_fee() {
 		);
 
 		assert_ok!(EcdsaAuthority::remove_authority(RuntimeOrigin::root(), a_1));
-		let message = [
-			226, 8, 210, 237, 239, 80, 33, 187, 89, 34, 131, 115, 232, 21, 120, 113, 61, 232, 73,
-			197, 77, 209, 161, 27, 140, 82, 9, 45, 3, 98, 173, 40,
-		];
+		let message = array_bytes::hex_n_into_unchecked(
+			"0x24956af4b0842e1caec63782602c5a94089ba7c8ab8bd12d4243bb1a893b8af0",
+		);
 
 		// Free for first-correct signature.
 		assert_eq!(

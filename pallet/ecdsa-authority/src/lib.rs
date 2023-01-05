@@ -57,10 +57,9 @@ pub mod pallet {
 		/// The maximum number of authorities.
 		#[pallet::constant]
 		type MaxAuthorities: Get<u32>;
-		// Commitment relates.
 		/// Chain's ID, which is using for constructing the message. (follow EIP-712 SPEC)
 		#[pallet::constant]
-		type ChainId: Get<&'static [u8]>;
+		type ChainId: Get<u64>;
 
 		/// The signing threshold.
 		///
@@ -68,9 +67,8 @@ pub mod pallet {
 		#[pallet::constant]
 		type SignThreshold: Get<Perbill>;
 
-		// Checkpoints.
-		// `SyncInterval` must be shorter than `MaxPendingPeriod`.
 		/// The interval of checking the message root.
+		/// This must be shorter than [`Config::MaxPendingPeriod`].
 		#[pallet::constant]
 		type SyncInterval: Get<Self::BlockNumber>;
 

@@ -1,3 +1,21 @@
+// This file is part of Darwinia.
+//
+// Copyright (C) 2018-2023 Darwinia Network
+// SPDX-License-Identifier: GPL-3.0
+//
+// Darwinia is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Darwinia is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Darwinia. If not, see <https://www.gnu.org/licenses/>.
+
 pub use sp_core::{ecdsa::Signature, H160 as Address, H256 as Hash};
 
 // crates.io
@@ -29,12 +47,12 @@ impl Sign {
 		hashing::keccak_256(data)
 	}
 
-	pub(crate) fn eth_signable_message(chain_id: &[u8], spec_name: &[u8], data: &[u8]) -> Hash {
+	pub(crate) fn eth_signable_message(chain_id: u64, spec_name: &[u8], data: &[u8]) -> Hash {
 		// \x19\x01 + keccack256(ChainIDSpecName::ecdsa-authority) + struct_hash
 		Hash(Self::hash(
 			&[
 				b"\x19\x01".as_slice(),
-				&Self::hash(&[chain_id, spec_name, b"::ecdsa-authority"].concat()),
+				&Self::hash(&[&chain_id.to_le_bytes(), spec_name, b"::ecdsa-authority"].concat()),
 				&Self::hash(data),
 			]
 			.concat(),
@@ -86,8 +104,8 @@ pub struct Commitment {
 #[test]
 fn eth_signable_message() {
 	assert_eq!(
-		array_bytes::bytes2hex("0x", &Sign::eth_signable_message(b"46", b"Darwinia", &[0; 32])),
-		"0x2abcc6d89747121e6b6005700ccf065ec5c86359c7a2cae4d00b3c4f90f76e84"
+		array_bytes::bytes2hex("0x", &Sign::eth_signable_message(46, b"Darwinia", &[0; 32])),
+		"0xb492857010088b0dff298645e9105549d088aab7bcb20cf5a3d0bc17dce91045"
 	);
 	assert_eq!(
 		array_bytes::bytes2hex("0x", &Sign::hash(b"46Darwinia::ecdsa-authority")),
@@ -96,8 +114,8 @@ fn eth_signable_message() {
 
 	let data = array_bytes::hex2bytes_unchecked("0x30a82982a8d5050d1c83bbea574aea301a4d317840a8c4734a308ffaa6a63bc8cb76085b00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000008000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000060000000000000000000000000000000000000000000000000000000000000000100000000000000000000000068898db1012808808c903f390909c52d9f7067490000000000000000000000004cdc1dbbd754ea539f1ffaea91f1b6c4b8dd14bd");
 	assert_eq!(
-		array_bytes::bytes2hex("0x", &Sign::eth_signable_message(b"45", b"Pangoro", &data)),
-		"0xc0cc97a3b7ce329120e03f03675fd4cc569f50bc9b792bbd40becd79c37badac"
+		array_bytes::bytes2hex("0x", &Sign::eth_signable_message(45, b"Pangoro", &data)),
+		"0x4bddffe492f1091c1902d1952fc4673b12915f4b22822c6c84eacad574f11f2e"
 	);
 
 	let operation = Operation::SwapMembers {
@@ -116,7 +134,7 @@ fn eth_signable_message() {
 		ethabi::Token::Uint(0.into()),
 	]);
 	assert_eq!(
-		array_bytes::bytes2hex("0x", &Sign::eth_signable_message(b"45", b"Pangoro", &encoded)),
-		"0xe0048b398f49e08acbe5d5acc8beceecf2734c2cd4e73ec683302822ecc8811e"
+		array_bytes::bytes2hex("0x", &Sign::eth_signable_message(45, b"Pangoro", &encoded)),
+		"0xe328aa10278425238407d49104ac5a55fd68e7f378b327c902d4d5035cfcfedf"
 	);
 }

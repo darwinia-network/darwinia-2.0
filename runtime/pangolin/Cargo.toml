@@ -37,6 +37,7 @@ cumulus-pallet-session-benchmarking = { optional = true, default-features = fals
 darwinia-account-migration        = { default-features = false, path = "../../pallet/account-migration" }
 darwinia-common-runtime           = { default-features = false, path = "../common" }
 darwinia-deposit                  = { default-features = false, path = "../../pallet/deposit" }
+darwinia-ecdsa-authority          = { default-features = false, path = "../../pallet/ecdsa-authority" }
 darwinia-message-gadget           = { default-features = false, path = "../../pallet/message-gadget" }
 darwinia-message-transact         = { default-features = false, path = "../../pallet/message-transact" }
 darwinia-precompile-assets        = { default-features = false, path = "../../precompile/assets" }
@@ -150,6 +151,7 @@ std = [
 	"darwinia-account-migration/std",
 	"darwinia-common-runtime/std",
 	"darwinia-deposit/std",
+	"darwinia-ecdsa-authority/std",
 	"darwinia-message-gadget/std",
 	"darwinia-message-transact/std",
 	"darwinia-precompile-assets/std",
