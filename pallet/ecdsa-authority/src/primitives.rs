@@ -8,7 +8,7 @@ use sp_io::{crypto, hashing};
 use sp_runtime::RuntimeDebug;
 
 // address(0x1)
-pub(crate) const AUTHORITY_SENTINEL: [u8; 20] =
+pub const AUTHORITY_SENTINEL: [u8; 20] =
 	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1];
 // keccak256("ChangeRelayer(bytes4 sig,bytes params,uint256 nonce)");
 // 0x30a82982a8d5050d1c83bbea574aea301a4d317840a8c4734a308ffaa6a63bc8
@@ -78,9 +78,9 @@ impl<A> Operation<A> {
 
 #[derive(Clone, PartialEq, Eq, Encode, Decode, RuntimeDebug, TypeInfo)]
 pub struct Commitment {
-	pub(crate) block_number: u32,
-	pub(crate) message_root: Hash,
-	pub(crate) nonce: u32,
+	pub block_number: u32,
+	pub message_root: Hash,
+	pub nonce: u32,
 }
 
 #[test]

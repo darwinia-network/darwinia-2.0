@@ -122,6 +122,10 @@ impl ExtBuilder {
 	}
 }
 
+pub fn account_id_of(id: u8) -> AccountId {
+	Address::repeat_byte(id).0.into()
+}
+
 pub fn gen_pair(byte: u8) -> (SecretKey, AccountId) {
 	let seed = iter::repeat(byte).take(32).collect::<Vec<_>>();
 	let secret_key = SecretKey::parse_slice(&seed).unwrap();
