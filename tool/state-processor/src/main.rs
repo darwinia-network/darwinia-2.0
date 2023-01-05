@@ -18,6 +18,7 @@ mod evm;
 mod indices;
 mod proxy;
 mod staking;
+mod sudo;
 mod system;
 mod vesting;
 
@@ -33,7 +34,7 @@ fn main() -> Result<()> {
 
 	// <Processor<Darwinia>>::new()?.process()?;
 	// <Processor<Crab>>::new()?.process()?;
-	<Processor<Pangolin>>::new()?.process()?;
+	<Processor<Pangolin>>::new()?.test().process()?;
 
 	Ok(())
 }
