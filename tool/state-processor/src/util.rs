@@ -76,7 +76,13 @@ pub fn build_spec(chain: &str) -> Result<()> {
 	}
 
 	Command::new(path)
-		.args(["build-spec", "--raw", "--chain", &format!("{chain}-genesis")])
+		.args([
+			"build-spec",
+			"--raw",
+			"--disable-default-bootnode",
+			"--chain",
+			&format!("{chain}-genesis"),
+		])
 		.stdout(Stdio::from(File::create(format!("data/{chain}-shell.json"))?))
 		.output()?;
 
