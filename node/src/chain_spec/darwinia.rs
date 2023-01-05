@@ -153,16 +153,7 @@ pub fn genesis_config() -> ChainSpec {
 					balances: vec![(array_bytes::hex_n_into_unchecked(ALITH), UNIT)],
 				},
 				transaction_payment: Default::default(),
-				assets: AssetsConfig {
-					assets: vec![(AssetIds::Kton as _, ROOT, true, 1)],
-					metadata: vec![(
-						AssetIds::Kton as _,
-						b"Darwinia Commitment Token".to_vec(),
-						b"KTON".to_vec(),
-						18,
-					)],
-					..Default::default()
-				},
+				assets: Default::default(),
 
 				// Consensus stuff.
 				staking: StakingConfig {
