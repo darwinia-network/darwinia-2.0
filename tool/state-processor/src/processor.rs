@@ -101,7 +101,7 @@ where
 }
 
 pub struct State<R> {
-	map: Map<String>,
+	pub map: Map<String>,
 	_runtime: PhantomData<R>,
 }
 impl<R> State<R> {
