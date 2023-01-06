@@ -22,10 +22,11 @@ use mock::*;
 // core
 use core::time::Duration;
 // darwinia
+use darwinia_deposit::Error as DepositError;
 use darwinia_staking::*;
 use dc_types::{Balance, UNIT};
 // substrate
-use frame_support::{assert_ok, BoundedVec};
+use frame_support::{assert_noop, assert_ok, BoundedVec};
 use sp_runtime::{assert_eq_error_rate, Perbill};
 
 #[test]
@@ -52,6 +53,12 @@ fn stake_should_work() {
 		assert_eq!(
 			Staking::ledger_of(1).unwrap(),
 			Ledger { staked_ring: UNIT, staked_kton: UNIT, ..ZeroDefault::default() }
+		);
+
+		// Stake invalid deposit.
+		assert_noop!(
+			Staking::stake(RuntimeOrigin::signed(1), 0, 0, vec![0]),
+			<DepositError<Runtime>>::DepositNotFound
 		);
 
 		// Stake 1 deposit.
@@ -132,6 +139,12 @@ fn unstake_should_work() {
 				unstaking_kton: BoundedVec::truncate_from(vec![(UNIT, 5)]),
 				..ZeroDefault::default()
 			}
+		);
+
+		// Unstake invalid deposit.
+		assert_noop!(
+			Staking::unstake(RuntimeOrigin::signed(1), 0, 0, vec![3]),
+			<DepositError<Runtime>>::DepositNotFound
 		);
 
 		// Unstake 1 deposit.
