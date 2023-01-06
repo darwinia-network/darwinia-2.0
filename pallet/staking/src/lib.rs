@@ -239,6 +239,8 @@ pub mod pallet {
 		ExceedMaxDeposits,
 		/// Exceed maximum unstaking/unbonding count.
 		ExceedMaxUnstakings,
+		/// Deposit not found.
+		DepositNotFound,
 		/// You are not a staker.
 		NotStaker,
 		/// Target is not a collator.
@@ -646,9 +648,6 @@ pub mod pallet {
 			ledger: &mut Ledger<T>,
 			deposit: DepositId<T>,
 		) -> DispatchResult {
-			// Check if the deposit exists.
-			let amount = T::Deposit::amount(who, deposit)?;
-
 			ledger
 				.unstaking_deposits
 				.try_push((
@@ -657,13 +656,13 @@ pub mod pallet {
 							.staked_deposits
 							.iter()
 							.position(|d| d == &deposit)
-							.ok_or("[pallet::staking] must exist, due to previous check; qed")?,
+							.ok_or(<Error<T>>::DepositNotFound)?,
 					),
 					<frame_system::Pallet<T>>::block_number() + T::MinStakingDuration::get(),
 				))
 				.map_err(|_| <Error<T>>::ExceedMaxUnstakings)?;
 
-			Self::update_pool::<RingPool<T>>(false, amount)?;
+			Self::update_pool::<RingPool<T>>(false, T::Deposit::amount(who, deposit)?)?;
 
 			Ok(())
 		}
@@ -676,23 +675,30 @@ pub mod pallet {
 		where
 			P: frame_support::StorageValue<Balance, Query = Balance>,
 		{
-			let expect_amount = amount;
+			let mut actual_restake = 0;
 
 			// Cancel the latest `unstake` first.
 			while let Some((u, _)) = unstaking.last_mut() {
 				if let Some(k) = u.checked_sub(amount) {
+					actual_restake += amount;
 					*u = k;
+
+					if k == 0 {
+						unstaking
+							.pop()
+							.ok_or("[pallet::staking] record must exist, due to `last_mut`; qed")?;
+					}
 
 					break;
 				} else {
+					actual_restake += *u;
 					amount -= *u;
+
 					unstaking
 						.pop()
 						.ok_or("[pallet::staking] record must exist, due to `last_mut`; qed")?;
 				}
 			}
-
-			let actual_restake = expect_amount - amount;
 
 			*staked += actual_restake;
 
@@ -706,9 +712,6 @@ pub mod pallet {
 			ledger: &mut Ledger<T>,
 			deposit: DepositId<T>,
 		) -> DispatchResult {
-			// Check if the deposit exists.
-			let amount = T::Deposit::amount(who, deposit)?;
-
 			ledger
 				.staked_deposits
 				.try_push(
@@ -719,15 +722,13 @@ pub mod pallet {
 								.unstaking_deposits
 								.iter()
 								.position(|(d, _)| d == &deposit)
-								.ok_or(
-									"[pallet::staking] must exist, due to previous check; qed",
-								)?,
+								.ok_or(<Error<T>>::DepositNotFound)?,
 						)
 						.0,
 				)
 				.map_err(|_| <Error<T>>::ExceedMaxDeposits)?;
 
-			Self::update_pool::<RingPool<T>>(true, amount)?;
+			Self::update_pool::<RingPool<T>>(true, T::Deposit::amount(who, deposit)?)?;
 
 			Ok(())
 		}
