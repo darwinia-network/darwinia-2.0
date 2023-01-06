@@ -824,7 +824,7 @@ pub mod pallet {
 							+ l.staked_deposits
 								.into_iter()
 								// We don't care if the deposit exists here.
-								// It is guaranteed by the `stake`/`unstake`/`restake` functions.
+								// It was guaranteed by the `stake`/`unstake`/`restake` functions.
 								.fold(0, |r, d| r + T::Deposit::amount(who, d).unwrap_or_default()),
 					) + Self::balance2power::<KtonPool<T>>(l.staked_kton)
 				})
