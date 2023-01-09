@@ -300,7 +300,7 @@ impl<R> State<R> {
 	}
 
 	pub fn starts_with(&self, key: &str) -> bool {
-		self.map.keys().into_iter().find(|k| k.starts_with(key)).is_some()
+		self.map.keys().into_iter().any(|k| k.starts_with(key))
 	}
 
 	// pub fn inc_consumers(&mut self, who: &str) {}
