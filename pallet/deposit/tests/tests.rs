@@ -1,6 +1,6 @@
 // This file is part of Darwinia.
 //
-// Copyright (C) 2018-2022 Darwinia Network
+// Copyright (C) 2018-2023 Darwinia Network
 // SPDX-License-Identifier: GPL-3.0
 //
 // Darwinia is free software: you can redistribute it and/or modify
@@ -30,11 +30,11 @@ use frame_support::{assert_noop, assert_ok, traits::Get};
 fn lock_should_work() {
 	new_test_ext().execute_with(|| {
 		assert_eq!(System::account(&1).consumers, 0);
-		assert_eq!(Balances::free_balance(&Deposit::account_id()), 0);
+		assert_eq!(Balances::free_balance(&darwinia_deposit::account_id()), 0);
 		assert_eq!(Balances::free_balance(&1), 1_000 * UNIT);
 		assert_ok!(Deposit::lock(RuntimeOrigin::signed(1), 10 * UNIT, 1));
 		assert_eq!(System::account(&1).consumers, 1);
-		assert_eq!(Balances::free_balance(&Deposit::account_id()), 10 * UNIT);
+		assert_eq!(Balances::free_balance(&darwinia_deposit::account_id()), 10 * UNIT);
 		assert_eq!(Balances::free_balance(&1), 990 * UNIT);
 	});
 }
@@ -64,28 +64,38 @@ fn unique_identity_should_work() {
 		assert_eq!(
 			Deposit::deposit_of(&1).unwrap().as_slice(),
 			&[
-				DepositS { id: 0, value: UNIT, expired_time: MILLISECS_PER_MONTH, in_use: false },
+				DepositS {
+					id: 0,
+					value: UNIT,
+					start_time: 0,
+					expired_time: MILLISECS_PER_MONTH,
+					in_use: false
+				},
 				DepositS {
 					id: 1,
 					value: 2 * UNIT,
+					start_time: 0,
 					expired_time: 2 * MILLISECS_PER_MONTH,
 					in_use: false
 				},
 				DepositS {
 					id: 2,
 					value: 3 * UNIT,
+					start_time: 0,
 					expired_time: MILLISECS_PER_MONTH,
 					in_use: false
 				},
 				DepositS {
 					id: 3,
 					value: 4 * UNIT,
+					start_time: 0,
 					expired_time: 2 * MILLISECS_PER_MONTH,
 					in_use: false
 				},
 				DepositS {
 					id: 4,
 					value: 5 * UNIT,
+					start_time: 0,
 					expired_time: MILLISECS_PER_MONTH,
 					in_use: false
 				}
@@ -102,18 +112,21 @@ fn unique_identity_should_work() {
 				DepositS {
 					id: 0,
 					value: 6 * UNIT,
+					start_time: MILLISECS_PER_MONTH,
 					expired_time: 2 * MILLISECS_PER_MONTH,
 					in_use: false
 				},
 				DepositS {
 					id: 1,
 					value: 2 * UNIT,
+					start_time: 0,
 					expired_time: 2 * MILLISECS_PER_MONTH,
 					in_use: false
 				},
 				DepositS {
 					id: 3,
 					value: 4 * UNIT,
+					start_time: 0,
 					expired_time: 2 * MILLISECS_PER_MONTH,
 					in_use: false
 				},
@@ -127,24 +140,28 @@ fn unique_identity_should_work() {
 				DepositS {
 					id: 0,
 					value: 6 * UNIT,
+					start_time: MILLISECS_PER_MONTH,
 					expired_time: 2 * MILLISECS_PER_MONTH,
 					in_use: false
 				},
 				DepositS {
 					id: 1,
 					value: 2 * UNIT,
+					start_time: 0,
 					expired_time: 2 * MILLISECS_PER_MONTH,
 					in_use: false
 				},
 				DepositS {
 					id: 2,
 					value: 7 * UNIT,
+					start_time: MILLISECS_PER_MONTH,
 					expired_time: 2 * MILLISECS_PER_MONTH,
 					in_use: false
 				},
 				DepositS {
 					id: 3,
 					value: 4 * UNIT,
+					start_time: 0,
 					expired_time: 2 * MILLISECS_PER_MONTH,
 					in_use: false
 				},
@@ -158,30 +175,35 @@ fn unique_identity_should_work() {
 				DepositS {
 					id: 0,
 					value: 6 * UNIT,
+					start_time: MILLISECS_PER_MONTH,
 					expired_time: 2 * MILLISECS_PER_MONTH,
 					in_use: false
 				},
 				DepositS {
 					id: 1,
 					value: 2 * UNIT,
+					start_time: 0,
 					expired_time: 2 * MILLISECS_PER_MONTH,
 					in_use: false
 				},
 				DepositS {
 					id: 2,
 					value: 7 * UNIT,
+					start_time: MILLISECS_PER_MONTH,
 					expired_time: 2 * MILLISECS_PER_MONTH,
 					in_use: false
 				},
 				DepositS {
 					id: 3,
 					value: 4 * UNIT,
+					start_time: 0,
 					expired_time: 2 * MILLISECS_PER_MONTH,
 					in_use: false
 				},
 				DepositS {
 					id: 4,
 					value: 8 * UNIT,
+					start_time: MILLISECS_PER_MONTH,
 					expired_time: 2 * MILLISECS_PER_MONTH,
 					in_use: false
 				},
@@ -203,6 +225,7 @@ fn expire_time_should_work() {
 				.map(|i| DepositS {
 					id: i - 1,
 					value: UNIT,
+					start_time: (i - 1) as Moment * MILLISECS_PER_MONTH,
 					expired_time: i as Moment * MILLISECS_PER_MONTH,
 					in_use: false
 				})
@@ -253,13 +276,13 @@ fn claim_should_work() {
 		assert!(Deposit::deposit_of(&1).is_none());
 
 		assert_ok!(Deposit::lock(RuntimeOrigin::signed(1), UNIT, 1));
-		assert!(!Deposit::deposit_of(&1).is_none());
+		assert!(Deposit::deposit_of(&1).is_some());
 
 		efflux(MILLISECS_PER_MONTH - 1);
 		assert_eq!(System::account(&1).consumers, 1);
 		assert_ok!(Deposit::claim(RuntimeOrigin::signed(1)));
 		assert_eq!(System::account(&1).consumers, 1);
-		assert!(!Deposit::deposit_of(&1).is_none());
+		assert!(Deposit::deposit_of(&1).is_some());
 
 		efflux(MILLISECS_PER_MONTH);
 		assert_eq!(System::account(&1).consumers, 1);
@@ -273,12 +296,40 @@ fn claim_should_work() {
 		assert_eq!(System::account(&1).consumers, 1);
 		assert_ok!(Deposit::claim(RuntimeOrigin::signed(1)));
 		assert_eq!(System::account(&1).consumers, 1);
-		assert!(!Deposit::deposit_of(&1).is_none());
+		assert!(Deposit::deposit_of(&1).is_some());
 
 		assert_ok!(Deposit::unstake(&1, 0));
 		assert_eq!(System::account(&1).consumers, 1);
 		assert_ok!(Deposit::claim(RuntimeOrigin::signed(1)));
 		assert_eq!(System::account(&1).consumers, 0);
 		assert!(Deposit::deposit_of(&1).is_none());
+	});
+}
+
+#[test]
+fn claim_with_penalty_should_work() {
+	new_test_ext().execute_with(|| {
+		assert!(Deposit::deposit_of(&1).is_none());
+		assert_ok!(Deposit::lock(RuntimeOrigin::signed(1), UNIT, 1));
+		assert!(Deposit::deposit_of(&1).is_some());
+
+		assert_noop!(
+			Deposit::claim_with_penalty(RuntimeOrigin::signed(1), 0),
+			<pallet_assets::Error<Runtime>>::BalanceLow
+		);
+
+		assert_ok!(KtonAsset::mint(&1, UNIT));
+		assert_ok!(Deposit::claim_with_penalty(RuntimeOrigin::signed(1), 0));
+		assert_eq!(Assets::balance(0, 1), 999_984_771_573_604_062);
+		assert!(Deposit::deposit_of(&1).is_none());
+
+		assert_ok!(Deposit::lock(RuntimeOrigin::signed(1), UNIT, 1));
+		efflux(MILLISECS_PER_MONTH);
+		assert!(Deposit::deposit_of(&1).is_some());
+
+		assert_noop!(
+			Deposit::claim_with_penalty(RuntimeOrigin::signed(1), 0),
+			<Error<Runtime>>::DepositAlreadyExpired
+		);
 	});
 }

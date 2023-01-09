@@ -1,6 +1,6 @@
 // This file is part of Darwinia.
 //
-// Copyright (C) 2018-2022 Darwinia Network
+// Copyright (C) 2018-2023 Darwinia Network
 // SPDX-License-Identifier: GPL-3.0
 //
 // Darwinia is free software: you can redistribute it and/or modify
@@ -17,8 +17,11 @@
 // along with Darwinia. If not, see <https://www.gnu.org/licenses/>.
 
 // darwinia
+use darwinia_staking::*;
 use dc_types::{AssetId, Balance, Moment, UNIT};
 // substrate
+use frame_support::traits::{GenesisBuild, OnInitialize};
+use sp_io::TestExternalities;
 use sp_runtime::RuntimeAppPublic;
 
 impl frame_system::Config for Runtime {
@@ -97,16 +100,24 @@ impl frame_support::traits::UnixTime for Time {
 		Time::get()
 	}
 }
-pub enum KtonMinting {}
-impl darwinia_deposit::Minting for KtonMinting {
+pub enum KtonAsset {}
+impl darwinia_deposit::SimpleAsset for KtonAsset {
 	type AccountId = u32;
 
 	fn mint(beneficiary: &Self::AccountId, amount: Balance) -> sp_runtime::DispatchResult {
 		Assets::mint(RuntimeOrigin::signed(0), 0, *beneficiary, amount)
 	}
+
+	fn burn(who: &Self::AccountId, amount: Balance) -> sp_runtime::DispatchResult {
+		if Assets::balance(0, who) < amount {
+			Err(<pallet_assets::Error<Runtime>>::BalanceLow)?;
+		}
+
+		Assets::burn(RuntimeOrigin::signed(0), 0, *who, amount)
+	}
 }
 impl darwinia_deposit::Config for Runtime {
-	type Kton = KtonMinting;
+	type Kton = KtonAsset;
 	type MaxDeposits = frame_support::traits::ConstU32<16>;
 	type MinLockingAmount = frame_support::traits::ConstU128<UNIT>;
 	type Ring = Balances;
@@ -154,7 +165,7 @@ impl pallet_session::SessionHandler<u32> for TestSessionHandler {
 		&[sp_runtime::testing::UintAuthorityId::ID];
 
 	fn on_genesis_session<Ks: sp_runtime::traits::OpaqueKeys>(keys: &[(u32, Ks)]) {
-		SessionHandlerCollators::set(keys.into_iter().map(|(a, _)| *a).collect::<Vec<_>>())
+		SessionHandlerCollators::set(keys.iter().map(|(a, _)| *a).collect::<Vec<_>>())
 	}
 
 	fn on_new_session<Ks: sp_runtime::traits::OpaqueKeys>(
@@ -163,7 +174,7 @@ impl pallet_session::SessionHandler<u32> for TestSessionHandler {
 		_: &[(u32, Ks)],
 	) {
 		SessionChangeBlock::set(System::block_number());
-		SessionHandlerCollators::set(keys.into_iter().map(|(a, _)| *a).collect::<Vec<_>>())
+		SessionHandlerCollators::set(keys.iter().map(|(a, _)| *a).collect::<Vec<_>>())
 	}
 
 	fn on_before_session_ending() {}
@@ -231,7 +242,7 @@ frame_support::construct_runtime!(
 pub trait ZeroDefault {
 	fn default() -> Self;
 }
-impl ZeroDefault for darwinia_staking::Ledger<Runtime> {
+impl ZeroDefault for Ledger<Runtime> {
 	fn default() -> Self {
 		Self {
 			staked_ring: Default::default(),
@@ -260,7 +271,7 @@ impl Efflux {
 fn initialize_block(number: u64) {
 	System::set_block_number(number);
 	Efflux::time(1);
-	<AllPalletsWithSystem as frame_support::traits::OnInitialize<u64>>::on_initialize(number);
+	<AllPalletsWithSystem as OnInitialize<u64>>::on_initialize(number);
 }
 
 #[derive(Default)]
@@ -274,10 +285,7 @@ impl ExtBuilder {
 		self
 	}
 
-	pub fn build(self) -> sp_io::TestExternalities {
-		// substrate
-		use frame_support::traits::GenesisBuild;
-
+	pub fn build(self) -> TestExternalities {
 		let _ = pretty_env_logger::try_init();
 		let mut storage =
 			frame_system::GenesisConfig::default().build_storage::<Runtime>().unwrap();
@@ -301,7 +309,7 @@ impl ExtBuilder {
 		.assimilate_storage(&mut storage)
 		.unwrap();
 
-		let mut ext = sp_io::TestExternalities::from(storage);
+		let mut ext = TestExternalities::from(storage);
 
 		ext.execute_with(|| initialize_block(1));
 

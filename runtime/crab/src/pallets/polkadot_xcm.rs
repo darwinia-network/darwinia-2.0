@@ -1,6 +1,6 @@
 // This file is part of Darwinia.
 //
-// Copyright (C) 2018-2022 Darwinia Network
+// Copyright (C) 2018-2023 Darwinia Network
 // SPDX-License-Identifier: GPL-3.0
 //
 // Darwinia is free software: you can redistribute it and/or modify
@@ -18,6 +18,8 @@
 
 // darwinia
 use crate::*;
+// substrate
+use frame_support::traits::Currency;
 
 /// Means for transacting assets on this chain.
 pub type LocalAssetTransactor = xcm_builder::CurrencyAdapter<
@@ -47,6 +49,8 @@ pub type LocationToAccountId = (
 	xcm_builder::SiblingParachainConvertsVia<polkadot_parachain::primitives::Sibling, AccountId>,
 	// Straight up local `AccountId20` origins just alias directly to `AccountId`.
 	xcm_builder::AccountKey20Aliases<RelayNetwork, AccountId>,
+	// The rest of locations are converted via hashing it.
+	darwinia_common_runtime::xcm_configs::Account20Hash<AccountId>,
 );
 /// This is the type we use to convert an (incoming) XCM origin into a local `Origin` instance,
 /// ready for dispatching a transaction with Xcm's `Transact`. There is an `OriginKind` which can
@@ -96,6 +100,25 @@ frame_support::parameter_types! {
 	pub UnitWeightCost: u64 = 1_000_000_000;
 }
 
+pub struct ToTreasury;
+impl xcm_builder::TakeRevenue for ToTreasury {
+	fn take_revenue(revenue: xcm::latest::prelude::MultiAsset) {
+		if let xcm::latest::prelude::MultiAsset {
+			id: xcm::latest::prelude::Concrete(_location),
+			fun: xcm::latest::prelude::Fungible(amount),
+		} = revenue
+		{
+			let treasury_account = Treasury::account_id();
+			let _ = Balances::deposit_creating(&treasury_account, amount);
+
+			frame_support::log::trace!(
+				target: "xcm::weight",
+				"LocalAssetTrader::to_treasury amount: {amount:?}, treasury: {treasury_account:?}"
+			);
+		}
+	}
+}
+
 pub struct XcmExecutorConfig;
 impl xcm_executor::Config for XcmExecutorConfig {
 	type AssetClaims = PolkadotXcm;
@@ -111,12 +134,13 @@ impl xcm_executor::Config for XcmExecutorConfig {
 	type ResponseHandler = PolkadotXcm;
 	type RuntimeCall = RuntimeCall;
 	type SubscriptionService = PolkadotXcm;
-	type Trader = xcm_builder::UsingComponents<
+	type Trader = xcm_configs::LocalAssetTrader<
 		ConstantMultiplier<Balance, darwinia_common_runtime::xcm_configs::XcmBaseWeightFee>,
 		AnchoringSelfReserve,
 		AccountId,
 		Balances,
 		DealWithFees<Runtime>,
+		ToTreasury,
 	>;
 	type Weigher = xcm_builder::FixedWeightBounds<UnitWeightCost, RuntimeCall, MaxInstructions>;
 	type XcmSender = XcmRouter;
@@ -145,8 +169,6 @@ impl pallet_xcm::Config for Runtime {
 	type SendXcmOrigin = xcm_builder::EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;
 	type Weigher = xcm_builder::FixedWeightBounds<UnitWeightCost, RuntimeCall, MaxInstructions>;
 	type XcmExecuteFilter = frame_support::traits::Everything;
-	// ^ Disable dispatchable execute on the XCM pallet.
-	// Needs to be `Everything` for local testing.
 	type XcmExecutor = xcm_executor::XcmExecutor<XcmExecutorConfig>;
 	type XcmReserveTransferFilter = frame_support::traits::Everything;
 	type XcmRouter = XcmRouter;

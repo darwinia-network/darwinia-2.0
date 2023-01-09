@@ -1,6 +1,6 @@
 // This file is part of Darwinia.
 //
-// Copyright (C) 2018-2022 Darwinia Network
+// Copyright (C) 2018-2023 Darwinia Network
 // SPDX-License-Identifier: GPL-3.0
 //
 // Darwinia is free software: you can redistribute it and/or modify
@@ -43,28 +43,38 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![deny(missing_docs)]
 
-// TODO: update weight
-
 #[cfg(test)]
 mod tests;
 
 // darwinia
-use dc_primitives::{AccountId as AccountId20, Balance, BlockNumber, Index};
+use darwinia_deposit::Deposit;
+use darwinia_staking::Ledger;
+use dc_primitives::{AccountId as AccountId20, AssetId, Balance, BlockNumber, Index};
 // substrate
 use frame_support::{
+<<<<<<< HEAD
 	log,
 	migration::put_storage_value,
 	pallet_prelude::*,
 	traits::{LockableCurrency, ReservableCurrency, WithdrawReasons},
 	StorageHasher, Twox64Concat,
+=======
+	log, migration,
+	pallet_prelude::*,
+	traits::{Currency, ExistenceRequirement::KeepAlive, LockableCurrency, WithdrawReasons},
+	StorageHasher,
+>>>>>>> main
 };
-use frame_system::{pallet_prelude::*, AccountInfo};
+use frame_system::{pallet_prelude::*, AccountInfo, RawOrigin};
 use pallet_balances::AccountData;
 use pallet_identity::{RegistrarInfo, Registration};
 use pallet_vesting::VestingInfo;
 use sp_core::sr25519::{Public, Signature};
 use sp_io::hashing;
-use sp_runtime::{traits::Verify, AccountId32};
+use sp_runtime::{
+	traits::{IdentityLookup, Verify},
+	AccountId32,
+};
 use sp_std::prelude::*;
 
 type Message = [u8; 32];
@@ -83,9 +93,16 @@ pub mod pallet {
 			BlockNumber = BlockNumber,
 			AccountId = AccountId20,
 			AccountData = AccountData<Balance>,
-		> + pallet_balances::Config<Balance = Balance>
+			Lookup = IdentityLookup<AccountId20>,
+		> + pallet_assets::Config<Balance = Balance, AssetId = AssetId>
+		+ pallet_balances::Config<Balance = Balance>
 		+ pallet_vesting::Config<Currency = pallet_balances::Pallet<Self>>
+<<<<<<< HEAD
 		+ pallet_identity::Config<Currency = pallet_balances::Pallet<Self>>
+=======
+		+ darwinia_deposit::Config
+		+ darwinia_staking::Config
+>>>>>>> main
 	{
 		/// Override the [`frame_system::Config::RuntimeEvent`].
 		type RuntimeEvent: From<Event> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
@@ -106,6 +123,8 @@ pub mod pallet {
 	pub enum Error<T> {
 		/// Exceed maximum vesting count.
 		ExceedMaxVestings,
+		/// Exceed maximum deposit count.
+		ExceedMaxDeposits,
 	}
 
 	/// [`frame_system::Account`] data.
@@ -114,7 +133,15 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn account_of)]
 	pub type Accounts<T: Config> =
-		StorageMap<_, Identity, AccountId32, AccountInfo<Index, AccountData<Balance>>>;
+		StorageMap<_, Blake2_128Concat, AccountId32, AccountInfo<Index, AccountData<Balance>>>;
+
+	/// [`pallet_asset::AssetAccount`] data.
+	///
+	/// https://github.dev/paritytech/substrate/blob/polkadot-v0.9.30/frame/assets/src/types.rs#L115
+	// The size of encoded `pallet_asset::AssetAccount` is 18 bytes.
+	#[pallet::storage]
+	#[pallet::getter(fn kton_account_of)]
+	pub type KtonAccounts<T: Config> = StorageMap<_, Blake2_128Concat, AccountId32, [u8; 18]>;
 
 	/// [`pallet_vesting::Vesting`] data.
 	///
@@ -125,29 +152,18 @@ pub mod pallet {
 	pub type Vestings<T: Config> =
 		StorageMap<_, Blake2_128Concat, AccountId32, Vec<VestingInfo<Balance, BlockNumber>>>;
 
-	/// [`pallet_identity::Registration`] data.
-	///
-	/// <https://github.dev/paritytech/substrate/blob/polkadot-v0.9.30/frame/identity/src/lib.rs#L163>
-	#[pallet::storage]
-	#[pallet::getter(fn identity_of)]
-	pub type IdentityOf<T: Config> = StorageMap<
-		_,
-		Twox64Concat,
-		AccountId32,
-		Registration<Balance, ConstU32<100>, ConstU32<100>>,
-	>;
-
-	/// [`pallet_identity::RegistrarInfo`] data.
-	///
-	/// <https://github.dev/paritytech/substrate/blob/polkadot-v0.9.30/frame/identity/src/lib.rs#L199>
+	/// [`darwinia_deposit::Deposits`] data.
 	#[pallet::storage]
 	#[pallet::unbounded]
-	#[pallet::getter(fn registrars)]
-	pub type Registrars<T: Config> =
-		StorageValue<_, Vec<Option<RegistrarInfo<Balance, AccountId32>>>, ValueQuery>;
+	#[pallet::getter(fn deposit_of)]
+	pub type Deposits<T: Config> = StorageMap<_, Blake2_128Concat, AccountId32, Vec<Deposit>>;
 
-	// TODO: proxy storages
-	// TODO: staking storages
+	/// [`darwinia_staking::Ledgers`] data.
+	#[pallet::storage]
+	#[pallet::getter(fn ledger_of)]
+	pub type Ledgers<T: Config> = StorageMap<_, Blake2_128Concat, AccountId32, Ledger<T>>;
+
+	// TODO: identity storages
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
@@ -166,8 +182,62 @@ pub mod pallet {
 
 			<frame_system::Account<T>>::insert(to, account);
 
-			Self::process_vesting(&from, &to)?;
-			Self::process_identity(&from, &to)?;
+			if let Some(a) = <KtonAccounts<T>>::take(&from) {
+				migration::put_storage_value(
+					b"Assets",
+					b"Account",
+					&[
+						Blake2_128Concat::hash(&1026_u64.encode()),
+						Blake2_128Concat::hash(&to.encode()),
+					]
+					.concat(),
+					a,
+				);
+			}
+			if let Some(v) = <Vestings<T>>::take(&from) {
+				let locked = v.iter().map(|v| v.locked()).sum();
+
+				<pallet_vesting::Vesting<T>>::insert(
+					to,
+					BoundedVec::try_from(v).map_err(|_| <Error<T>>::ExceedMaxVestings)?,
+				);
+
+				// https://github.dev/paritytech/substrate/blob/19162e43be45817b44c7d48e50d03f074f60fbf4/frame/vesting/src/lib.rs#L248
+				let reasons = WithdrawReasons::TRANSFER | WithdrawReasons::RESERVE;
+
+				// https://github.dev/paritytech/substrate/blob/19162e43be45817b44c7d48e50d03f074f60fbf4/frame/vesting/src/lib.rs#L86
+				<pallet_balances::Pallet<T>>::set_lock(*b"vesting ", &to, locked, reasons);
+			}
+			if let Some(l) = <Ledgers<T>>::take(&from) {
+				if let Some(ds) = <Deposits<T>>::take(&from) {
+					<pallet_balances::Pallet<T> as Currency<_>>::transfer(
+						&to,
+						&darwinia_deposit::account_id(),
+						ds.iter().map(|d| d.value).sum(),
+						KeepAlive,
+					)?;
+					<darwinia_deposit::Deposits<T>>::insert(
+						to,
+						BoundedVec::try_from(ds).map_err(|_| <Error<T>>::ExceedMaxDeposits)?,
+					);
+				}
+
+				let staking_pot = darwinia_staking::account_id();
+
+				<pallet_balances::Pallet<T> as Currency<_>>::transfer(
+					&to,
+					&staking_pot,
+					l.staked_ring + l.unstaking_ring.iter().map(|(r, _)| r).sum::<Balance>(),
+					KeepAlive,
+				)?;
+				<pallet_assets::Pallet<T>>::transfer(
+					RawOrigin::Signed(to).into(),
+					1026_u64,
+					staking_pot,
+					l.staked_kton + l.unstaking_kton.iter().map(|(k, _)| k).sum::<Balance>(),
+				)?;
+				<darwinia_staking::Ledgers<T>>::insert(to, l);
+			}
 
 			Self::deposit_event(Event::Migrated { from, to });
 

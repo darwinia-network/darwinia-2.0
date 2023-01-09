@@ -19,18 +19,21 @@
   - remove para backing account - TODO
   - check remaining sum - TODO
   - XCM relate - TODO
-- set KTON total issuances - TODO
-  - compare the calculated one with the storage one
-  - check remaining sum - TODO
+- create KTON asset details
 - set accounts
   - if is EVM address
+    - insert to `Assets::Account` (update kton asset details)
     - insert to `System::Account`
   - if is Substrate address
     - reset the nonce
+    - insert to `AccountMigration::KtonAccounts`
     - insert to `AccountMigration::Accounts`
-    - calculate misc frozen and fee frozen
+- set KTON total issuances
+  - compare the calculated one with the storage one
+  - check remaining sum - TODO
 
 - some remaining accounts, bridge endpoint accounts - TODO
 - special accounts - TODO
   - parachain backing account 0x8c585F9791EE5b4B23fe82888cE576DBB69607eB
   - bridge root account 0x726f6f7400000000000000000000000000000000
+  - pallet accounts

@@ -1,6 +1,6 @@
 // This file is part of Darwinia.
 //
-// Copyright (C) 2018-2022 Darwinia Network
+// Copyright (C) 2018-2023 Darwinia Network
 // SPDX-License-Identifier: GPL-3.0
 //
 // Darwinia is free software: you can redistribute it and/or modify
@@ -93,17 +93,21 @@ impl pallet_timestamp::Config for TestRuntime {
 	type WeightInfo = ();
 }
 
-pub enum KtonMinting {}
-impl darwinia_deposit::Minting for KtonMinting {
+pub enum KtonAsset {}
+impl darwinia_deposit::SimpleAsset for KtonAsset {
 	type AccountId = AccountId;
 
-	fn mint(_beneficiary: &Self::AccountId, _amount: Balance) -> sp_runtime::DispatchResult {
+	fn mint(_: &Self::AccountId, _: Balance) -> sp_runtime::DispatchResult {
+		Ok(())
+	}
+
+	fn burn(_: &Self::AccountId, _: Balance) -> sp_runtime::DispatchResult {
 		Ok(())
 	}
 }
 
 impl darwinia_deposit::Config for TestRuntime {
-	type Kton = KtonMinting;
+	type Kton = KtonAsset;
 	type MaxDeposits = frame_support::traits::ConstU32<16>;
 	type MinLockingAmount = frame_support::traits::ConstU128<100>;
 	type Ring = Balances;

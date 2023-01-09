@@ -1,6 +1,6 @@
 // This file is part of Darwinia.
 //
-// Copyright (C) 2018-2022 Darwinia Network
+// Copyright (C) 2018-2023 Darwinia Network
 // SPDX-License-Identifier: GPL-3.0
 //
 // Darwinia is free software: you can redistribute it and/or modify
@@ -18,6 +18,9 @@
 
 // darwinia
 use dc_types::{AssetId, Balance, Moment, UNIT};
+// substrate
+use frame_support::traits::GenesisBuild;
+use sp_io::TestExternalities;
 
 impl frame_system::Config for Runtime {
 	type AccountData = pallet_balances::AccountData<Balance>;
@@ -82,16 +85,24 @@ impl pallet_assets::Config for Runtime {
 	type WeightInfo = ();
 }
 
-pub enum KtonMinting {}
-impl darwinia_deposit::Minting for KtonMinting {
+pub enum KtonAsset {}
+impl darwinia_deposit::SimpleAsset for KtonAsset {
 	type AccountId = u32;
 
 	fn mint(beneficiary: &Self::AccountId, amount: Balance) -> sp_runtime::DispatchResult {
 		Assets::mint(RuntimeOrigin::signed(0), 0, *beneficiary, amount)
 	}
+
+	fn burn(who: &Self::AccountId, amount: Balance) -> sp_runtime::DispatchResult {
+		if Assets::balance(0, who) < amount {
+			Err(<pallet_assets::Error<Runtime>>::BalanceLow)?;
+		}
+
+		Assets::burn(RuntimeOrigin::signed(0), 0, *who, amount)
+	}
 }
 impl darwinia_deposit::Config for Runtime {
-	type Kton = KtonMinting;
+	type Kton = KtonAsset;
 	type MaxDeposits = frame_support::traits::ConstU32<16>;
 	type MinLockingAmount = frame_support::traits::ConstU128<UNIT>;
 	type Ring = Balances;
@@ -117,10 +128,7 @@ pub fn efflux(milli_secs: Moment) {
 	Timestamp::set_timestamp(Timestamp::now() + milli_secs);
 }
 
-pub fn new_test_ext() -> sp_io::TestExternalities {
-	// substrate
-	use frame_support::traits::GenesisBuild;
-
+pub fn new_test_ext() -> TestExternalities {
 	let mut storage = frame_system::GenesisConfig::default().build_storage::<Runtime>().unwrap();
 
 	pallet_balances::GenesisConfig::<Runtime> {

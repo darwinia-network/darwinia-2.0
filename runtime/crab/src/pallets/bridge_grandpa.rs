@@ -1,6 +1,6 @@
 // This file is part of Darwinia.
 //
-// Copyright (C) 2018-2022 Darwinia Network
+// Copyright (C) 2018-2023 Darwinia Network
 // SPDX-License-Identifier: GPL-3.0
 //
 // Darwinia is free software: you can redistribute it and/or modify
@@ -26,8 +26,8 @@ pub type PolkadotHeadersToKeep = ConstU32<500>;
 impl pallet_bridge_grandpa::Config<WithPolkadotGrandpa> for Runtime {
 	type BridgedChain = bp_darwinia::DarwiniaLike;
 	type HeadersToKeep = PolkadotHeadersToKeep;
-	type MaxBridgedAuthorities = ();
-	type MaxBridgedHeaderSize = ();
+	type MaxBridgedAuthorities = ConstU32<100_000>;
+	type MaxBridgedHeaderSize = ConstU32<65536>;
 	type MaxRequests = ConstU32<50>;
 	type WeightInfo = ();
 }

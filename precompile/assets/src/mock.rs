@@ -1,6 +1,6 @@
 // This file is part of Darwinia.
 //
-// Copyright (C) 2018-2022 Darwinia Network
+// Copyright (C) 2018-2023 Darwinia Network
 // SPDX-License-Identifier: GPL-3.0
 //
 // Darwinia is free software: you can redistribute it and/or modify
@@ -142,8 +142,7 @@ fn addr(a: u64) -> H160 {
 pub struct AssetIdConverter;
 impl AccountToAssetId<AccountId, AssetId> for AssetIdConverter {
 	fn account_to_asset_id(account_id: AccountId) -> AssetId {
-		let addr: H160 = account_id.into();
-		addr.to_low_u64_be()
+		account_id.to_low_u64_be()
 	}
 }
 

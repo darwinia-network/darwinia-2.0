@@ -1,6 +1,6 @@
 // This file is part of Darwinia.
 //
-// Copyright (C) 2018-2022 Darwinia Network
+// Copyright (C) 2018-2023 Darwinia Network
 // SPDX-License-Identifier: GPL-3.0
 //
 // Darwinia is free software: you can redistribute it and/or modify
@@ -44,7 +44,7 @@ pub use assets::*;
 
 mod deposit;
 
-mod migrate;
+mod account_migration;
 
 // Consensus stuff.
 mod authorship;
@@ -58,6 +58,10 @@ mod aura;
 
 mod aura_ext;
 
+mod message_gadget;
+
+mod ecdsa_authority;
+
 // Governance stuff.
 mod democracy;
 
@@ -69,6 +73,7 @@ mod elections_phragmen;
 mod membership;
 
 mod treasury;
+pub use treasury::*;
 
 mod tips;
 

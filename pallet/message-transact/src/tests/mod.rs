@@ -1,6 +1,6 @@
 // This file is part of Darwinia.
 //
-// Copyright (C) 2018-2022 Darwinia Network
+// Copyright (C) 2018-2023 Darwinia Network
 // SPDX-License-Identifier: GPL-3.0
 //
 // Darwinia is free software: you can redistribute it and/or modify
@@ -89,7 +89,7 @@ impl LegacyUnsignedTransaction {
 	fn signing_hash(&self) -> H256 {
 		let mut stream = RlpStream::new();
 		self.signing_rlp_append(&mut stream);
-		H256::from_slice(&Keccak256::digest(&stream.out()).as_slice())
+		H256::from_slice(Keccak256::digest(&stream.out()).as_slice())
 	}
 
 	pub fn sign(&self, key: &H256) -> Transaction {

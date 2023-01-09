@@ -1,6 +1,6 @@
 // This file is part of Darwinia.
 //
-// Copyright (C) 2018-2022 Darwinia Network
+// Copyright (C) 2018-2023 Darwinia Network
 // SPDX-License-Identifier: GPL-3.0
 //
 // Darwinia is free software: you can redistribute it and/or modify
@@ -23,7 +23,6 @@ use codec::{Decode, Encode};
 use sha3::{Digest, Keccak256};
 // frontier
 use pallet_ethereum::IntermediateStateRoot;
-use pallet_evm::IdentityAddressMapping;
 // substrate
 use frame_support::{
 	dispatch::RawOrigin,
@@ -118,7 +117,7 @@ impl FeeCalculator for FixedGasPrice {
 }
 
 impl pallet_evm::Config for TestRuntime {
-	type AddressMapping = IdentityAddressMapping;
+	type AddressMapping = pallet_evm::IdentityAddressMapping;
 	type BlockGasLimit = BlockGasLimit;
 	type BlockHashMapping = pallet_evm::SubstrateBlockHashMapping<Self>;
 	type CallOrigin = pallet_evm::EnsureAddressRoot<AccountId>;
@@ -165,7 +164,7 @@ impl CallValidate<AccountId, RuntimeOrigin, RuntimeCall> for MockCallValidator {
 		match call {
 			RuntimeCall::MessageTransact(crate::Call::message_transact { transaction: tx }) => {
 				let total_payment = crate::total_payment::<TestRuntime>((&**tx).into());
-				let relayer = pallet_evm::Pallet::<TestRuntime>::account_basic(&relayer_account).0;
+				let relayer = pallet_evm::Pallet::<TestRuntime>::account_basic(relayer_account).0;
 
 				ensure!(relayer.balance >= total_payment, "Insufficient balance");
 				Ok(())

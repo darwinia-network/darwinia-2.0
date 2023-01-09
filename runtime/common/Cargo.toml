@@ -10,33 +10,54 @@ repository  = "https://github.com/darwinia-network/darwinia"
 version     = "6.0.0"
 
 [dependencies]
+# crates.io
+codec    = { package = "parity-scale-codec", version = "3.2", default-features = false }
+smallvec = { version = "1.10" }
+
 # darwinia
 dc-primitives = { default-features = false, path = "../../core/primitives" }
 
 # darwinia-messages-substrate
 bp-darwinia-core = { default-features = false, git = "https://github.com/darwinia-network/darwinia-messages-substrate", branch = "polkadot-v0.9.30" }
 
+# moonbeam
+account = { default-features = false, git = "https://github.com/darwinia-network/moonbeam", branch = "polkadot-v0.9.30" }
+
 # polkadot
 xcm          = { default-features = false, git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.30" }
+xcm-builder  = { default-features = false, git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.30" }
 xcm-executor = { default-features = false, git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.30" }
 
 # substrate
-frame-support     = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
-frame-system      = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
-pallet-collective = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
+frame-support      = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
+frame-system       = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
+pallet-collective  = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
+sp-io              = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
+sp-runtime         = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
+sp-std             = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
 
 [features]
 default = ["std"]
 std = [
+	# crates.io
+	"codec/std",
+
 	# darwinia
 	"dc-primitives/std",
 
+	# moonbeam
+	"account/std",
+
 	# polkadot
 	"xcm/std",
+	"xcm-builder/std",
 	"xcm-executor/std",
 
 	# substrate
 	"frame-support/std",
 	"frame-system/std",
 	"pallet-collective/std",
+	"sp-io/std",
+	"sp-runtime/std",
+	"sp-std/std",
 ]

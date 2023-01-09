@@ -1,6 +1,6 @@
 // This file is part of Darwinia.
 //
-// Copyright (C) 2018-2022 Darwinia Network
+// Copyright (C) 2018-2023 Darwinia Network
 // SPDX-License-Identifier: GPL-3.0
 //
 // Darwinia is free software: you can redistribute it and/or modify
@@ -121,15 +121,15 @@ where
 		// darwinia
 		use darwinia_precompile_assets::AccountToAssetId;
 
-		let (code_address, caller) = (handle.code_address(), handle.context().caller);
+		let (code_addr, context_addr) = (handle.code_address(), handle.context().address);
 		// Filter known precompile addresses except Ethereum officials
-		if self.is_precompile(code_address) && code_address > addr(9) && code_address != caller {
+		if self.is_precompile(code_addr) && code_addr > addr(9) && code_addr != context_addr {
 			return Some(Err(precompile_utils::revert(
 				"cannot be called with DELEGATECALL or CALLCODE",
 			)));
 		};
 
-		match code_address {
+		match code_addr {
 			// Ethereum precompiles:
 			a if a == addr(1) => Some(pallet_evm_precompile_simple::ECRecover::execute(handle)),
 			a if a == addr(2) => Some(pallet_evm_precompile_simple::Sha256::execute(handle)),
@@ -146,7 +146,7 @@ where
 				darwinia_precompile_state_storage::EthereumStorageFilter,
 			>>::execute(handle)),
 			a if a == addr(1025) =>
-				Some(<pallet_evm_precompile_dispatch::Dispatch<Runtime>>::execute(handle)),
+				Some(<darwinia_precompile_dispatch::Dispatch<Runtime>>::execute(handle)),
 			// [1026, 1536) reserved for assets precompiles.
 			a if (1026..1536).contains(&AssetIdConverter::account_to_asset_id(a.into())) =>
 				Some(<darwinia_precompile_assets::ERC20Assets<Runtime, AssetIdConverter>>::execute(
