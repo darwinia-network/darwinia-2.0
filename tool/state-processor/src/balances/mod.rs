@@ -35,12 +35,9 @@ impl<S> Processor<S> {
 			.take_value(b"Balances", b"TotalIssuance", "", &mut para_ring_total_issuance)
 			.take_map(b"Balances", b"Locks", &mut para_ring_locks, get_hashed_key);
 
-		log::info!("check solo ring locks, there should not be any `solo_ring_locks`");
-		check_locks(solo_ring_locks);
-		log::info!("check solo kton locks, there should not be any `solo_kton_locks`");
-		check_locks(solo_kton_locks);
-		log::info!("check para locks, there should not be any `para_ring_locks`");
-		check_locks(para_ring_locks);
+		if self.para_state.exists(b"Balances", b"Locks") {
+			log::error!("check para `Balances::Locks`, it isn't empty");
+		}
 
 		(solo_ring_total_issuance + para_ring_total_issuance, solo_kton_total_issuance)
 	}
@@ -80,10 +77,4 @@ fn prune(locks: &mut Map<Locks>) {
 
 		!v.is_empty()
 	});
-}
-
-fn check_locks(locks: Map<Locks>) {
-	locks
-		.into_iter()
-		.for_each(|(k, _)| log::error!("found unexpected locks of account({})", get_last_64(&k)));
 }
