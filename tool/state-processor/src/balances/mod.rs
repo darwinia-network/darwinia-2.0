@@ -12,7 +12,6 @@ impl<S> Processor<S> {
 		let mut solo_kton_total_issuance = u128::default();
 		let mut solo_ring_locks = <Map<Locks>>::default();
 		let mut solo_kton_locks = <Map<Locks>>::default();
-		let mut para_ring_locks = <Map<Locks>>::default();
 		let mut para_ring_total_issuance = u128::default();
 
 		log::info!("take solo `Balances::TotalIssuance`, `Kton::TotalIssuance`, `Balances::Locks` and `Kton::Locks`");
@@ -31,9 +30,12 @@ impl<S> Processor<S> {
 		solo_kton_total_issuance.adjust();
 
 		log::info!("take para `Balances::TotalIssuance` and `Balances::Locks`");
-		self.para_state
-			.take_value(b"Balances", b"TotalIssuance", "", &mut para_ring_total_issuance)
-			.take_map(b"Balances", b"Locks", &mut para_ring_locks, get_hashed_key);
+		self.para_state.take_value(
+			b"Balances",
+			b"TotalIssuance",
+			"",
+			&mut para_ring_total_issuance,
+		);
 
 		if self.para_state.exists(b"Balances", b"Locks") {
 			log::error!("check para `Balances::Locks`, it isn't empty");
