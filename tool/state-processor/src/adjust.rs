@@ -69,3 +69,20 @@ impl Adjust for Unbonding {
 		self.until.adjust();
 	}
 }
+
+impl Adjust for Registration {
+	fn adjust(&mut self) {
+		self.deposit.adjust();
+		self.judgements.iter_mut().for_each(|(_k, judgement)| {
+			if let Judgement::FeePaid(amount) = judgement {
+				amount.adjust()
+			}
+		})
+	}
+}
+
+impl Adjust for RegistrarInfo {
+	fn adjust(&mut self) {
+		self.fee.adjust();
+	}
+}

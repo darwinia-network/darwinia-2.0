@@ -15,6 +15,7 @@ use type_registry::*;
 // Runtime pallets.
 mod balances;
 mod evm;
+mod identity;
 mod indices;
 mod proxy;
 mod staking;
@@ -32,8 +33,8 @@ fn main() -> Result<()> {
 	pretty_env_logger::init();
 
 	// <Processor<Darwinia>>::new()?.process()?;
-	// <Processor<Crab>>::new()?.process()?;
-	<Processor<Pangolin>>::new()?.test().process()?;
+	<Processor<Crab>>::new()?.process()?;
+	// <Processor<Pangolin>>::new()?.test().process()?;
 
 	Ok(())
 }

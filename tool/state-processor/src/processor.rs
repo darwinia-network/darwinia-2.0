@@ -75,7 +75,8 @@ where
 			.process_vesting()
 			.process_proxy()
 			.process_staking()
-			.process_evm();
+			.process_evm()
+			.process_identity();
 
 		self.save()
 	}
