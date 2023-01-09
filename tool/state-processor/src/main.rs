@@ -32,8 +32,8 @@ fn main() -> Result<()> {
 	pretty_env_logger::init();
 
 	// <Processor<Darwinia>>::new()?.process()?;
-	// <Processor<Crab>>::new()?.process()?;
-	<Processor<Pangolin>>::new()?.test().process()?;
+	<Processor<Crab>>::new()?.process()?;
+	// <Processor<Pangolin>>::new()?.test().process()?;
 
 	Ok(())
 }

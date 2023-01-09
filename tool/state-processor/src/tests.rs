@@ -648,3 +648,5 @@ fn indices_adjust_substrate_account() {
 		assert_eq!(migrated_account.data.reserved, (solo_account.data.reserved - index.1) * GWEI);
 	});
 }
+
+// --- Proxy ---

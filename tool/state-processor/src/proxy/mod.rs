@@ -5,9 +5,10 @@ impl<S> Processor<S> {
 	pub fn process_proxy(&mut self) -> &mut Self {
 		// Storage items.
 		// https://github.dev/darwinia-network/substrate/blob/darwinia-v0.12.5/frame/proxy/src/lib.rs#L599
-		// Skip the `Announcements`.
-		// Need to make sure the storage is empty.
-		//
+		if self.solo_state.starts_with(&item_key(b"Proxy", b"Announcements")) {
+			log::error!("The `Proxy::Announcements` not empty");
+		}
+
 		// The size of encoded `pallet_proxy::ProxyDefinition` is 37 bytes.
 		let mut proxies = <Map<(Vec<[u8; 37]>, u128)>>::default();
 
