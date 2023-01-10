@@ -24,6 +24,13 @@ struct Tester {
 	shell_state: State<()>,
 }
 
+pub fn two_x64_concat_to_string<D>(data: D) -> String
+where
+	D: AsRef<[u8]>,
+{
+	array_bytes::bytes2hex("", subhasher::twox64_concat(data))
+}
+
 fn get_last_40(key: &str, _: &str) -> String {
 	format!("0x{}", &key[key.len() - 40..])
 }
@@ -673,5 +680,97 @@ fn proxy_reserved_adjust() {
 			(solo_account.data.free + solo_account.data.reserved) * GWEI
 		);
 		assert_eq!(migrated_account.data.reserved, 0);
+	});
+}
+
+// --- Identity ---
+
+#[test]
+fn identities_adjust() {
+	run_test(|tester| {
+		// https://crab.subscan.io/account/5GNKjtPsXmHr4hkqTdgeZmp7nT6ALkrHnWK8GZNPQYfnNtkA
+		let test_addr: [u8; 32] = hex_n_into_unchecked::<_, _, 32>(
+			"0xbe60e61c9a14ee4682d798c883dfec2df4ff34ad1c2e1bc8efcaa5a96f021355",
+		);
+
+		let mut registration = Registration::default();
+		tester.solo_state.get_value(
+			b"Identity",
+			b"IdentityOf",
+			&two_x64_concat_to_string(test_addr.encode()),
+			&mut registration,
+		);
+		assert_ne!(registration.deposit, 0);
+		assert_eq!(registration.info.display, Data::Raw(b"evolution".to_vec()));
+
+		// after migrated
+		let mut migrated_registration = Registration::default();
+		tester.shell_state.get_value(
+			b"AccountMigration",
+			b"IdentityOf",
+			&two_x64_concat_to_string(test_addr.encode()),
+			&mut migrated_registration,
+		);
+		assert_eq!(migrated_registration.deposit, registration.deposit * GWEI);
+		assert_eq!(migrated_registration.info.display, registration.info.display);
+	});
+}
+
+#[test]
+fn registrars_adust() {
+	run_test(|tester| {
+		let mut registrars: Vec<Option<RegistrarInfo>> = Vec::new();
+		tester.solo_state.get_value(b"Identity", b"Registrars", "", &mut registrars);
+		assert!(registrars.len() > 0);
+
+		// after migrated
+		let mut migrated_registrars: Vec<Option<RegistrarInfo>> = Vec::new();
+		tester.solo_state.get_value(
+			b"AccountMigration",
+			b"Registrars",
+			"",
+			&mut migrated_registrars,
+		);
+
+		registrars.iter().zip(migrated_registrars.iter()).for_each(|(a, b)| match (a, b) {
+			(Some(a), Some(b)) => {
+				assert_eq!(a.account, b.account);
+				assert_eq!(a.fee * GWEI, b.fee);
+				assert_eq!(a.fields, b.fields);
+			},
+			(None, None) => {},
+			_ => panic!("this should never happen!"),
+		});
+	});
+}
+
+#[test]
+fn super_of_adjust() {
+	run_test(|tester| {
+		// https://crab.subscan.io/account/5HizvHpWBowXaH3VmVsVXF7V1YkdbX7LWpbb9ToevnvxdHpg
+		let addr = "0xfa61ee117cf487dc39620fac6c3e855111f68435827a1c6468a45b8ab73b7a93";
+		let account_id: [u8; 32] = hex_n_into_unchecked::<_, _, 32>(addr);
+
+		let mut subs_of = (0u128, Vec::<[u8; 32]>::default());
+		tester.solo_state.get_value(
+			b"Identity",
+			b"SubsOf",
+			&two_x64_concat_to_string(account_id.encode()),
+			&mut subs_of,
+		);
+		assert_ne!(subs_of.0, 0);
+		assert_ne!(subs_of.1.len(), 0);
+
+		let solo_account = tester.solo_accounts.get(addr).unwrap();
+		assert_ne!(solo_account.data.reserved, 0);
+
+		// after migrated
+		let migrated_account = tester.migration_accounts.get(addr).unwrap();
+		println!("migrated_account: {:?}", migrated_account);
+		println!("migrated_account: {:?}", solo_account);
+		assert_eq!(
+			solo_account.data.reserved * GWEI - migrated_account.data.reserved,
+			subs_of.0 * GWEI
+		);
 	});
 }

@@ -20,7 +20,7 @@ impl<S> Processor<S> {
 			.take_map(b"Identity", b"IdentityOf", &mut identities, get_hashed_key)
 			.take_value(b"Identity", b"Registrars", "", &mut registrars)
 			.take_map(b"Identity", b"SuperOf", &mut super_of, get_last_64_key)
-			.take_map(b"Identity", b"SubsOf", &mut subs_of, get_hashed_key);
+			.take_map(b"Identity", b"SubsOf", &mut subs_of, get_last_64_key);
 
 		log::info!("update identities's deposit and judgement decimal.");
 		identities.iter_mut().for_each(|(_k, v)| {
@@ -39,26 +39,9 @@ impl<S> Processor<S> {
 		});
 
 		log::info!("analyze `Identity::SuperOf` and `Identity::SubsOf` and update identity's reserved balance.");
-		subs_of.iter_mut().for_each(|(_, (subs_deposit, sub_ids))| {
-			for sub_id in sub_ids {
-				if let Some((super_id, _)) = super_of.get(&array_bytes::bytes2hex("0x", sub_id)) {
-					// `Identity::SubsOf` use `Twox64Concat` hash, calc the key manually.
-					self.shell_state
-						.map
-						.entry(full_key(
-							b"AccountMigration",
-							b"Accounts",
-							&blake2_128_concat_to_string(&super_id),
-						))
-						.and_modify(|v| {
-							let mut info = decode::<AccountInfo>(v).expect("Never happened!");
-							let deposit = SUB_ACCOUNT_DEPOSIT.min(*subs_deposit);
-							*subs_deposit -= deposit;
-
-							info.data.reserved -= deposit * GWEI;
-						});
-				}
-			}
+		subs_of.iter_mut().for_each(|(super_id, (subs_deposit, _))| {
+			let super_id: [u8; 32] = array_bytes::hex_n_into_unchecked::<_, _, 32>(super_id);
+			self.shell_state.unreserve(super_id, *subs_deposit * GWEI);
 		});
 
 		log::info!("set `AccountMigration::IdentityOf` and`AccountMigration::Registrars`.");

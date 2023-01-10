@@ -159,7 +159,7 @@ pub struct Ledger {
 	pub unstaking_deposits: Vec<(u16, u32)>,
 }
 
-#[derive(Debug, Encode)]
+#[derive(Default, Debug, Encode)]
 pub struct Registration {
 	pub judgements: Vec<(u32, Judgement)>,
 	pub deposit: u128,
@@ -187,7 +187,7 @@ pub enum Judgement {
 	Erroneous,
 }
 
-#[derive(Debug, Encode, Decode)]
+#[derive(Default, Debug, Encode, Decode)]
 pub struct IdentityInfo {
 	pub additional: Vec<(Data, Data)>,
 	pub display: Data,
@@ -200,7 +200,7 @@ pub struct IdentityInfo {
 	pub twitter: Data,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum Data {
 	None,
 	Raw(Vec<u8>),
@@ -208,6 +208,12 @@ pub enum Data {
 	Sha256([u8; 32]),
 	Keccak256([u8; 32]),
 	ShaThree256([u8; 32]),
+}
+
+impl Default for Data {
+	fn default() -> Self {
+		Data::None
+	}
 }
 
 impl Encode for Data {
@@ -253,14 +259,14 @@ impl EncodeLike for Data {}
 
 use enumflags2::{bitflags, BitFlags};
 
-#[derive(Debug, Encode, Decode)]
+#[derive(Debug, Encode, Decode, PartialEq, Eq)]
 pub struct RegistrarInfo {
 	pub account: [u8; 32],
 	pub fee: u128,
 	pub fields: IdentityFields,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct IdentityFields(pub BitFlags<IdentityField>);
 
 impl Encode for IdentityFields {
