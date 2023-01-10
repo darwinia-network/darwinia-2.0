@@ -12,7 +12,7 @@ version     = "6.0.0"
 [dependencies]
 # crates.io
 codec      = { default-features = false, package = "parity-scale-codec", version = "3.2.1", features = ["derive"] }
-ethereum   = { default-features = false, version = "0.12.0",  features = ["with-codec"] }
+ethereum   = { default-features = false, version = "0.14.0",  features = ["with-codec"] }
 scale-info = { default-features = false, version = "2.3.0", features = ["derive"] }
 
 # frontier
