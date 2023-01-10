@@ -251,14 +251,14 @@ pub mod pallet {
 				<darwinia_staking::Ledgers<T>>::insert(to, l);
 			}
 
-			if let Some(id) = IdentityOf::<T>::take(from.clone()) {
+			if let Some(identity) = IdentityOf::<T>::take(from.clone()) {
 				put_storage_value(
 					b"Identity",
 					b"IdentityOf",
 					&Twox64Concat::hash(&to.encode()),
-					id.clone(),
+					identity.clone(),
 				);
-				<pallet_balances::Pallet<T>>::reserve(&to, id.deposit)?;
+				<pallet_balances::Pallet<T>>::reserve(&to, identity.deposit)?;
 			}
 			let mut chain_rs = <pallet_identity::Pallet<T>>::registrars().into_inner();
 			for (i, rs) in Self::registrars().iter().enumerate() {
