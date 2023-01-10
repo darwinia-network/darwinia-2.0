@@ -54,10 +54,10 @@ impl pallet_scheduler::Config for Runtime {
 	type MaximumWeight = MaximumSchedulerWeight;
 	type OriginPrivilegeCmp = OriginPrivilegeCmp;
 	type PalletsOrigin = OriginCaller;
+	type Preimages = Preimage;
 	type RuntimeCall = RuntimeCall;
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeOrigin = RuntimeOrigin;
 	type ScheduleOrigin = Root;
 	type WeightInfo = ();
-	type Preimages = Preimage;
 }
