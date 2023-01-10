@@ -25,7 +25,7 @@ pub enum AssetIds {
 }
 
 frame_support::parameter_types! {
-	const Signers: Vec<AccountId> = vec![ROOT];
+	pub Signers: Vec<AccountId> = vec![ROOT];
 }
 
 impl pallet_assets::Config for Runtime {

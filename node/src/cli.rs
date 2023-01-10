@@ -93,7 +93,7 @@ pub struct Cli {
 	#[arg(raw = true)]
 	pub relay_chain_args: Vec<String>,
 
-	#[arg(flatten)]
+	#[command(flatten)]
 	pub eth_args: EthArgs,
 }
 
