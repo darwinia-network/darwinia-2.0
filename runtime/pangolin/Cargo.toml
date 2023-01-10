@@ -71,8 +71,8 @@ pallet-evm-precompile-modexp   = { default-features = false, git = "https://gith
 pallet-evm-precompile-simple   = { default-features = false, git = "https://github.com/darwinia-network/frontier", branch = "prepare-polkadot-v0.9.33" }
 
 # moonbeam
-precompile-utils = { default-features = false, git = "https://github.com/darwinia-network/moonbeam", branch = "polkadot-v0.9.33" }
-xcm-primitives   = { default-features = false, git = "https://github.com/darwinia-network/moonbeam", branch = "polkadot-v0.9.33" }
+precompile-utils = { default-features = false, git = "https://github.com/darwinia-network/moonbeam", branch = "prepare-polkadot-v0.9.33" }
+xcm-primitives   = { default-features = false, git = "https://github.com/darwinia-network/moonbeam", branch = "prepare-polkadot-v0.9.33" }
 
 # polkadot
 pallet-xcm              = { default-features = false, git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.33" }

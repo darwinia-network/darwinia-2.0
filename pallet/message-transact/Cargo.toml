@@ -42,7 +42,7 @@ bp-runtime             = { git = "https://github.com/darwinia-network/darwinia-m
 fp-self-contained = { git = "https://github.com/darwinia-network/frontier", branch = "prepare-polkadot-v0.9.33" }
 
 # moonbeam
-precompile-utils = { git = "https://github.com/darwinia-network/moonbeam.git", branch = "polkadot-v0.9.33", features = ["testing"] }
+precompile-utils = { git = "https://github.com/darwinia-network/moonbeam", branch = "prepare-polkadot-v0.9.33", features = ["testing"] }
 
 # substrate
 pallet-balances  = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33" }
