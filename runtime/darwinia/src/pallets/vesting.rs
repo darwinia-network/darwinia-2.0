@@ -19,13 +19,18 @@
 // darwinia
 use crate::*;
 
+frame_support::parameter_types! {
+	pub UnvestedFundsAllowedWithdrawReasons: frame_support::traits::WithdrawReasons =
+		frame_support::traits::WithdrawReasons::except(frame_support::traits::WithdrawReasons::TRANSFER | frame_support::traits::WithdrawReasons::RESERVE);
+}
+
 impl pallet_vesting::Config for Runtime {
 	type BlockNumberToBalance = sp_runtime::traits::ConvertInto;
 	type Currency = Balances;
 	type MinVestedTransfer = ConstU128<UNIT>;
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = ();
-
+	type UnvestedFundsAllowedWithdrawReasons = UnvestedFundsAllowedWithdrawReasons;
 	// `VestingInfo` encode length is 36bytes. 28 schedules gets encoded as 1009 bytes, which is the
 	// highest number of schedules that encodes less than 2^10.
 	const MAX_VESTING_SCHEDULES: u32 = 28;
