@@ -30,7 +30,7 @@ impl pallet_assets::Config for Runtime {
 	type AssetDeposit = ConstU128<0>;
 	type AssetId = AssetId;
 	type Balance = Balance;
-	type CreateOrigin = EnsureRoot<AccountId>;
+	type CreateOrigin = frame_support::traits::AsEnsureOriginWithArg<frame_system::EnsureRoot<AccountId>>;
 	type Currency = Balances;
 	type Extra = ();
 	type ForceOrigin = EnsureRoot<AccountId>;
