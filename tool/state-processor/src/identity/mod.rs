@@ -42,7 +42,6 @@ impl<S> Processor<S> {
 		subs_of.iter_mut().for_each(|(_, (subs_deposit, sub_ids))| {
 			for sub_id in sub_ids {
 				if let Some((super_id, _)) = super_of.get(&array_bytes::bytes2hex("0x", sub_id)) {
-
 					// `Identity::SubsOf` use `Twox64Concat` hash, calc the key manually.
 					self.shell_state
 						.map

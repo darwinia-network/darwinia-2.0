@@ -24,10 +24,6 @@ struct Tester {
 	shell_state: State<()>,
 }
 
-fn get_last_64(key: &str, _: &str) -> String {
-	format!("0x{}", &key[key.len() - 64..])
-}
-
 fn get_last_40(key: &str, _: &str) -> String {
 	format!("0x{}", &key[key.len() - 40..])
 }
@@ -46,14 +42,24 @@ impl Tester {
 		let mut solo_remaining_kton = <Map<u128>>::default();
 		let mut solo_evm_codes = <Map<Vec<u8>>>::default();
 		solo_state
-			.take_map(b"System", b"Account", &mut solo_accounts, get_last_64)
-			.take_map(b"Ethereum", b"RemainingRingBalance", &mut solo_remaining_ring, get_last_64)
-			.take_map(b"Ethereum", b"RemainingKtonBalance", &mut solo_remaining_kton, get_last_64)
+			.take_map(b"System", b"Account", &mut solo_accounts, get_last_64_key)
+			.take_map(
+				b"Ethereum",
+				b"RemainingRingBalance",
+				&mut solo_remaining_ring,
+				get_last_64_key,
+			)
+			.take_map(
+				b"Ethereum",
+				b"RemainingKtonBalance",
+				&mut solo_remaining_kton,
+				get_last_64_key,
+			)
 			.take_map(b"EVM", b"AccountCodes", &mut solo_evm_codes, get_last_40);
 
 		// para chain
 		let mut para_accounts = <Map<AccountInfo>>::default();
-		para_state.take_map(b"System", b"Account", &mut para_accounts, get_last_64);
+		para_state.take_map(b"System", b"Account", &mut para_accounts, get_last_64_key);
 
 		// processed
 		let mut shell_system_accounts = <Map<AccountInfo>>::default();
@@ -66,9 +72,9 @@ impl Tester {
 				b"AccountMigration",
 				b"KtonAccounts",
 				&mut migration_kton_accounts,
-				get_last_64,
+				get_last_64_key,
 			)
-			.take_map(b"AccountMigration", b"Accounts", &mut migration_accounts, get_last_64)
+			.take_map(b"AccountMigration", b"Accounts", &mut migration_accounts, get_last_64_key)
 			.take_map(b"Evm", b"AccountCodes", &mut shell_evm_codes, get_last_40);
 
 		Self {
