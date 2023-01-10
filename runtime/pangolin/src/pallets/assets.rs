@@ -24,6 +24,10 @@ pub enum AssetIds {
 	PKton = 1026,
 }
 
+frame_support::parameter_types! {
+	const Signers: Vec<AccountId> = vec![ROOT];
+}
+
 impl pallet_assets::Config for Runtime {
 	type ApprovalDeposit = ConstU128<0>;
 	type AssetAccountDeposit = ConstU128<0>;
@@ -31,7 +35,7 @@ impl pallet_assets::Config for Runtime {
 	type AssetId = AssetId;
 	type Balance = Balance;
 	type CreateOrigin =
-		frame_support::traits::AsEnsureOriginWithArg<frame_system::EnsureRoot<AccountId>>;
+		frame_support::traits::AsEnsureOriginWithArg<frame_system::EnsureSignedBy<frame_support::traits::IsInVec<Signers>, AccountId>>;
 	type Currency = Balances;
 	type Extra = ();
 	type ForceOrigin = EnsureRoot<AccountId>;
