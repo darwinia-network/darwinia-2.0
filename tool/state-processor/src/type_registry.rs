@@ -1,7 +1,8 @@
-// crates.io
-use parity_scale_codec::{Decode, Encode, EncodeLike};
-use sp_runtime::traits::AppendZerosInput;
+// std
 use std::iter::once;
+// crates.io
+use enumflags2::{bitflags, BitFlags};
+use parity_scale_codec::{Decode, Encode, EncodeLike, Error, Input};
 
 #[derive(Default, Debug, PartialEq, Eq, Encode, Decode)]
 pub struct AccountInfo {
@@ -167,10 +168,7 @@ pub struct Registration {
 }
 
 impl Decode for Registration {
-	fn decode<I: parity_scale_codec::Input>(
-		input: &mut I,
-	) -> Result<Self, parity_scale_codec::Error> {
-		// TODO: Any way to remove the AppendZerosInput
+	fn decode<I: Input>(input: &mut I) -> Result<Self, Error> {
 		let (judgements, deposit, info) = Decode::decode(&mut AppendZerosInput::new(input))?;
 		Ok(Self { judgements, deposit, info })
 	}
@@ -235,9 +233,7 @@ impl Encode for Data {
 }
 
 impl Decode for Data {
-	fn decode<I: parity_scale_codec::Input>(
-		input: &mut I,
-	) -> Result<Self, parity_scale_codec::Error> {
+	fn decode<I: Input>(input: &mut I) -> Result<Self, Error> {
 		let b = input.read_byte()?;
 		Ok(match b {
 			0 => Data::None,
@@ -250,14 +246,12 @@ impl Decode for Data {
 			35 => Data::Sha256(<[u8; 32]>::decode(input)?),
 			36 => Data::Keccak256(<[u8; 32]>::decode(input)?),
 			37 => Data::ShaThree256(<[u8; 32]>::decode(input)?),
-			_ => return Err(parity_scale_codec::Error::from("invalid leading byte")),
+			_ => return Err(Error::from("invalid leading byte")),
 		})
 	}
 }
 
 impl EncodeLike for Data {}
-
-use enumflags2::{bitflags, BitFlags};
 
 #[derive(Debug, Encode, Decode, PartialEq, Eq)]
 pub struct RegistrarInfo {
@@ -275,9 +269,7 @@ impl Encode for IdentityFields {
 	}
 }
 impl Decode for IdentityFields {
-	fn decode<I: parity_scale_codec::Input>(
-		input: &mut I,
-	) -> Result<Self, parity_scale_codec::Error> {
+	fn decode<I: Input>(input: &mut I) -> Result<Self, Error> {
 		let field = u64::decode(input)?;
 		Ok(Self(<BitFlags<IdentityField>>::from_bits(field as u64).map_err(|_| "invalid value")?))
 	}
@@ -295,4 +287,44 @@ pub enum IdentityField {
 	PgpFingerprint = 0b0000000000000000000000000000000000000000000000000000000000100000,
 	Image = 0b0000000000000000000000000000000000000000000000000000000001000000,
 	Twitter = 0b0000000000000000000000000000000000000000000000000000000010000000,
+}
+
+// Copied from substrate repo
+pub struct AppendZerosInput<'a, T>(&'a mut T);
+impl<'a, T> AppendZerosInput<'a, T> {
+	pub fn new(input: &'a mut T) -> Self {
+		Self(input)
+	}
+}
+impl<'a, T: Input> Input for AppendZerosInput<'a, T> {
+	fn remaining_len(&mut self) -> Result<Option<usize>, Error> {
+		Ok(None)
+	}
+
+	fn read(&mut self, into: &mut [u8]) -> Result<(), Error> {
+		let remaining = self.0.remaining_len()?;
+		let completed = if let Some(n) = remaining {
+			let readable = into.len().min(n);
+			// this should never fail if `remaining_len` API is implemented correctly.
+			self.0.read(&mut into[..readable])?;
+			readable
+		} else {
+			// Fill it byte-by-byte.
+			let mut i = 0;
+			while i < into.len() {
+				if let Ok(b) = self.0.read_byte() {
+					into[i] = b;
+					i += 1;
+				} else {
+					break;
+				}
+			}
+			i
+		};
+		// Fill the rest with zeros.
+		for i in &mut into[completed..] {
+			*i = 0;
+		}
+		Ok(())
+	}
 }
