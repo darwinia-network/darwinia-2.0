@@ -1,47 +1,38 @@
 // darwinia
 use crate::*;
 
-// TODO: Note this value is different between pangolin/crab and darwinia network.
-// Pangolin: https://github.com/darwinia-network/darwinia-common/blob/main/node/runtime/pangolin/src/pallets/identity.rs#L10
-// Crab: https://github.com/darwinia-network/darwinia/blob/main/runtime/crab/src/pallets/identity.rs#L10
-// Darwinia: https://github.com/darwinia-network/darwinia/blob/main/runtime/darwinia/src/pallets/identity.rs#L10
-const SUB_ACCOUNT_DEPOSIT: u128 = 2 * GWEI;
-
 impl<S> Processor<S> {
 	/// Only care about the solo chain, since parachains don't have identity now.
 	pub fn process_identity(&mut self) -> &mut Self {
 		let mut identities = <Map<Registration>>::default();
 		let mut registrars = Vec::<Option<RegistrarInfo>>::default();
-		let mut super_of = Map::<([u8; 32], Data)>::default();
 		let mut subs_of = Map::<(u128, Vec<[u8; 32]>)>::default();
 
 		log::info!("take `Identity::IdentityOf`, `Identity::Registrars`, `Identity::SuperOf` and `Identity::SuperOf`.");
 		self.solo_state
 			.take_map(b"Identity", b"IdentityOf", &mut identities, get_hashed_key)
 			.take_value(b"Identity", b"Registrars", "", &mut registrars)
-			.take_map(b"Identity", b"SuperOf", &mut super_of, get_last_64_key)
 			.take_map(b"Identity", b"SubsOf", &mut subs_of, get_last_64_key);
 
 		log::info!("update identities's deposit and judgement decimal.");
 		identities.iter_mut().for_each(|(_k, v)| {
 			v.adjust();
 		});
+
 		log::info!("update registrars fee decimal.");
 		registrars.iter_mut().for_each(|registar_info| match registar_info {
 			Some(info) => {
 				info.adjust();
 			},
-			None => {
-				log::error!(
-					"This gonna not matched, no request_judgement or provide_judgement in this case."
-				);
-			},
+			None => {},
 		});
 
-		log::info!("analyze `Identity::SuperOf` and `Identity::SubsOf` and update identity's reserved balance.");
+		log::info!("update super_id's reserved balance.");
 		subs_of.iter_mut().for_each(|(super_id, (subs_deposit, _))| {
-			let super_id: [u8; 32] = array_bytes::hex_n_into_unchecked::<_, _, 32>(super_id);
-			self.shell_state.unreserve(super_id, *subs_deposit * GWEI);
+			self.shell_state.unreserve(
+				array_bytes::hex_n_into_unchecked::<_, [u8; 32], 32>(super_id),
+				*subs_deposit * GWEI,
+			);
 		});
 
 		log::info!("set `AccountMigration::IdentityOf` and`AccountMigration::Registrars`.");

@@ -766,8 +766,6 @@ fn super_of_adjust() {
 
 		// after migrated
 		let migrated_account = tester.migration_accounts.get(addr).unwrap();
-		println!("migrated_account: {:?}", migrated_account);
-		println!("migrated_account: {:?}", solo_account);
 		assert_eq!(
 			solo_account.data.reserved * GWEI - migrated_account.data.reserved,
 			subs_of.0 * GWEI
