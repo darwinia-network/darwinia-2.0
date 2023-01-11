@@ -312,7 +312,6 @@ frame_support::construct_runtime! {
 		// EVM stuff.
 		Ethereum: pallet_ethereum = 31,
 		Evm: pallet_evm = 32,
-		BaseFee: pallet_base_fee = 33,
 		MessageTransact: darwinia_message_transact = 39,
 
 		// S2S stuff.
@@ -618,11 +617,10 @@ sp_api::impl_runtime_apis! {
 		}
 
 		fn elasticity() -> Option<Permill> {
-			Some(BaseFee::elasticity())
+			None
 		}
 
 		fn gas_limit_multiplier_support() {
-			todo!()
 		}
 	}
 

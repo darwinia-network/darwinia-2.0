@@ -62,7 +62,6 @@ pallet-fee-market        = { default-features = false, git = "https://github.com
 # frontier
 fp-rpc                         = { default-features = false, git = "https://github.com/darwinia-network/frontier", branch = "prepare-polkadot-v0.9.33" }
 fp-self-contained              = { default-features = false, git = "https://github.com/darwinia-network/frontier", branch = "prepare-polkadot-v0.9.33" }
-pallet-base-fee                = { default-features = false, git = "https://github.com/darwinia-network/frontier", branch = "prepare-polkadot-v0.9.33" }
 pallet-ethereum                = { default-features = false, features = ["forbid-evm-reentrancy"], git = "https://github.com/darwinia-network/frontier", branch = "prepare-polkadot-v0.9.33" }
 pallet-evm                     = { default-features = false, features = ["forbid-evm-reentrancy"], git = "https://github.com/darwinia-network/frontier", branch = "prepare-polkadot-v0.9.33" }
 pallet-evm-precompile-blake2   = { default-features = false, git = "https://github.com/darwinia-network/frontier", branch = "prepare-polkadot-v0.9.33" }
@@ -175,7 +174,6 @@ std = [
 	# frontier
 	"fp-rpc/std",
 	"fp-self-contained/std",
-	"pallet-base-fee/std",
 	"pallet-ethereum/std",
 	"pallet-evm/std",
 	"pallet-evm-precompile-blake2/std",
@@ -310,7 +308,6 @@ try-runtime = [
 	"parachain-info/try-runtime",
 
 	# frontier
-	"pallet-base-fee/try-runtime",
 	"pallet-ethereum/try-runtime",
 	"pallet-evm/try-runtime",
 

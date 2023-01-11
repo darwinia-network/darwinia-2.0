@@ -199,7 +199,6 @@ pub fn genesis_config() -> ChainSpec {
 				// EVM stuff.
 				ethereum: Default::default(),
 				evm: Default::default(),
-				base_fee: Default::default(),
 			}
 		},
 		Vec::new(),
@@ -326,6 +325,5 @@ fn testnet_genesis(
 				)
 			},
 		},
-		base_fee: Default::default(),
 	}
 }
