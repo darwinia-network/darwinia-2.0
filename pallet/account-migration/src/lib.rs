@@ -258,7 +258,6 @@ pub mod pallet {
 					&Twox64Concat::hash(&to.encode()),
 					identity.clone(),
 				);
-				<pallet_balances::Pallet<T>>::reserve(&to, identity.deposit)?;
 			}
 			let mut chain_rs = <pallet_identity::Pallet<T>>::registrars().into_inner();
 			for (i, rs) in Self::registrars().iter().enumerate() {
