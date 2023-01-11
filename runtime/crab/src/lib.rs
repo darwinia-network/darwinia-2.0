@@ -620,9 +620,7 @@ sp_api::impl_runtime_apis! {
 			None
 		}
 
-		fn gas_limit_multiplier_support() {
-			todo!()
-		}
+		fn gas_limit_multiplier_support() {}
 	}
 
 	impl fp_rpc::ConvertTransactionRuntimeApi<Block> for Runtime {
