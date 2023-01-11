@@ -45,8 +45,8 @@ use sp_runtime::app_crypto::AppKey;
 type FullBackend = sc_service::TFullBackend<Block>;
 type FullClient<RuntimeApi, Executor> =
 	sc_service::TFullClient<Block, RuntimeApi, sc_executor::NativeElseWasmExecutor<Executor>>;
-type ParachainBlockImport<RuntimeApi> =
-	cumulus_client_consensus_common::ParachainBlockImport<Arc<ParachainClient<RuntimeApi>>>;
+type ParachainBlockImport<RuntimeApi, Executor> =
+	cumulus_client_consensus_common::ParachainBlockImport<Arc<FullClient<RuntimeApi, Executor>>>;
 
 /// Can be called for a `Configuration` to check if it is a configuration for the `Crab` network.
 pub trait IdentifyVariant {
@@ -125,7 +125,7 @@ pub fn new_partial<RuntimeApi, Executor>(
 			Option<fc_rpc_core::types::FilterPool>,
 			fc_rpc_core::types::FeeHistoryCache,
 			fc_rpc_core::types::FeeHistoryCacheLimit,
-			ParachainBlockImport<RuntimeApi>,
+			ParachainBlockImport<RuntimeApi, Executor>,
 			Option<sc_telemetry::Telemetry>,
 			Option<sc_telemetry::TelemetryWorkerHandle>,
 		),
@@ -228,7 +228,12 @@ async fn build_relay_chain_interface(
 )> {
 	match collator_options.relay_chain_rpc_url {
 		Some(relay_chain_url) =>
-			build_minimal_relay_chain_node(polkadot_config, task_manager, relay_chain_url).await,
+			cumulus_relay_chain_minimal_node::build_minimal_relay_chain_node(
+				polkadot_config,
+				task_manager,
+				relay_chain_url,
+			)
+			.await,
 		None => cumulus_relay_chain_inprocess_interface::build_inprocess_relay_chain(
 			polkadot_config,
 			parachain_config,
@@ -267,7 +272,7 @@ where
 	) -> Result<jsonrpsee::RpcModule<()>, sc_service::Error>,
 	BIC: FnOnce(
 		Arc<FullClient<RuntimeApi, Executor>>,
-		ParachainBlockImport<RuntimeApi>,
+		ParachainBlockImport<RuntimeApi, Executor>,
 		Option<&substrate_prometheus_endpoint::Registry>,
 		Option<sc_telemetry::TelemetryHandle>,
 		&sc_service::TaskManager,
@@ -475,7 +480,7 @@ where
 /// Build the import queue for the parachain runtime.
 pub fn parachain_build_import_queue<RuntimeApi, Executor>(
 	client: Arc<FullClient<RuntimeApi, Executor>>,
-	block_import: ParachainBlockImport,
+	block_import: ParachainBlockImport<RuntimeApi, Executor>,
 	config: &sc_service::Configuration,
 	telemetry: Option<sc_telemetry::TelemetryHandle>,
 	task_manager: &sc_service::TaskManager,
@@ -605,7 +610,7 @@ where
 						Ok((slot, timestamp, parachain_inherent))
 					}
 				},
-				block_import: client.clone(),
+				block_import,
 				para_client: client,
 				backoff_authoring_blocks: Option::<()>::None,
 				sync_oracle,
@@ -662,6 +667,7 @@ where
 				filter_pool,
 				fee_history_cache,
 				fee_history_cache_limit,
+				_block_import,
 				_telemetry,
 				_telemetry_worker_handle,
 			),
@@ -778,6 +784,7 @@ where
 				cumulus_client_consensus_aura::SlotProportion::new(1f32 / 16f32),
 			),
 			telemetry: None,
+			compatibility_mode: Default::default(),
 		})?;
 
 		// the AURA authoring task is considered essential, i.e. if it
