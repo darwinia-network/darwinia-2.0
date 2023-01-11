@@ -40,10 +40,10 @@ fn sr25519_signable_message_should_work() {
 			],
 		])
 		.for_each(|((chain_id, spec_name), message)| {
-			assert_eq!(
-				sr25519_signable_message(*chain_id, spec_name, &Default::default()),
-				message
-			);
+			let m = sr25519_signable_message(*chain_id, spec_name, &Default::default());
+
+			assert_eq!(&m[..m.len() - 32], SIGN_TIPS);
+			assert_eq!(m[m.len() - 32..], message);
 		});
 }
 

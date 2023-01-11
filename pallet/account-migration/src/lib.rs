@@ -68,8 +68,6 @@ use sp_runtime::{
 };
 use sp_std::prelude::*;
 
-type Message = [u8; 32];
-
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
@@ -277,25 +275,37 @@ pub mod pallet {
 }
 pub use pallet::*;
 
+const SIGN_TIPS: &[u8] = b"\
+	Hi there from `account-migration`! \
+	Sign this message to prove you have access to this wallet and we'll do the migration for you. \
+	This won't cost you any. \
+	To stop hackers using your wallet, here's a unique message ID: \
+";
+
 fn sr25519_signable_message(
 	chain_id: u64,
 	spec_name: &[u8],
 	account_id_20: &AccountId20,
-) -> Message {
-	hashing::blake2_256(
-		&[
-			&hashing::blake2_256(
-				&[&chain_id.to_le_bytes(), spec_name, b"::account-migration"].concat(),
-			),
-			account_id_20.0.as_slice(),
-		]
-		.concat(),
-	)
+) -> Vec<u8> {
+	[
+		SIGN_TIPS,
+		hashing::blake2_256(
+			&[
+				&hashing::blake2_256(
+					&[&chain_id.to_le_bytes(), spec_name, b"::account-migration"].concat(),
+				),
+				account_id_20.0.as_slice(),
+			]
+			.concat(),
+		)
+		.as_slice(),
+	]
+	.concat()
 }
 
 fn verify_sr25519_signature(
 	public_key: &AccountId32,
-	message: &Message,
+	message: &[u8],
 	signature: &Signature,
 ) -> bool {
 	// Actually, `&[u8]` is `[u8; 32]` here.
@@ -306,5 +316,5 @@ fn verify_sr25519_signature(
 		return false;
 	};
 
-	signature.verify(message.as_slice(), public_key)
+	signature.verify(message, public_key)
 }
