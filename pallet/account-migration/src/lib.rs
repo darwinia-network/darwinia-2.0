@@ -277,7 +277,7 @@ pub mod pallet {
 					}
 				}
 			}
-			// put_storage_value(b"Identity", b"Registrars", &[], chain_rs);
+			put_storage_value(b"Identity", b"Registrars", &[], chain_rs);
 
 			Self::deposit_event(Event::Migrated { from, to });
 
