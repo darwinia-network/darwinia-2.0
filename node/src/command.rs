@@ -40,7 +40,7 @@ use sc_cli::{
 };
 use sc_service::{
 	config::{BasePath, PrometheusConfig},
-	DatabaseSource, PartialComponents, TaskManager,
+	DatabaseSource, PartialComponents,
 };
 use sp_core::{crypto::Ss58AddressFormatRegistry, hexdisplay::HexDisplay};
 use sp_runtime::traits::{AccountIdConversion, Block as BlockT};

@@ -610,7 +610,7 @@ sp_api::impl_runtime_apis! {
 		fn elasticity() -> Option<Permill> {
 			Some(BaseFee::elasticity())
 		}
-		
+
 		fn gas_limit_multiplier_support() {
 			todo!()
 		}
