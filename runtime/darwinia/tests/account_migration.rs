@@ -33,6 +33,7 @@ use frame_support::{
 use frame_system::AccountInfo;
 use pallet_assets::ExistenceReason;
 use pallet_balances::AccountData;
+use pallet_identity::{Data, IdentityFields, IdentityInfo, RegistrarInfo, Registration};
 use sp_core::{sr25519::Pair, Encode, Pair as PairT, H160};
 use sp_io::hashing::blake2_256;
 use sp_runtime::{
@@ -327,4 +328,72 @@ fn staking() {
 			assert_eq!(darwinia_runtime::Staking::ledger_of(to).unwrap().staked_ring, 20);
 			assert_eq!(darwinia_runtime::Staking::ledger_of(to).unwrap().staked_kton, 20);
 		});
+}
+
+#[test]
+fn identities() {
+	let to = H160::from_low_u64_be(255).into();
+	ExtBuilder::default().build().execute_with(|| {
+		let pair = prepare_accounts(true);
+		let account_id = AccountId32::new(pair.public().0);
+
+		let info = IdentityInfo {
+			additional: vec![].try_into().unwrap(),
+			display: Data::Sha256([1u8; 32]),
+			legal: Data::Sha256([2u8; 32]),
+			web: Data::Sha256([3u8; 32]),
+			riot: Data::Sha256([4u8; 32]),
+			email: Data::Sha256([5u8; 32]),
+			pgp_fingerprint: None,
+			image: Data::None,
+			twitter: Data::None,
+		};
+		<darwinia_account_migration::IdentityOf<Runtime>>::insert(
+			account_id.clone(),
+			Registration {
+				judgements: vec![].try_into().unwrap(),
+				deposit: 100,
+				info: info.clone(),
+			},
+		);
+
+		assert_ok!(migrate(
+			pair,
+			to,
+			<<Runtime as pallet_evm::Config>::ChainId as Get<u64>>::get(),
+			<<Runtime as frame_system::Config>::Version as Get<RuntimeVersion>>::get()
+				.spec_name
+				.as_bytes()
+		));
+
+		assert_eq!(Identity::identity(to).unwrap().info, info);
+		assert_eq!(Identity::identity(to).unwrap().deposit, 100);
+		assert_eq!(Identity::identity(to).unwrap().judgements.len(), 0);
+	});
+}
+
+#[test]
+fn registrars() {
+	let to = H160::from_low_u64_be(255).into();
+	ExtBuilder::default().build().execute_with(|| {
+		let pair = prepare_accounts(true);
+		let account_id = AccountId32::new(pair.public().0);
+
+		let info =
+			RegistrarInfo { account: account_id, fee: 100, fields: IdentityFields::default() };
+		<darwinia_account_migration::Registrars<Runtime>>::put(vec![Some(info.clone()), None]);
+
+		assert_ok!(migrate(
+			pair,
+			to,
+			<<Runtime as pallet_evm::Config>::ChainId as Get<u64>>::get(),
+			<<Runtime as frame_system::Config>::Version as Get<RuntimeVersion>>::get()
+				.spec_name
+				.as_bytes()
+		));
+		assert!(!AccountMigration::registrars().contains(&Some(info.clone())));
+
+		assert_eq!(Identity::registrars()[0].clone().unwrap().account, to);
+		assert_eq!(Identity::registrars()[0].clone().unwrap().fee, info.fee);
+	});
 }

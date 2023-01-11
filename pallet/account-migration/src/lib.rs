@@ -260,7 +260,7 @@ pub mod pallet {
 					b"Identity",
 					b"IdentityOf",
 					&Twox64Concat::hash(&to.encode()),
-					identity.clone(),
+					identity,
 				);
 			}
 			let mut chain_rs = <pallet_identity::Pallet<T>>::registrars().into_inner();
