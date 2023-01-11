@@ -55,10 +55,7 @@ use frame_support::{
 	log, migration,
 	migration::put_storage_value,
 	pallet_prelude::*,
-	traits::{
-		Currency, ExistenceRequirement::KeepAlive, LockableCurrency, ReservableCurrency,
-		WithdrawReasons,
-	},
+	traits::{Currency, ExistenceRequirement::KeepAlive, LockableCurrency, WithdrawReasons},
 	StorageHasher,
 };
 use frame_system::{pallet_prelude::*, AccountInfo, RawOrigin};
@@ -273,7 +270,7 @@ pub mod pallet {
 					}
 				}
 			}
-			put_storage_value(b"Identity", b"Registrars", &[], chain_rs);
+			// put_storage_value(b"Identity", b"Registrars", &[], chain_rs);
 
 			Self::deposit_event(Event::Migrated { from, to });
 
