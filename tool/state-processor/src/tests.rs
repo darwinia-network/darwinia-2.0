@@ -688,9 +688,9 @@ fn proxy_reserved_adjust() {
 #[test]
 fn identities_adjust() {
 	run_test(|tester| {
-		// https://crab.subscan.io/account/5GNKjtPsXmHr4hkqTdgeZmp7nT6ALkrHnWK8GZNPQYfnNtkA
+		// https://crab.subscan.io/account/5CcRAW3d6vi4Vq2BX9EeynS1rj7bqoZ5EPwPiLiJ422FsEbC
 		let test_addr: [u8; 32] = hex_n_into_unchecked::<_, _, 32>(
-			"0xbe60e61c9a14ee4682d798c883dfec2df4ff34ad1c2e1bc8efcaa5a96f021355",
+			"0x182fa92d7f04c79c541d5f117223fcb9f83f2e830c3c187f2622176ed68c3c1a",
 		);
 
 		let mut registration = Registration::default();
@@ -701,7 +701,9 @@ fn identities_adjust() {
 			&mut registration,
 		);
 		assert_ne!(registration.deposit, 0);
-		assert_eq!(registration.info.display, Data::Raw(b"evolution".to_vec()));
+		assert_eq!(registration.info.display, Data::Raw(b"COLD STORAGE CAPITAL".to_vec()));
+		assert_eq!(registration.info.email, Data::Raw(b"rbarraza@coldstoragecapital.com".to_vec()));
+		assert_eq!(registration.info.twitter, Data::Raw(b"@coldstoragecap".to_vec()));
 
 		// after migrated
 		let mut migrated_registration = Registration::default();
@@ -712,7 +714,10 @@ fn identities_adjust() {
 			&mut migrated_registration,
 		);
 		assert_eq!(migrated_registration.deposit, registration.deposit * GWEI);
+		assert_eq!(migrated_registration.judgements.len(), 0);
 		assert_eq!(migrated_registration.info.display, registration.info.display);
+		assert_eq!(migrated_registration.info.email, registration.info.email);
+		assert_eq!(migrated_registration.info.twitter, registration.info.twitter);
 	});
 }
 

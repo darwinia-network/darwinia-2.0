@@ -1,3 +1,5 @@
+use std::vec;
+
 // darwinia
 use crate::*;
 
@@ -73,11 +75,8 @@ impl Adjust for Unbonding {
 impl Adjust for Registration {
 	fn adjust(&mut self) {
 		self.deposit.adjust();
-		self.judgements.iter_mut().for_each(|(_, judgement)| {
-			if let Judgement::FeePaid(amount) = judgement {
-				amount.adjust()
-			}
-		})
+		// Reset the judgements
+		self.judgements = vec![];
 	}
 }
 
