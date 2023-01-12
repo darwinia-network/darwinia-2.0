@@ -18,10 +18,10 @@ smallvec = { version = "1.10" }
 dc-primitives = { default-features = false, path = "../../core/primitives" }
 
 # darwinia-messages-substrate
-bp-darwinia-core = { default-features = false, git = "https://github.com/darwinia-network/darwinia-messages-substrate", branch = "prepare-polkadot-v0.9.33" }
+bp-darwinia-core = { default-features = false, git = "https://github.com/darwinia-network/darwinia-messages-substrate", branch = "polkadot-v0.9.33" }
 
 # moonbeam
-account = { default-features = false, git = "https://github.com/darwinia-network/moonbeam", branch = "prepare-polkadot-v0.9.33" }
+account = { default-features = false, git = "https://github.com/darwinia-network/moonbeam", branch = "polkadot-v0.9.33" }
 
 # polkadot
 xcm          = { default-features = false, git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.33" }

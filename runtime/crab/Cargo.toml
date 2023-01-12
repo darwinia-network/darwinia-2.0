@@ -49,31 +49,31 @@ darwinia-staking                  = { default-features = false, path = "../../pa
 dc-primitives                     = { default-features = false, path = "../../core/primitives" }
 
 # darwinia-messages-substrate
-bp-message-dispatch      = { default-features = false, git = "https://github.com/darwinia-network/darwinia-messages-substrate", branch = "prepare-polkadot-v0.9.33" }
-bp-messages              = { default-features = false, git = "https://github.com/darwinia-network/darwinia-messages-substrate", branch = "prepare-polkadot-v0.9.33" }
-bp-polkadot-core         = { default-features = false, git = "https://github.com/darwinia-network/darwinia-messages-substrate", branch = "prepare-polkadot-v0.9.33" }
-bp-runtime               = { default-features = false, git = "https://github.com/darwinia-network/darwinia-messages-substrate", branch = "prepare-polkadot-v0.9.33" }
-bridge-runtime-common    = { default-features = false, git = "https://github.com/darwinia-network/darwinia-messages-substrate", branch = "prepare-polkadot-v0.9.33" }
-pallet-bridge-dispatch   = { default-features = false, git = "https://github.com/darwinia-network/darwinia-messages-substrate", branch = "prepare-polkadot-v0.9.33" }
-pallet-bridge-grandpa    = { default-features = false, git = "https://github.com/darwinia-network/darwinia-messages-substrate", branch = "prepare-polkadot-v0.9.33" }
-pallet-bridge-messages   = { default-features = false, git = "https://github.com/darwinia-network/darwinia-messages-substrate", branch = "prepare-polkadot-v0.9.33" }
-pallet-bridge-parachains = { default-features = false, git = "https://github.com/darwinia-network/darwinia-messages-substrate", branch = "prepare-polkadot-v0.9.33" }
-pallet-fee-market        = { default-features = false, git = "https://github.com/darwinia-network/darwinia-messages-substrate", branch = "prepare-polkadot-v0.9.33" }
+bp-message-dispatch      = { default-features = false, git = "https://github.com/darwinia-network/darwinia-messages-substrate", branch = "polkadot-v0.9.33" }
+bp-messages              = { default-features = false, git = "https://github.com/darwinia-network/darwinia-messages-substrate", branch = "polkadot-v0.9.33" }
+bp-polkadot-core         = { default-features = false, git = "https://github.com/darwinia-network/darwinia-messages-substrate", branch = "polkadot-v0.9.33" }
+bp-runtime               = { default-features = false, git = "https://github.com/darwinia-network/darwinia-messages-substrate", branch = "polkadot-v0.9.33" }
+bridge-runtime-common    = { default-features = false, git = "https://github.com/darwinia-network/darwinia-messages-substrate", branch = "polkadot-v0.9.33" }
+pallet-bridge-dispatch   = { default-features = false, git = "https://github.com/darwinia-network/darwinia-messages-substrate", branch = "polkadot-v0.9.33" }
+pallet-bridge-grandpa    = { default-features = false, git = "https://github.com/darwinia-network/darwinia-messages-substrate", branch = "polkadot-v0.9.33" }
+pallet-bridge-messages   = { default-features = false, git = "https://github.com/darwinia-network/darwinia-messages-substrate", branch = "polkadot-v0.9.33" }
+pallet-bridge-parachains = { default-features = false, git = "https://github.com/darwinia-network/darwinia-messages-substrate", branch = "polkadot-v0.9.33" }
+pallet-fee-market        = { default-features = false, git = "https://github.com/darwinia-network/darwinia-messages-substrate", branch = "polkadot-v0.9.33" }
 
 # frontier
-fp-rpc                         = { default-features = false, git = "https://github.com/darwinia-network/frontier", branch = "prepare-polkadot-v0.9.33" }
-fp-self-contained              = { default-features = false, git = "https://github.com/darwinia-network/frontier", branch = "prepare-polkadot-v0.9.33" }
-pallet-ethereum                = { default-features = false, features = ["forbid-evm-reentrancy"], git = "https://github.com/darwinia-network/frontier", branch = "prepare-polkadot-v0.9.33" }
-pallet-evm                     = { default-features = false, features = ["forbid-evm-reentrancy"], git = "https://github.com/darwinia-network/frontier", branch = "prepare-polkadot-v0.9.33" }
-pallet-evm-precompile-blake2   = { default-features = false, git = "https://github.com/darwinia-network/frontier", branch = "prepare-polkadot-v0.9.33" }
-pallet-evm-precompile-bn128    = { default-features = false, git = "https://github.com/darwinia-network/frontier", branch = "prepare-polkadot-v0.9.33" }
-pallet-evm-precompile-dispatch = { default-features = false, git = "https://github.com/darwinia-network/frontier", branch = "prepare-polkadot-v0.9.33" }
-pallet-evm-precompile-modexp   = { default-features = false, git = "https://github.com/darwinia-network/frontier", branch = "prepare-polkadot-v0.9.33" }
-pallet-evm-precompile-simple   = { default-features = false, git = "https://github.com/darwinia-network/frontier", branch = "prepare-polkadot-v0.9.33" }
+fp-rpc                         = { default-features = false, git = "https://github.com/darwinia-network/frontier", branch = "polkadot-v0.9.33" }
+fp-self-contained              = { default-features = false, git = "https://github.com/darwinia-network/frontier", branch = "polkadot-v0.9.33" }
+pallet-ethereum                = { default-features = false, features = ["forbid-evm-reentrancy"], git = "https://github.com/darwinia-network/frontier", branch = "polkadot-v0.9.33" }
+pallet-evm                     = { default-features = false, features = ["forbid-evm-reentrancy"], git = "https://github.com/darwinia-network/frontier", branch = "polkadot-v0.9.33" }
+pallet-evm-precompile-blake2   = { default-features = false, git = "https://github.com/darwinia-network/frontier", branch = "polkadot-v0.9.33" }
+pallet-evm-precompile-bn128    = { default-features = false, git = "https://github.com/darwinia-network/frontier", branch = "polkadot-v0.9.33" }
+pallet-evm-precompile-dispatch = { default-features = false, git = "https://github.com/darwinia-network/frontier", branch = "polkadot-v0.9.33" }
+pallet-evm-precompile-modexp   = { default-features = false, git = "https://github.com/darwinia-network/frontier", branch = "polkadot-v0.9.33" }
+pallet-evm-precompile-simple   = { default-features = false, git = "https://github.com/darwinia-network/frontier", branch = "polkadot-v0.9.33" }
 
 # moonbeam
-precompile-utils = { default-features = false, git = "https://github.com/darwinia-network/moonbeam", branch = "prepare-polkadot-v0.9.33" }
-xcm-primitives   = { default-features = false, git = "https://github.com/darwinia-network/moonbeam", branch = "prepare-polkadot-v0.9.33" }
+precompile-utils = { default-features = false, git = "https://github.com/darwinia-network/moonbeam", branch = "polkadot-v0.9.33" }
+xcm-primitives   = { default-features = false, git = "https://github.com/darwinia-network/moonbeam", branch = "polkadot-v0.9.33" }
 
 # polkadot
 pallet-xcm              = { default-features = false, git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.33" }
