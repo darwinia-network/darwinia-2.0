@@ -16,11 +16,13 @@
 // You should have received a copy of the GNU General Public License
 // along with Darwinia. If not, see <https://www.gnu.org/licenses/>.
 
-// darwinia
-use pangolin_runtime::*;
-// parity
+pub use pangolin_runtime::*;
+
+// substrate
 use frame_support::traits::GenesisBuild;
 use sp_io::TestExternalities;
+
+pub const KTON_ID: u64 = AssetIds::PKton as _;
 
 #[derive(Clone, Default)]
 pub struct ExtBuilder {
@@ -47,13 +49,8 @@ impl ExtBuilder {
 			.assimilate_storage(&mut t)
 			.unwrap();
 		pallet_assets::GenesisConfig::<Runtime> {
-			assets: vec![(AssetIds::PKton as _, ROOT, true, 1)],
-			metadata: vec![(
-				AssetIds::PKton as _,
-				b"Pangolin Commitment Token".to_vec(),
-				b"PKTON".to_vec(),
-				18,
-			)],
+			assets: vec![(KTON_ID, ROOT, true, 1)],
+			metadata: vec![(KTON_ID, b"Pangolin Commitment Token".to_vec(), b"PKTON".to_vec(), 18)],
 			accounts: self.assets_accounts.clone(),
 		}
 		.assimilate_storage(&mut t)
