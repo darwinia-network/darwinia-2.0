@@ -888,6 +888,8 @@ pub mod pallet {
 						Perbill::from_rational(n_exposure.value, c_exposure.total) * n_payout;
 
 					if c == n_exposure.who {
+						// If the collator nominated themselves.
+
 						c_payout += n_payout;
 					} else if T::RingCurrency::deposit_into_existing(&n_exposure.who, n_payout)
 						.is_ok()
