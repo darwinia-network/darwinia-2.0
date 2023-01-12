@@ -889,8 +889,8 @@ pub mod pallet {
 
 					if c == n_exposure.who {
 						c_payout += n_payout;
-					} else if let Ok(_i) =
-						T::RingCurrency::deposit_into_existing(&n_exposure.who, n_payout)
+					} else if T::RingCurrency::deposit_into_existing(&n_exposure.who, n_payout)
+						.is_ok()
 					{
 						actual_payout += n_payout;
 
@@ -901,7 +901,7 @@ pub mod pallet {
 					}
 				}
 
-				if let Ok(_i) = T::RingCurrency::deposit_into_existing(&c, c_payout) {
+				if T::RingCurrency::deposit_into_existing(&c, c_payout).is_ok() {
 					actual_payout += c_payout;
 
 					Self::deposit_event(Event::Payout { staker: c, ring_amount: c_payout });
