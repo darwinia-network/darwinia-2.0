@@ -22,9 +22,8 @@ mod mock;
 use mock::*;
 
 // darwinia
-use darwinia_deposit::Deposit;
+use darwinia_deposit::Deposit as DepositS;
 use darwinia_staking::Ledger;
-use dc_primitives::AccountId;
 use pangolin_runtime::*;
 // substrate
 use frame_support::{
@@ -34,159 +33,160 @@ use frame_system::AccountInfo;
 use pallet_assets::ExistenceReason;
 use pallet_balances::AccountData;
 use sp_core::{sr25519::Pair, Encode, Pair as PairT, H160};
-use sp_io::hashing::blake2_256;
+use sp_keyring::sr25519::Keyring;
 use sp_runtime::{
 	traits::ValidateUnsigned,
 	transaction_validity::{InvalidTransaction, TransactionValidityError},
-	AccountId32, DispatchError, DispatchResult,
+	AccountId32, DispatchError,
 };
 use sp_version::RuntimeVersion;
 
 const RING_AMOUNT: u128 = 100;
 const KTON_AMOUNT: u128 = 100;
 
-fn migrate(pair: Pair, to: AccountId, chain_id: u64, spec_name: &[u8]) -> DispatchResult {
-	let account_id = AccountId32::new(pair.public().0);
-
-	let message = blake2_256(
-		&[
-			&blake2_256(&[&chain_id.to_le_bytes(), spec_name, b"::account-migration"].concat()),
-			to.0.as_slice(),
-		]
-		.concat(),
-	);
-	let sig = pair.sign(&message);
-
-	AccountMigration::pre_dispatch(&darwinia_account_migration::Call::migrate {
-		from: account_id.clone(),
-		to,
-		signature: sig.clone(),
-	})
-	.map_err(|e| match e {
-		TransactionValidityError::Invalid(InvalidTransaction::Custom(e)) =>
-			Box::leak(format!("err code: {}", e).into_boxed_str()),
-		e => <&'static str>::from(e),
-	})?;
-	AccountMigration::migrate(RuntimeOrigin::none(), account_id, to, sig)
+#[derive(Debug, PartialEq, Eq)]
+enum E {
+	T(TransactionValidityError),
+	D(DispatchError),
+}
+use E::*;
+impl From<TransactionValidityError> for E {
+	fn from(t: TransactionValidityError) -> Self {
+		T(t)
+	}
+}
+impl From<DispatchError> for E {
+	fn from(d: DispatchError) -> Self {
+		D(d)
+	}
 }
 
-fn prepare_accounts(storage: bool) -> Pair {
-	let pair = Pair::from_seed(b"00000000000000000000000000000001");
-	let account_id = AccountId32::new(pair.public().0);
+// This struct is private in `pallet-assets`.
+#[derive(Encode)]
+struct AssetAccount {
+	balance: u128,
+	is_frozen: bool,
+	reason: ExistenceReason<u128>,
+	extra: (),
+}
 
-	if storage {
-		<darwinia_account_migration::Accounts<Runtime>>::insert(
-			account_id.clone(),
-			AccountInfo {
-				nonce: 100,
-				consumers: 1,
-				providers: 1,
-				sufficients: 1,
-				data: AccountData { free: RING_AMOUNT, ..Default::default() },
-			},
-		);
+// This struct is private in `pallet-vesting`.
+#[derive(Encode)]
+struct VestingInfo {
+	locked: u128,
+	per_block: u128,
+	starting_block: u32,
+}
 
-		// The struct in the upstream repo is not accessible due to viable.
-		#[derive(Clone, Encode)]
-		pub struct AssetAccount {
-			pub balance: u128,
-			pub is_frozen: bool,
-			pub reason: ExistenceReason<u128>,
-			pub extra: (),
-		}
-		let asset_account = AssetAccount {
-			balance: KTON_AMOUNT,
-			is_frozen: false,
-			reason: ExistenceReason::<u128>::Sufficient,
-			extra: (),
-		};
-		migration::put_storage_value(
-			b"AccountMigration",
-			b"KtonAccounts",
-			&Blake2_128Concat::hash(account_id.as_ref()),
-			asset_account.clone(),
-		);
-		assert!(AccountMigration::account_of(account_id).is_some());
-	}
-	pair
+fn alice() -> (Pair, AccountId32) {
+	let pair = Keyring::Alice.pair();
+	let public_key = AccountId32::new(pair.public().0);
+
+	(pair, public_key)
+}
+
+fn invalid_transaction(code: u8) -> E {
+	T(TransactionValidityError::Invalid(InvalidTransaction::Custom(code)))
+}
+
+fn preset_state_of(who: &Pair) {
+	let account_id_32 = AccountId32::new(who.public().0);
+	let asset_account = AssetAccount {
+		balance: KTON_AMOUNT,
+		is_frozen: false,
+		reason: ExistenceReason::<u128>::Sufficient,
+		extra: (),
+	};
+
+	assert!(AccountMigration::account_of(&account_id_32).is_none());
+	assert!(AccountMigration::kton_account_of(&account_id_32).is_none());
+
+	<darwinia_account_migration::Accounts<Runtime>>::insert(
+		&account_id_32,
+		AccountInfo {
+			nonce: 100,
+			consumers: 1,
+			providers: 1,
+			sufficients: 1,
+			data: AccountData { free: RING_AMOUNT, ..Default::default() },
+		},
+	);
+	migration::put_storage_value(
+		b"AccountMigration",
+		b"KtonAccounts",
+		&Blake2_128Concat::hash(account_id_32.as_ref()),
+		asset_account,
+	);
+	assert!(AccountMigration::account_of(&account_id_32).is_some());
+	assert!(AccountMigration::kton_account_of(&account_id_32).is_some());
+}
+
+fn migrate(from: Pair, to: AccountId) -> Result<(), E> {
+	let message = darwinia_account_migration::sr25519_signable_message(
+		<<Runtime as frame_system::Config>::Version as Get<RuntimeVersion>>::get()
+			.spec_name
+			.as_bytes(),
+		&to,
+	);
+	let sig = from.sign(&message);
+	let from_pk = AccountId32::new(from.public().0);
+
+	AccountMigration::pre_dispatch(&darwinia_account_migration::Call::migrate {
+		from: from_pk.clone(),
+		to,
+		signature: sig.clone(),
+	})?;
+	AccountMigration::migrate(RuntimeOrigin::none(), from_pk, to, sig)?;
+
+	Ok(())
 }
 
 #[test]
 fn validate_substrate_account_not_found() {
 	ExtBuilder::default().build().execute_with(|| {
-		let to = H160::default();
-		let pair = prepare_accounts(false);
+		let (from, _) = alice();
+		let to = AccountId::default();
 
-		assert_err!(
-			migrate(
-				pair,
-				to.into(),
-				<<Runtime as pallet_evm::Config>::ChainId as Get<u64>>::get(),
-				<<Runtime as frame_system::Config>::Version as Get<RuntimeVersion>>::get()
-					.spec_name
-					.as_bytes()
-			),
-			DispatchError::Other("err code: 1") // The migration source not exist.
-		);
+		// Migration source doesn't exist.
+		assert_err!(migrate(from, to), invalid_transaction(1));
 	});
 }
 
 #[test]
 fn validate_evm_account_already_exist() {
+	let (from, _) = alice();
 	let to = H160::from_low_u64_be(33).into();
-	ExtBuilder::default().with_balances(vec![(to, 100)]).build().execute_with(|| {
-		let pair = prepare_accounts(true);
 
-		assert_err!(
-			migrate(
-				pair,
-				to,
-				<<Runtime as pallet_evm::Config>::ChainId as Get<u64>>::get(),
-				<<Runtime as frame_system::Config>::Version as Get<RuntimeVersion>>::get()
-					.spec_name
-					.as_bytes()
-			),
-			DispatchError::Other("err code: 0") // To account has been used.
-		);
+	ExtBuilder::default().with_balances(vec![(to, RING_AMOUNT)]).build().execute_with(|| {
+		preset_state_of(&from);
+
+		// Migration target has already been migrated.
+		assert_err!(migrate(from, to), invalid_transaction(0));
 	});
 }
 
 #[test]
 fn validate_invalid_sig() {
+	let (from, _) = alice();
 	let to = H160::from_low_u64_be(33).into();
 	ExtBuilder::default().build().execute_with(|| {
-		let pair = prepare_accounts(true);
+		preset_state_of(&from);
 
-		assert_err!(
-			migrate(
-				pair,
-				to,
-				<<Runtime as pallet_evm::Config>::ChainId as Get<u64>>::get() + 1,
-				<<Runtime as frame_system::Config>::Version as Get<RuntimeVersion>>::get()
-					.spec_name
-					.as_bytes()
-			),
-			DispatchError::Other("err code: 2") // Invalid signature
-		);
+		// Invalid signature.
+		assert_err!(migrate(from, to), invalid_transaction(2));
 	});
 }
 
 #[test]
-fn migrate_accounts() {
+fn migrate_accounts_should_work() {
+	let (from, from_pk) = alice();
 	let to = H160::from_low_u64_be(255).into();
-	ExtBuilder::default().build().execute_with(|| {
-		let pair = prepare_accounts(true);
-		let account_id = AccountId32::new(pair.public().0);
 
-		assert_ok!(migrate(
-			pair,
-			to,
-			<<Runtime as pallet_evm::Config>::ChainId as Get<u64>>::get(),
-			<<Runtime as frame_system::Config>::Version as Get<RuntimeVersion>>::get()
-				.spec_name
-				.as_bytes()
-		));
-		assert_eq!(AccountMigration::account_of(account_id), None);
+	ExtBuilder::default().build().execute_with(|| {
+		preset_state_of(&from);
+
+		assert_ok!(migrate(from, to));
+		assert_eq!(AccountMigration::account_of(from_pk), None);
 		assert_eq!(
 			System::account(to),
 			AccountInfo {
@@ -194,93 +194,75 @@ fn migrate_accounts() {
 				consumers: 1,
 				providers: 1,
 				sufficients: 1,
-				data: AccountData { free: 100, ..Default::default() },
+				data: AccountData { free: RING_AMOUNT, ..Default::default() },
 			}
 		);
 	});
 }
 
 #[test]
-fn migrate_kton_accounts() {
+fn migrate_kton_accounts_should_work() {
+	let (from, from_pk) = alice();
 	let to = H160::from_low_u64_be(255).into();
-	ExtBuilder::default().build().execute_with(|| {
-		let pair = prepare_accounts(true);
-		let account_id = AccountId32::new(pair.public().0);
 
-		assert_ok!(migrate(
-			pair,
-			to,
-			<<Runtime as pallet_evm::Config>::ChainId as Get<u64>>::get(),
-			<<Runtime as frame_system::Config>::Version as Get<RuntimeVersion>>::get()
-				.spec_name
-				.as_bytes()
-		));
-		assert_eq!(AccountMigration::kton_account_of(account_id), None);
-		assert_eq!(Assets::maybe_balance(KTON_ID, to).unwrap(), KTON_AMOUNT);
+	ExtBuilder::default().build().execute_with(|| {
+		preset_state_of(&from);
+
+		assert_ok!(migrate(from, to));
+		assert_eq!(AccountMigration::kton_account_of(from_pk), None);
+		assert_eq!(Assets::maybe_balance(AssetIds::PKton as _, to).unwrap(), KTON_AMOUNT);
 	});
 }
 
 #[test]
-fn vesting() {
+fn vesting_should_work() {
+	let (from, from_pk) = alice();
 	let to = H160::from_low_u64_be(255).into();
-	ExtBuilder::default().build().execute_with(|| {
-		let pair = prepare_accounts(true);
-		let account_id = AccountId32::new(pair.public().0);
 
-		// The struct in the upstream repo is not accessible due to viable.
-		#[derive(Encode)]
-		pub struct VestingInfo {
-			locked: u128,
-			per_block: u128,
-			starting_block: u32,
-		}
+	ExtBuilder::default().build().execute_with(|| {
+		preset_state_of(&from);
 
 		migration::put_storage_value(
 			b"AccountMigration",
 			b"Vestings",
-			&Blake2_128Concat::hash(account_id.as_ref()),
+			&Blake2_128Concat::hash(from_pk.as_ref()),
 			vec![
 				VestingInfo { locked: 100, per_block: 5, starting_block: 0 },
 				VestingInfo { locked: 100, per_block: 5, starting_block: 0 },
 			],
 		);
+		assert!(Vesting::vesting(to).unwrap().is_empty());
+		assert!(Balances::locks(to).is_empty());
 
-		assert_ok!(migrate(
-			pair,
-			to,
-			<<Runtime as pallet_evm::Config>::ChainId as Get<u64>>::get(),
-			<<Runtime as frame_system::Config>::Version as Get<RuntimeVersion>>::get()
-				.spec_name
-				.as_bytes()
-		));
-
+		assert_ok!(migrate(from, to));
 		assert_eq!(Vesting::vesting(to).unwrap().len(), 2);
 		assert_eq!(Balances::locks(to).len(), 1);
 	});
 }
 
 #[test]
-fn staking() {
+fn staking_should_work() {
+	let (from, from_pk) = alice();
 	let init = H160::from_low_u64_be(254).into();
 	let to = H160::from_low_u64_be(255).into();
+
 	ExtBuilder::default()
-		.with_assets_accounts(vec![(KTON_ID, init, KTON_AMOUNT)])
+		.with_assets_accounts(vec![(AssetIds::PKton as _, init, KTON_AMOUNT)])
 		.build()
 		.execute_with(|| {
-			let pair = prepare_accounts(true);
-			let account_id = AccountId32::new(pair.public().0);
+			preset_state_of(&from);
 
 			<darwinia_account_migration::Deposits<Runtime>>::insert(
-				account_id.clone(),
+				&from_pk,
 				vec![
-					Deposit {
+					DepositS {
 						id: 1,
 						value: 10,
 						start_time: 1000,
 						expired_time: 2000,
 						in_use: true,
 					},
-					Deposit {
+					DepositS {
 						id: 2,
 						value: 10,
 						start_time: 1000,
@@ -289,9 +271,8 @@ fn staking() {
 					},
 				],
 			);
-
 			<darwinia_account_migration::Ledgers<Runtime>>::insert(
-				account_id.clone(),
+				&from_pk,
 				Ledger {
 					staked_ring: 20,
 					staked_kton: 20,
@@ -302,29 +283,21 @@ fn staking() {
 				},
 			);
 
-			assert_ok!(migrate(
-				pair,
-				to,
-				<<Runtime as pallet_evm::Config>::ChainId as Get<u64>>::get(),
-				<<Runtime as frame_system::Config>::Version as Get<RuntimeVersion>>::get()
-					.spec_name
-					.as_bytes()
-			));
-
+			assert_ok!(migrate(from, to));
 			assert_eq!(Balances::free_balance(to), 60);
 			assert_eq!(Balances::free_balance(&darwinia_deposit::account_id::<AccountId>()), 20);
 			assert_eq!(Balances::free_balance(&darwinia_staking::account_id::<AccountId>()), 20);
-
-			assert_eq!(pangolin_runtime::Deposit::deposit_of(to).unwrap().len(), 2);
-
-			assert_eq!(Assets::maybe_balance(KTON_ID, to).unwrap(), 80);
+			assert_eq!(Deposit::deposit_of(to).unwrap().len(), 2);
+			assert_eq!(Assets::maybe_balance(AssetIds::PKton as _, to).unwrap(), 80);
 			assert_eq!(
-				Assets::maybe_balance(KTON_ID, darwinia_staking::account_id::<AccountId>())
-					.unwrap(),
+				Assets::maybe_balance(
+					AssetIds::PKton as _,
+					darwinia_staking::account_id::<AccountId>()
+				)
+				.unwrap(),
 				20
 			);
-
-			assert_eq!(pangolin_runtime::Staking::ledger_of(to).unwrap().staked_ring, 20);
-			assert_eq!(pangolin_runtime::Staking::ledger_of(to).unwrap().staked_kton, 20);
+			assert_eq!(Staking::ledger_of(to).unwrap().staked_ring, 20);
+			assert_eq!(Staking::ledger_of(to).unwrap().staked_kton, 20);
 		});
 }

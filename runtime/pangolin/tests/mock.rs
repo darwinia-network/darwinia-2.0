@@ -17,49 +17,52 @@
 // along with Darwinia. If not, see <https://www.gnu.org/licenses/>.
 
 // darwinia
-use darwinia_common_runtime::gov_origin::ROOT;
-use dc_primitives::{AccountId, Balance};
-use pangolin_runtime::{Runtime, System};
+use pangolin_runtime::*;
 // parity
 use frame_support::traits::GenesisBuild;
 use sp_io::TestExternalities;
 
-pub(crate) const KTON_ID: u64 = 1026;
-
-#[derive(Default, Clone)]
+#[derive(Clone, Default)]
 pub struct ExtBuilder {
 	balances: Vec<(AccountId, Balance)>,
 	assets_accounts: Vec<(u64, AccountId, Balance)>,
 }
-
 impl ExtBuilder {
+	pub fn with_balances(&mut self, balances: Vec<(AccountId, Balance)>) -> &mut Self {
+		self.balances = balances;
+
+		self
+	}
+
+	pub fn with_assets_accounts(&mut self, accounts: Vec<(u64, AccountId, Balance)>) -> &mut Self {
+		self.assets_accounts = accounts;
+
+		self
+	}
+
 	pub fn build(&mut self) -> TestExternalities {
 		let mut t = frame_system::GenesisConfig::default().build_storage::<Runtime>().unwrap();
 
 		pallet_balances::GenesisConfig::<Runtime> { balances: self.balances.clone() }
 			.assimilate_storage(&mut t)
 			.unwrap();
-
 		pallet_assets::GenesisConfig::<Runtime> {
-			assets: vec![(KTON_ID, ROOT, true, 1)],
-			metadata: vec![(KTON_ID, b"Test Commitment Token".to_vec(), b"TKTON".to_vec(), 18)],
+			assets: vec![(AssetIds::PKton as _, ROOT, true, 1)],
+			metadata: vec![(
+				AssetIds::PKton as _,
+				b"Pangolin Commitment Token".to_vec(),
+				b"PKTON".to_vec(),
+				18,
+			)],
 			accounts: self.assets_accounts.clone(),
 		}
 		.assimilate_storage(&mut t)
 		.unwrap();
 
 		let mut ext = TestExternalities::new(t);
+
 		ext.execute_with(|| System::set_block_number(1));
+
 		ext
-	}
-
-	pub fn with_balances(&mut self, balances: Vec<(AccountId, Balance)>) -> &mut Self {
-		self.balances = balances;
-		self
-	}
-
-	pub fn with_assets_accounts(&mut self, accounts: Vec<(u64, AccountId, Balance)>) -> &mut Self {
-		self.assets_accounts = accounts;
-		self
 	}
 }
