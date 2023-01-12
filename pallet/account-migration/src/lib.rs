@@ -43,8 +43,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![deny(missing_docs)]
 
-// TODO: update weight
-
 #[cfg(test)]
 mod tests;
 
@@ -63,18 +61,17 @@ use frame_system::{pallet_prelude::*, AccountInfo, RawOrigin};
 use pallet_balances::AccountData;
 use pallet_vesting::VestingInfo;
 use sp_core::sr25519::{Public, Signature};
-use sp_io::hashing;
 use sp_runtime::{
 	traits::{IdentityLookup, Verify},
 	AccountId32,
 };
 use sp_std::prelude::*;
 
-type Message = [u8; 32];
-
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
+
+	const KTON_ID: u64 = 1026;
 
 	#[pallet::pallet]
 	pub struct Pallet<T>(PhantomData<T>);
@@ -95,9 +92,6 @@ pub mod pallet {
 	{
 		/// Override the [`frame_system::Config::RuntimeEvent`].
 		type RuntimeEvent: From<Event> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
-		/// Chain's ID, which is used for constructing the message. (follow EIP-712 SPEC)
-		#[pallet::constant]
-		type ChainId: Get<u64>;
 	}
 
 	#[allow(missing_docs)]
@@ -127,10 +121,10 @@ pub mod pallet {
 	/// [`pallet_asset::AssetAccount`] data.
 	///
 	/// https://github.dev/paritytech/substrate/blob/polkadot-v0.9.30/frame/assets/src/types.rs#L115
-	// The size of `pallet_asset::AssetAccount` is 64 bytes.
+	// The size of encoded `pallet_asset::AssetAccount` is 18 bytes.
 	#[pallet::storage]
 	#[pallet::getter(fn kton_account_of)]
-	pub type KtonAccounts<T: Config> = StorageMap<_, Blake2_128Concat, AccountId32, [u8; 64]>;
+	pub type KtonAccounts<T: Config> = StorageMap<_, Blake2_128Concat, AccountId32, [u8; 18]>;
 
 	/// [`pallet_vesting::Vesting`] data.
 	///
@@ -147,20 +141,12 @@ pub mod pallet {
 	#[pallet::getter(fn deposit_of)]
 	pub type Deposits<T: Config> = StorageMap<_, Blake2_128Concat, AccountId32, Vec<Deposit>>;
 
-	/// [`darwinia_staking::Bonded`] data.
-	///
-	/// <https://github.dev/darwinia-network/darwinia-common/blob/6a9392cfb9fe2c99b1c2b47d0c36125d61991bb7/frame/staking/src/lib.rs#L592>
-	#[pallet::storage]
-	#[pallet::getter(fn bonded)]
-	pub type Bonded<T: Config> = StorageMap<_, Twox64Concat, AccountId32, AccountId32>;
-
 	/// [`darwinia_staking::Ledgers`] data.
 	#[pallet::storage]
 	#[pallet::getter(fn ledger_of)]
 	pub type Ledgers<T: Config> = StorageMap<_, Blake2_128Concat, AccountId32, Ledger<T>>;
 
 	// TODO: identity storages
-	// TODO: proxy storages
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
@@ -184,14 +170,14 @@ pub mod pallet {
 					b"Assets",
 					b"Account",
 					&[
-						Blake2_128Concat::hash(&1026_u64.encode()),
+						Blake2_128Concat::hash(&KTON_ID.encode()),
 						Blake2_128Concat::hash(&to.encode()),
 					]
 					.concat(),
 					a,
 				);
 			}
-			if let Some(v) = <Vestings<T>>::get(&from) {
+			if let Some(v) = <Vestings<T>>::take(&from) {
 				let locked = v.iter().map(|v| v.locked()).sum();
 
 				<pallet_vesting::Vesting<T>>::insert(
@@ -205,8 +191,8 @@ pub mod pallet {
 				// https://github.dev/paritytech/substrate/blob/19162e43be45817b44c7d48e50d03f074f60fbf4/frame/vesting/src/lib.rs#L86
 				<pallet_balances::Pallet<T>>::set_lock(*b"vesting ", &to, locked, reasons);
 			}
-			if let Some(l) = <Bonded<T>>::get(&from).and_then(<Ledgers<T>>::get) {
-				if let Some(ds) = <Deposits<T>>::get(&from) {
+			if let Some(l) = <Ledgers<T>>::take(&from) {
+				if let Some(ds) = <Deposits<T>>::take(&from) {
 					<pallet_balances::Pallet<T> as Currency<_>>::transfer(
 						&to,
 						&darwinia_deposit::account_id(),
@@ -220,19 +206,25 @@ pub mod pallet {
 				}
 
 				let staking_pot = darwinia_staking::account_id();
-
 				<pallet_balances::Pallet<T> as Currency<_>>::transfer(
 					&to,
 					&staking_pot,
 					l.staked_ring + l.unstaking_ring.iter().map(|(r, _)| r).sum::<Balance>(),
 					KeepAlive,
 				)?;
-				<pallet_assets::Pallet<T>>::transfer(
-					RawOrigin::Signed(to).into(),
-					1026_u64,
-					staking_pot,
-					l.staked_kton + l.unstaking_kton.iter().map(|(k, _)| k).sum::<Balance>(),
-				)?;
+
+				let sum = l.staked_kton + l.unstaking_kton.iter().map(|(k, _)| k).sum::<Balance>();
+				if let Some(amount) = <pallet_assets::Pallet<T>>::maybe_balance(KTON_ID, to) {
+					if amount >= sum {
+						<pallet_assets::Pallet<T>>::transfer(
+							RawOrigin::Signed(to).into(),
+							KTON_ID,
+							staking_pot,
+							sum,
+						)?;
+					}
+				}
+
 				<darwinia_staking::Ledgers<T>>::insert(to, l);
 			}
 
@@ -266,11 +258,7 @@ pub mod pallet {
 				return InvalidTransaction::Custom(E_ACCOUNT_ALREADY_EXISTED).into();
 			}
 
-			let message = sr25519_signable_message(
-				T::ChainId::get(),
-				T::Version::get().spec_name.as_ref(),
-				to,
-			);
+			let message = sr25519_signable_message(T::Version::get().spec_name.as_ref(), to);
 
 			if verify_sr25519_signature(from, &message, signature) {
 				ValidTransaction::with_tag_prefix("account-migration")
@@ -287,25 +275,22 @@ pub mod pallet {
 }
 pub use pallet::*;
 
-fn sr25519_signable_message(
-	chain_id: u64,
-	spec_name: &[u8],
-	account_id_20: &AccountId20,
-) -> Message {
-	hashing::blake2_256(
-		&[
-			&hashing::blake2_256(
-				&[&chain_id.to_le_bytes(), spec_name, b"::account-migration"].concat(),
-			),
-			account_id_20.0.as_slice(),
-		]
-		.concat(),
-	)
+fn sr25519_signable_message(spec_name: &[u8], account_id_20: &AccountId20) -> Vec<u8> {
+	[
+		b"I authorize the migration to ",
+		account_id_20.0.as_slice(),
+		b", an unused address on ",
+		spec_name,
+		b". Sign this message to authorize using the Substrate key associated with the account on ",
+		&spec_name[..spec_name.len() - 1],
+		b" that you wish to migrate.",
+	]
+	.concat()
 }
 
 fn verify_sr25519_signature(
 	public_key: &AccountId32,
-	message: &Message,
+	message: &[u8],
 	signature: &Signature,
 ) -> bool {
 	// Actually, `&[u8]` is `[u8; 32]` here.
@@ -316,5 +301,5 @@ fn verify_sr25519_signature(
 		return false;
 	};
 
-	signature.verify(message.as_slice(), public_key)
+	signature.verify(message, public_key)
 }

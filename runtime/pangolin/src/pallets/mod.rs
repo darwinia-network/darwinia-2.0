@@ -42,9 +42,11 @@ mod transaction_payment;
 mod assets;
 pub use assets::*;
 
+mod vesting;
+
 mod deposit;
 
-mod migrate;
+mod account_migration;
 
 // Consensus stuff.
 mod authorship;
@@ -58,6 +60,10 @@ mod aura;
 
 mod aura_ext;
 
+mod message_gadget;
+
+mod ecdsa_authority;
+
 // Governance stuff.
 mod democracy;
 
@@ -69,13 +75,12 @@ mod elections_phragmen;
 mod membership;
 
 mod treasury;
+pub use treasury::*;
 
 mod tips;
 
 // Utility stuff.
 mod sudo;
-
-mod vesting;
 
 mod utility;
 

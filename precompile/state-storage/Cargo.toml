@@ -1,6 +1,6 @@
 [package]
 authors     = ["Darwinia Network <hello@darwinia.network>"]
-description = "State storage precompiles for EVM pallet."
+description = "State storage precompile for EVM pallet."
 edition     = "2021"
 homepage    = "https://darwinia.network"
 license     = "GPL-3.0"

@@ -1,3 +1,5 @@
+// crates.io
+use parity_scale_codec::Encode;
 // darwinia
 use crate::*;
 
@@ -15,7 +17,10 @@ pub struct AccountAll {
 	pub kton_locks: Vec<BalanceLock>,
 }
 
-impl Processor {
+impl<S> Processor<S>
+where
+	S: Configurable,
+{
 	pub fn process_system(&mut self) -> &mut Self {
 		// System storage items.
 		// https://github.dev/darwinia-network/substrate/blob/darwinia-v0.12.5/frame/system/src/lib.rs#L545
@@ -176,21 +181,6 @@ impl Processor {
 			b"Asset",
 			&blake2_128_concat_to_string(KTON_ID.encode()),
 			kton_details,
-		);
-
-		log::info!("set `Assets::Metadata`");
-		self.shell_state.insert_value(
-			b"Assets",
-			b"Metadata",
-			&blake2_128_concat_to_string(KTON_ID.encode()),
-			AssetMetadata {
-				deposit: 0,
-				// TODO: different runtime
-				name: b"Darwinia Commitment Token".to_vec(),
-				symbol: b"KTON".to_vec(),
-				decimals: 18,
-				is_frozen: false,
-			},
 		);
 
 		self

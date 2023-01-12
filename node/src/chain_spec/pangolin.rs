@@ -136,11 +136,9 @@ pub fn local_config() -> ChainSpec {
 }
 
 pub fn genesis_config() -> ChainSpec {
-	// TODO: update this before final release
+	// TODO: update this before the final release
 	ChainSpec::from_genesis(
-		// Name
 		"Pangolin2",
-		// ID
 		"pangolin2",
 		ChainType::Live,
 		move || {
@@ -151,7 +149,9 @@ pub fn genesis_config() -> ChainSpec {
 				parachain_info: ParachainInfoConfig { parachain_id: 2105.into() },
 
 				// Monetary stuff.
-				balances: Default::default(),
+				balances: BalancesConfig {
+					balances: vec![(array_bytes::hex_n_into_unchecked(ALITH), 100_000_000 * UNIT)],
+				},
 				transaction_payment: Default::default(),
 				assets: AssetsConfig {
 					assets: vec![(AssetIds::PKton as _, ROOT, true, 1)],
@@ -163,13 +163,14 @@ pub fn genesis_config() -> ChainSpec {
 					)],
 					..Default::default()
 				},
+				vesting: Default::default(),
 
 				// Consensus stuff.
 				staking: StakingConfig {
 					now: SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis(),
 					elapsed_time: 0,
 					collator_count: 3,
-					collators: Vec::new(),
+					collators: vec![(array_bytes::hex_n_into_unchecked(ALITH), UNIT)],
 				},
 				session: SessionConfig {
 					keys: vec![(
@@ -180,6 +181,8 @@ pub fn genesis_config() -> ChainSpec {
 				},
 				aura: Default::default(),
 				aura_ext: Default::default(),
+				message_gadget: Default::default(),
+				ecdsa_authority: Default::default(),
 
 				// Governance stuff.
 				democracy: Default::default(),
@@ -190,8 +193,7 @@ pub fn genesis_config() -> ChainSpec {
 				treasury: Default::default(),
 
 				// Utility stuff.
-				sudo: Default::default(),
-				vesting: Default::default(),
+				sudo: SudoConfig { key: Some(array_bytes::hex_n_into_unchecked(ALITH)) },
 
 				// XCM stuff.
 				polkadot_xcm: PolkadotXcmConfig { safe_xcm_version: Some(SAFE_XCM_VERSION) },
@@ -243,6 +245,7 @@ fn testnet_genesis(
 			)],
 			..Default::default()
 		},
+		vesting: Default::default(),
 
 		// Consensus stuff.
 		staking: StakingConfig {
@@ -265,6 +268,8 @@ fn testnet_genesis(
 		},
 		aura: Default::default(),
 		aura_ext: Default::default(),
+		message_gadget: Default::default(),
+		ecdsa_authority: Default::default(),
 
 		// Governance stuff.
 		democracy: Default::default(),
@@ -276,7 +281,6 @@ fn testnet_genesis(
 
 		// Utility stuff.
 		sudo: SudoConfig { key: Some(array_bytes::hex_n_into_unchecked(ALITH)) },
-		vesting: Default::default(),
 
 		// XCM stuff.
 		polkadot_xcm: PolkadotXcmConfig { safe_xcm_version: Some(SAFE_XCM_VERSION) },

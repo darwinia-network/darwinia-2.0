@@ -1329,6 +1329,8 @@ dependencies = [
  "darwinia-account-migration",
  "darwinia-common-runtime",
  "darwinia-deposit",
+ "darwinia-ecdsa-authority",
+ "darwinia-message-gadget",
  "darwinia-message-transact",
  "darwinia-precompile-assets",
  "darwinia-precompile-bls12-381",
@@ -1387,7 +1389,6 @@ dependencies = [
  "polkadot-runtime-common",
  "precompile-utils",
  "scale-info",
- "smallvec",
  "sp-api",
  "sp-block-builder",
  "sp-consensus-aura",
@@ -2291,7 +2292,6 @@ dependencies = [
  "parity-scale-codec",
  "scale-info",
  "sp-core",
- "sp-io",
  "sp-keyring",
  "sp-runtime",
  "sp-std",
@@ -2308,9 +2308,12 @@ dependencies = [
  "frame-system",
  "pallet-collective",
  "parity-scale-codec",
+ "smallvec",
  "sp-io",
+ "sp-runtime",
  "sp-std",
  "xcm",
+ "xcm-builder",
  "xcm-executor",
 ]
 
@@ -2325,6 +2328,43 @@ dependencies = [
  "frame-system",
  "pallet-assets",
  "pallet-balances",
+ "pallet-timestamp",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "darwinia-ecdsa-authority"
+version = "2.10.1"
+dependencies = [
+ "array-bytes 6.0.0",
+ "dc-primitives",
+ "ethabi",
+ "frame-support",
+ "frame-system",
+ "libsecp256k1 0.7.1",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+ "sp-version",
+]
+
+[[package]]
+name = "darwinia-message-gadget"
+version = "6.0.0"
+dependencies = [
+ "array-bytes 6.0.0",
+ "frame-support",
+ "frame-system",
+ "pallet-balances",
+ "pallet-evm",
  "pallet-timestamp",
  "parity-scale-codec",
  "scale-info",
@@ -2487,6 +2527,8 @@ dependencies = [
  "darwinia-account-migration",
  "darwinia-common-runtime",
  "darwinia-deposit",
+ "darwinia-ecdsa-authority",
+ "darwinia-message-gadget",
  "darwinia-message-transact",
  "darwinia-precompile-assets",
  "darwinia-precompile-bls12-381",
@@ -2545,7 +2587,6 @@ dependencies = [
  "polkadot-runtime-common",
  "precompile-utils",
  "scale-info",
- "smallvec",
  "sp-api",
  "sp-block-builder",
  "sp-consensus-aura",
@@ -2620,7 +2661,7 @@ name = "dc-inflation"
 version = "6.0.0"
 dependencies = [
  "dc-types",
- "primitive-types",
+ "primitive-types 0.12.1",
  "sp-arithmetic",
  "substrate-fixed",
 ]
@@ -2981,13 +3022,37 @@ dependencies = [
 ]
 
 [[package]]
+name = "ethabi"
+version = "17.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e4966fba78396ff92db3b817ee71143eccd98acf0f876b8d600e585a670c5d1b"
+dependencies = [
+ "ethereum-types 0.13.1",
+ "hex",
+ "sha3 0.10.6",
+ "thiserror",
+ "uint",
+]
+
+[[package]]
+name = "ethbloom"
+version = "0.12.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "11da94e443c60508eb62cf256243a64da87304c2802ac2528847f79d750007ef"
+dependencies = [
+ "crunchy",
+ "fixed-hash 0.7.0",
+ "tiny-keccak",
+]
+
+[[package]]
 name = "ethbloom"
 version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c22d4b5885b6aa2fe5e8b9329fb8d232bf739e434e6b87347c63bdd00c120f60"
 dependencies = [
  "crunchy",
- "fixed-hash",
+ "fixed-hash 0.8.0",
  "impl-codec",
  "impl-rlp",
  "impl-serde 0.4.0",
@@ -3002,7 +3067,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6a89fb87a9e103f71b903b80b670200b54cc67a07578f070681f1fffb7396fb7"
 dependencies = [
  "bytes",
- "ethereum-types",
+ "ethereum-types 0.14.1",
  "hash-db",
  "hash256-std-hasher",
  "parity-scale-codec",
@@ -3015,16 +3080,28 @@ dependencies = [
 
 [[package]]
 name = "ethereum-types"
+version = "0.13.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b2827b94c556145446fcce834ca86b7abf0c39a805883fe20e72c5bfdb5a0dc6"
+dependencies = [
+ "ethbloom 0.12.1",
+ "fixed-hash 0.7.0",
+ "primitive-types 0.11.1",
+ "uint",
+]
+
+[[package]]
+name = "ethereum-types"
 version = "0.14.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "02d215cbf040552efcbe99a38372fe80ab9d00268e20012b79fcd0f073edd8ee"
 dependencies = [
- "ethbloom",
- "fixed-hash",
+ "ethbloom 0.13.0",
+ "fixed-hash 0.8.0",
  "impl-codec",
  "impl-rlp",
  "impl-serde 0.4.0",
- "primitive-types",
+ "primitive-types 0.12.1",
  "scale-info",
  "uint",
 ]
@@ -3049,7 +3126,7 @@ dependencies = [
  "evm-runtime",
  "log",
  "parity-scale-codec",
- "primitive-types",
+ "primitive-types 0.12.1",
  "rlp",
  "scale-info",
  "serde",
@@ -3063,7 +3140,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "64c51bec0eb68a891c2575c758eaaa1d61373fc51f7caaf216b1fb5c3fea3b5d"
 dependencies = [
  "parity-scale-codec",
- "primitive-types",
+ "primitive-types 0.12.1",
  "scale-info",
  "serde",
 ]
@@ -3077,7 +3154,7 @@ dependencies = [
  "environmental",
  "evm-core",
  "evm-runtime",
- "primitive-types",
+ "primitive-types 0.12.1",
 ]
 
 [[package]]
@@ -3089,7 +3166,7 @@ dependencies = [
  "auto_impl",
  "environmental",
  "evm-core",
- "primitive-types",
+ "primitive-types 0.12.1",
  "sha3 0.10.6",
 ]
 
@@ -3179,7 +3256,7 @@ version = "1.0.0-dev"
 source = "git+https://github.com/darwinia-network/frontier?branch=prepare-polkadot-v0.9.33#e66dc0457406dde585f6189bdcd685776814eb83"
 dependencies = [
  "clap",
- "ethereum-types",
+ "ethereum-types 0.14.1",
  "fc-db",
  "fp-rpc",
  "fp-storage",
@@ -3253,7 +3330,7 @@ version = "2.0.0-dev"
 source = "git+https://github.com/darwinia-network/frontier?branch=prepare-polkadot-v0.9.33#e66dc0457406dde585f6189bdcd685776814eb83"
 dependencies = [
  "ethereum",
- "ethereum-types",
+ "ethereum-types 0.14.1",
  "evm",
  "fc-db",
  "fc-rpc-core",
@@ -3296,7 +3373,7 @@ version = "1.1.0-dev"
 source = "git+https://github.com/darwinia-network/frontier?branch=prepare-polkadot-v0.9.33#e66dc0457406dde585f6189bdcd685776814eb83"
 dependencies = [
  "ethereum",
- "ethereum-types",
+ "ethereum-types 0.14.1",
  "jsonrpsee",
  "rlp",
  "rustc-hex",
@@ -3365,6 +3442,18 @@ dependencies = [
  "parity-scale-codec",
  "parking_lot 0.12.1",
  "scale-info",
+]
+
+[[package]]
+name = "fixed-hash"
+version = "0.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cfcf0ed7fe52a17a03854ec54a9f76d6d84508d1c0e66bc1793301c73fc8493c"
+dependencies = [
+ "byteorder",
+ "rand 0.8.5",
+ "rustc-hex",
+ "static_assertions",
 ]
 
 [[package]]
@@ -3446,7 +3535,7 @@ version = "1.0.0-dev"
 source = "git+https://github.com/darwinia-network/frontier?branch=prepare-polkadot-v0.9.33#e66dc0457406dde585f6189bdcd685776814eb83"
 dependencies = [
  "ethereum",
- "ethereum-types",
+ "ethereum-types 0.14.1",
  "fp-evm",
  "frame-support",
  "num_enum",
@@ -3474,7 +3563,7 @@ version = "3.0.0-dev"
 source = "git+https://github.com/darwinia-network/frontier?branch=prepare-polkadot-v0.9.33#e66dc0457406dde585f6189bdcd685776814eb83"
 dependencies = [
  "ethereum",
- "ethereum-types",
+ "ethereum-types 0.14.1",
  "fp-evm",
  "parity-scale-codec",
  "scale-info",
@@ -6506,7 +6595,7 @@ version = "4.0.0-dev"
 source = "git+https://github.com/darwinia-network/frontier?branch=prepare-polkadot-v0.9.33#e66dc0457406dde585f6189bdcd685776814eb83"
 dependencies = [
  "ethereum",
- "ethereum-types",
+ "ethereum-types 0.14.1",
  "evm",
  "fp-consensus",
  "fp-ethereum",
@@ -6542,7 +6631,7 @@ dependencies = [
  "log",
  "pallet-timestamp",
  "parity-scale-codec",
- "primitive-types",
+ "primitive-types 0.12.1",
  "rlp",
  "scale-info",
  "serde",
@@ -7306,6 +7395,8 @@ dependencies = [
  "darwinia-account-migration",
  "darwinia-common-runtime",
  "darwinia-deposit",
+ "darwinia-ecdsa-authority",
+ "darwinia-message-gadget",
  "darwinia-message-transact",
  "darwinia-precompile-assets",
  "darwinia-precompile-bls12-381",
@@ -7363,7 +7454,6 @@ dependencies = [
  "polkadot-runtime-common",
  "precompile-utils",
  "scale-info",
- "smallvec",
  "sp-api",
  "sp-block-builder",
  "sp-consensus-aura",
@@ -7455,13 +7545,13 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0d32c34f4f5ca7f9196001c0aba5a1f9a5a12382c8944b8b0f90233282d1e8f8"
 dependencies = [
  "cfg-if",
- "ethereum-types",
+ "ethereum-types 0.14.1",
  "hashbrown",
  "impl-trait-for-tuples",
  "lru",
  "parity-util-mem-derive",
  "parking_lot 0.12.1",
- "primitive-types",
+ "primitive-types 0.12.1",
  "smallvec",
  "winapi",
 ]
@@ -8966,11 +9056,22 @@ dependencies = [
 
 [[package]]
 name = "primitive-types"
+version = "0.11.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e28720988bff275df1f51b171e1b2a18c30d194c4d2b61defdacecd625a5d94a"
+dependencies = [
+ "fixed-hash 0.7.0",
+ "impl-codec",
+ "uint",
+]
+
+[[package]]
+name = "primitive-types"
 version = "0.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9f3486ccba82358b11a77516035647c34ba167dfa53312630de83b12bd4f3d66"
 dependencies = [
- "fixed-hash",
+ "fixed-hash 0.8.0",
  "impl-codec",
  "impl-rlp",
  "impl-serde 0.4.0",
@@ -11527,7 +11628,7 @@ dependencies = [
  "num-traits",
  "parity-scale-codec",
  "parking_lot 0.12.1",
- "primitive-types",
+ "primitive-types 0.12.1",
  "rand 0.7.3",
  "regex",
  "scale-info",
@@ -11791,7 +11892,7 @@ dependencies = [
  "bytes",
  "impl-trait-for-tuples",
  "parity-scale-codec",
- "primitive-types",
+ "primitive-types 0.12.1",
  "sp-externalities",
  "sp-runtime-interface-proc-macro",
  "sp-std",
@@ -13796,7 +13897,7 @@ version = "0.1.0"
 source = "git+https://github.com/darwinia-network/moonbeam?branch=prepare-polkadot-v0.9.33#d9a02eca48e9026ca304223b93348d8d958f719a"
 dependencies = [
  "ethereum",
- "ethereum-types",
+ "ethereum-types 0.14.1",
  "frame-support",
  "frame-system",
  "hex",

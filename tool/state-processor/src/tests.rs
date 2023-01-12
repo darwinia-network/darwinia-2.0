@@ -19,9 +19,9 @@ struct Tester {
 	shell_system_accounts: Map<AccountInfo>,
 	shell_evm_codes: Map<Vec<u8>>,
 
-	solo_state: State,
-	para_state: State,
-	shell_state: State,
+	solo_state: State<Crab>,
+	para_state: State<()>,
+	shell_state: State<()>,
 }
 
 fn get_last_64(key: &str, _: &str) -> String {
@@ -32,20 +32,13 @@ fn get_last_40(key: &str, _: &str) -> String {
 	format!("0x{}", &key[key.len() - 40..])
 }
 
-fn twox64_concat_to_string<D>(data: D) -> String
-where
-	D: AsRef<[u8]>,
-{
-	array_bytes::bytes2hex("", subhasher::twox64_concat(data))
-}
-
 impl Tester {
 	fn new() -> Self {
 		// This test is only used to ensure the correctness of  the state processor and is only
 		// applicable to Crab, Crab Parachain.
-		let mut solo_state = State::from_file("test-data/crab.json").unwrap();
-		let mut para_state = State::from_file("test-data/crab-parachain.json").unwrap();
-		let mut shell_state = State::from_file("test-data/processed.json").unwrap();
+		let mut solo_state = State::from_file("data/crab-solo.json").unwrap();
+		let mut para_state = State::from_file("data/crab-para.json").unwrap();
+		let mut shell_state = State::from_file("data/crab-processed.json").unwrap();
 
 		// solo chain
 		let mut solo_accounts = <Map<AccountInfo>>::default();
@@ -323,8 +316,8 @@ fn asset_metadata() {
 			&mut metadata,
 		);
 		assert_eq!(metadata.decimals, 18);
-		assert_eq!(metadata.symbol, b"KTON".to_vec());
-		assert_eq!(metadata.name, b"Darwinia Commitment Token".to_vec());
+		assert_eq!(metadata.symbol, b"CKTON".to_vec());
+		assert_eq!(metadata.name, b"Crab Commitment Token".to_vec());
 	});
 }
 
@@ -358,7 +351,7 @@ fn evm_account_storage_migrate() {
 		let test_addr: [u8; 20] =
 			hex_n_into_unchecked::<_, _, 20>("0x0050f880c35c31c13bfd9cbb7d28aafaeca3abd2");
 
-		let storage_item_len = tester.solo_state.0.iter().fold(0u32, |sum, (k, _)| {
+		let storage_item_len = tester.solo_state.map.iter().fold(0u32, |sum, (k, _)| {
 			if k.starts_with(&full_key(
 				b"EVM",
 				b"AccountStorages",
@@ -388,7 +381,7 @@ fn evm_account_storage_migrate() {
 		assert_ne!(storage_value, H256::zero());
 
 		// after migrate
-		let migrated_storage_item_len = tester.shell_state.0.iter().fold(0u32, |sum, (k, _)| {
+		let migrated_storage_item_len = tester.shell_state.map.iter().fold(0u32, |sum, (k, _)| {
 			if k.starts_with(&full_key(
 				b"Evm",
 				b"AccountStorages",
@@ -417,35 +410,6 @@ fn evm_account_storage_migrate() {
 }
 
 // --- Staking ---
-
-#[test]
-fn bonded_migrate() {
-	run_test(|tester| {
-		// https://crab.subscan.io/account/5FxS8ugbXi4WijFuNS45Wg3Z5QsdN8hLZMmo71afoW8hJP67
-		let test_addr: [u8; 32] = hex_n_into_unchecked::<_, _, 32>(
-			"0xac288b0d41a3dcb69b025f51d9ad76ee088339f1c27708e164f9b019c584897d",
-		);
-
-		let mut controller = [0u8; 32];
-		tester.solo_state.get_value(
-			b"Staking",
-			b"Bonded",
-			&twox64_concat_to_string(test_addr.encode()),
-			&mut controller,
-		);
-		assert_ne!(controller, [0u8; 32]);
-
-		// after migrate
-		let mut migrated_controller = [0u8; 32];
-		tester.shell_state.get_value(
-			b"AccountMigration",
-			b"Bonded",
-			&twox64_concat_to_string(test_addr.encode()),
-			&mut migrated_controller,
-		);
-		assert_eq!(migrated_controller, controller);
-	});
-}
 
 #[test]
 fn deposit_items_migrate() {
@@ -682,5 +646,26 @@ fn indices_adjust_substrate_account() {
 		let migrated_account = tester.migration_accounts.get(test_addr).unwrap();
 		assert_eq!(migrated_account.data.free, (solo_account.data.free + index.1) * GWEI);
 		assert_eq!(migrated_account.data.reserved, (solo_account.data.reserved - index.1) * GWEI);
+	});
+}
+
+// --- Proxy ---
+
+#[test]
+fn proxy_reserved_adjust() {
+	run_test(|tester| {
+		// https://crab.subscan.io/account/5EU6EEhZRbh1NQS7HRMwAogoBHWtT2eLFQWei2UZHUHJosHt
+		let test_addr = "0x6a4e6bef70a768785050414fcdf4d869debe5cb6336f8eeebe01f458ddbce409";
+
+		let solo_account = tester.solo_accounts.get(test_addr).unwrap();
+		assert_ne!(solo_account.data.reserved, 0);
+
+		// after migrated
+		let migrated_account = tester.migration_accounts.get(test_addr).unwrap();
+		assert_eq!(
+			migrated_account.data.free,
+			(solo_account.data.free + solo_account.data.reserved) * GWEI
+		);
+		assert_eq!(migrated_account.data.reserved, 0);
 	});
 }
