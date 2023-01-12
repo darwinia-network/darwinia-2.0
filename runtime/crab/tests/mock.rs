@@ -50,7 +50,7 @@ impl ExtBuilder {
 			.unwrap();
 		pallet_assets::GenesisConfig::<Runtime> {
 			assets: vec![(KTON_ID, ROOT, true, 1)],
-			metadata: vec![(KTON_ID, b"Pangolin Commitment Token".to_vec(), b"PKTON".to_vec(), 18)],
+			metadata: vec![(KTON_ID, b"Crab Commitment Token".to_vec(), b"CKTON".to_vec(), 18)],
 			accounts: self.assets_accounts.clone(),
 		}
 		.assimilate_storage(&mut t)
