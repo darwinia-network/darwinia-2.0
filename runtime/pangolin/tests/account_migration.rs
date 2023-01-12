@@ -167,13 +167,23 @@ fn validate_evm_account_already_exist() {
 
 #[test]
 fn validate_invalid_sig() {
-	let (from, _) = alice();
+	let (from, from_pk) = alice();
 	let to = H160::from_low_u64_be(33).into();
+	let message = darwinia_account_migration::sr25519_signable_message(b"?", &to);
+	let sig = from.sign(&message);
+
 	ExtBuilder::default().build().execute_with(|| {
 		preset_state_of(&from);
 
-		// Invalid signature.
-		assert_err!(migrate(from, to), invalid_transaction(2));
+		assert_err!(
+			AccountMigration::pre_dispatch(&darwinia_account_migration::Call::migrate {
+				from: from_pk.clone(),
+				to,
+				signature: sig.clone(),
+			})
+			.map_err(E::from),
+			invalid_transaction(2)
+		);
 	});
 }
 
@@ -231,7 +241,7 @@ fn vesting_should_work() {
 				VestingInfo { locked: 100, per_block: 5, starting_block: 0 },
 			],
 		);
-		assert!(Vesting::vesting(to).unwrap().is_empty());
+		assert!(Vesting::vesting(to).is_none());
 		assert!(Balances::locks(to).is_empty());
 
 		assert_ok!(migrate(from, to));
@@ -276,10 +286,10 @@ fn staking_should_work() {
 				Ledger {
 					staked_ring: 20,
 					staked_kton: 20,
-					staked_deposits: vec![].try_into().unwrap(),
-					unstaking_ring: vec![].try_into().unwrap(),
-					unstaking_kton: vec![].try_into().unwrap(),
-					unstaking_deposits: vec![].try_into().unwrap(),
+					staked_deposits: Default::default(),
+					unstaking_ring: Default::default(),
+					unstaking_kton: Default::default(),
+					unstaking_deposits: Default::default(),
 				},
 			);
 
