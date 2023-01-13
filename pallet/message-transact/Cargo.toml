@@ -34,9 +34,9 @@ rlp          = { version = "0.5" }
 sha3         = { version = "0.9" }
 
 # darwinia
+bp-runtime             = { git = "https://github.com/darwinia-network/darwinia-messages-substrate", branch = "polkadot-v0.9.33" }
 pallet-bridge-dispatch = { git = "https://github.com/darwinia-network/darwinia-messages-substrate", branch = "polkadot-v0.9.33" }
 bp-message-dispatch    = { git = "https://github.com/darwinia-network/darwinia-messages-substrate", branch = "polkadot-v0.9.33" }
-bp-runtime             = { git = "https://github.com/darwinia-network/darwinia-messages-substrate", branch = "polkadot-v0.9.33" }
 
 # frontier
 fp-self-contained = { git = "https://github.com/darwinia-network/frontier", branch = "polkadot-v0.9.33" }

@@ -45,8 +45,8 @@ std = [
 	# darwinia
 	"dc-primitives/std",
 
-    # darwinia-messages-substrate
-    "bp-darwinia-core/std",
+	# darwinia-messages-substrate
+	"bp-darwinia-core/std",
 
 	# moonbeam
 	"account/std",
