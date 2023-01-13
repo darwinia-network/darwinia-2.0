@@ -71,11 +71,9 @@ jobs:
         with:
           command: ${{ matrix.action }}
           args: --release --locked --features all-native
-      - name: Compress
+      - name: Change path
         if: matrix.action != 'test'
-        run: |
-          mv target/release/darwinia .
-          tar cf darwinia.tar.zst darwinia -I pzstd
+        run: mv target/release/darwinia .
       - name: Upload
         if: matrix.action != 'test'
         uses: actions/upload-artifact@v2
