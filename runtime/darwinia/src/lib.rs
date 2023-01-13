@@ -33,12 +33,11 @@ pub use bridges_message::*;
 mod weights;
 
 pub use darwinia_common_runtime::*;
+pub use dc_primitives::*;
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 
 // cumulus
 use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
-// darwinia
-use dc_primitives::*;
 // polkadot
 use xcm_executor::XcmExecutor;
 // substrate
@@ -232,6 +231,7 @@ frame_support::construct_runtime! {
 		Balances: pallet_balances = 5,
 		TransactionPayment: pallet_transaction_payment = 6,
 		Assets: pallet_assets = 34,
+		Vesting: pallet_vesting = 20,
 		Deposit: darwinia_deposit = 40,
 		AccountMigration: darwinia_account_migration = 41,
 
@@ -255,7 +255,6 @@ frame_support::construct_runtime! {
 
 		// Utility stuff.
 		Sudo: pallet_sudo = 19,
-		Vesting: pallet_vesting = 20,
 		Utility: pallet_utility = 21,
 		Identity: pallet_identity = 22,
 		Scheduler: pallet_scheduler = 23,

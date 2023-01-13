@@ -29,7 +29,6 @@ use cumulus_primitives_core::ParaId;
 // darwinia
 use super::*;
 use darwinia_runtime::*;
-use dc_primitives::*;
 // frontier
 use fp_evm::GenesisAccount;
 // substrate
@@ -163,6 +162,7 @@ pub fn genesis_config() -> ChainSpec {
 					)],
 					..Default::default()
 				},
+				vesting: Default::default(),
 
 				// Consensus stuff.
 				staking: StakingConfig {
@@ -193,7 +193,6 @@ pub fn genesis_config() -> ChainSpec {
 
 				// Utility stuff.
 				sudo: SudoConfig { key: Some(array_bytes::hex_n_into_unchecked(ALITH)) },
-				vesting: Default::default(),
 
 				// XCM stuff.
 				polkadot_xcm: PolkadotXcmConfig { safe_xcm_version: Some(SAFE_XCM_VERSION) },
@@ -252,6 +251,7 @@ fn testnet_genesis(
 			)],
 			..Default::default()
 		},
+		vesting: Default::default(),
 
 		// Consensus stuff.
 		staking: StakingConfig {
@@ -287,7 +287,6 @@ fn testnet_genesis(
 
 		// Utility stuff.
 		sudo: SudoConfig { key: Some(array_bytes::hex_n_into_unchecked(ALITH)) },
-		vesting: Default::default(),
 
 		// XCM stuff.
 		polkadot_xcm: PolkadotXcmConfig { safe_xcm_version: Some(SAFE_XCM_VERSION) },
