@@ -30,8 +30,6 @@ env:
   SCCACHE_VERSION: v0.3.0
   SCCACHE_DIR: /home/runner/.cache/sccache
 
-  SUBALFRED_LINK: https://github.com/hack-ink/subalfred/releases/latest/download/subalfred-x86_64-unknown-linux-gnu.zst
-
 jobs:
   basic-checks:
     name: Task ${{ matrix.action }} darwinia
