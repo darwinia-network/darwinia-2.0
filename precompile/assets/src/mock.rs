@@ -178,7 +178,7 @@ impl pallet_assets::Config for TestRuntime {
 	type AssetId = AssetId;
 	type Balance = Balance;
 	type CreateOrigin = frame_support::traits::AsEnsureOriginWithArg<
-		frame_system::EnsureSignedBy<frame_support::traits::IsInVec<()>, AccountId>
+		frame_system::EnsureSignedBy<frame_support::traits::IsInVec<()>, AccountId>,
 	>;
 	type Currency = Balances;
 	type Extra = ();

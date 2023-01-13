@@ -20,8 +20,8 @@
 use crate::*;
 
 frame_support::parameter_types! {
-	pub UnvestedFundsAllowedWithdrawReasons: frame_support::traits::WithdrawReasons =
-		frame_support::traits::WithdrawReasons::except(frame_support::traits::WithdrawReasons::TRANSFER | frame_support::traits::WithdrawReasons::RESERVE);
+	pub UnvestedFundsAllowedWithdrawReasons: WithdrawReasons =
+		WithdrawReasons::except(WithdrawReasons::TRANSFER | WithdrawReasons::RESERVE);
 }
 
 impl pallet_vesting::Config for Runtime {

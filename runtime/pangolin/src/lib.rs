@@ -40,10 +40,10 @@ use xcm_executor::XcmExecutor;
 // substrate
 use frame_support::{
 	dispatch::DispatchClass,
-	traits::{Imbalance, OnUnbalanced},
+	traits::{AsEnsureOriginWithArg, Imbalance, IsInVec, OnUnbalanced, WithdrawReasons},
 	weights::{ConstantMultiplier, Weight},
 };
-use frame_system::EnsureRoot;
+use frame_system::{EnsureRoot, EnsureSignedBy};
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata, H160, H256, U256};
 use sp_runtime::{
 	generic,

@@ -34,9 +34,7 @@ impl pallet_assets::Config for Runtime {
 	type AssetDeposit = ConstU128<0>;
 	type AssetId = AssetId;
 	type Balance = Balance;
-	type CreateOrigin = frame_support::traits::AsEnsureOriginWithArg<
-		frame_system::EnsureSignedBy<frame_support::traits::IsInVec<Signers>, AccountId>,
-	>;
+	type CreateOrigin = AsEnsureOriginWithArg<EnsureSignedBy<IsInVec<Signers>, AccountId>>;
 	type Currency = Balances;
 	type Extra = ();
 	type ForceOrigin = EnsureRoot<AccountId>;
