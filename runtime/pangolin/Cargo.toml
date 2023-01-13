@@ -130,7 +130,7 @@ frame-try-runtime         = { optional = true, default-features = false, git = "
 # darwinia
 darwinia-common-runtime = { features = ["test"], path = "../common" }
 # substrate
-sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
+sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33" }
 
 [features]
 default = ["std"]
