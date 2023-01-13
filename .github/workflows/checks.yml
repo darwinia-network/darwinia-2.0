@@ -115,7 +115,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check ${{ matrix.target.chain }}
-        uses: hack-ink/subalfred-check-runtime-action@v0.1.0
+        uses: hack-ink/subalfred-check-runtime-action@v0.1.3
         with:
           uploaded-artifact: darwinia
           chain: ${{ matrix.target.chain }}
