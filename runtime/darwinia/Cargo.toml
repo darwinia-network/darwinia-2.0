@@ -187,7 +187,7 @@ std = [
 	"pallet-evm/std",
 	"pallet-evm-precompile-blake2/std",
 	"pallet-evm-precompile-bn128/std",
-    "pallet-evm-precompile-dispatch/std",
+	"pallet-evm-precompile-dispatch/std",
 	"pallet-evm-precompile-modexp/std",
 	"pallet-evm-precompile-simple/std",
 

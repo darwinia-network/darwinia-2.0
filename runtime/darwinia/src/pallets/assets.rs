@@ -25,7 +25,7 @@ pub enum AssetIds {
 }
 
 frame_support::parameter_types! {
-	pub Signers: Vec<AccountId> = vec![ROOT];
+	pub Creators: Vec<AccountId> = vec![ROOT];
 }
 
 impl pallet_assets::Config for Runtime {
@@ -34,7 +34,7 @@ impl pallet_assets::Config for Runtime {
 	type AssetDeposit = ConstU128<0>;
 	type AssetId = AssetId;
 	type Balance = Balance;
-	type CreateOrigin = AsEnsureOriginWithArg<EnsureSignedBy<IsInVec<Signers>, AccountId>>;
+	type CreateOrigin = AsEnsureOriginWithArg<EnsureSignedBy<IsInVec<Creators>, AccountId>>;
 	type Currency = Balances;
 	type Extra = ();
 	type ForceOrigin = EnsureRoot<AccountId>;
