@@ -216,7 +216,6 @@ pub fn genesis_config() -> ChainSpec {
 						)
 					},
 				},
-				base_fee: Default::default(),
 
 				// S2S stuff.
 				bridge_kusama_grandpa: Default::default(),
