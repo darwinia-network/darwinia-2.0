@@ -8,36 +8,40 @@ impl<S> Processor<S> {
 		let mut registrars = Vec::<Option<RegistrarInfo>>::default();
 		let mut subs_of = Map::<(u128, Vec<[u8; 32]>)>::default();
 
-		log::info!("take `Identity::IdentityOf`, `Identity::Registrars`, `Identity::SuperOf` and `Identity::SuperOf`.");
+		log::info!("take `Identity::IdentityOf`, `Identity::Registrars`, `Identity::SuperOf` and `Identity::SuperOf`");
 		self.solo_state
 			.take_map(b"Identity", b"IdentityOf", &mut identities, get_hashed_key)
 			.take_value(b"Identity", b"Registrars", "", &mut registrars)
 			.take_map(b"Identity", b"SubsOf", &mut subs_of, get_last_64_key);
 
-		log::info!("update identities's deposit and judgement decimal.");
+		log::info!("update identities's deposit and judgement decimal");
 		identities.iter_mut().for_each(|(_k, v)| {
 			v.adjust();
 		});
 
-		log::info!("update registrars fee decimal.");
-		registrars.iter_mut().for_each(|registar_info| match registar_info {
-			Some(info) => {
-				info.adjust();
-			},
-			None => {},
+		log::info!("update registrars fee decimal");
+		registrars.iter_mut().for_each(|o| {
+			if let Some(r) = o {
+				r.adjust()
+			}
 		});
 
-		log::info!("update super_id's reserved balance.");
-		subs_of.iter_mut().for_each(|(super_id, (subs_deposit, _))| {
-			self.shell_state.unreserve(
-				array_bytes::hex_n_into_unchecked::<_, [u8; 32], 32>(super_id),
-				*subs_deposit * GWEI,
-			);
+		log::info!("update super_id's reserved balance");
+		subs_of.into_iter().for_each(|(super_id, (mut subs_deposit, _))| {
+			subs_deposit.adjust();
+
+			self.shell_state
+				.unreserve(array_bytes::hex2array_unchecked::<_, 32>(super_id), subs_deposit);
 		});
 
-		log::info!("set `AccountMigration::IdentityOf` and`AccountMigration::Registrars`.");
-		self.shell_state
-			.insert_map(identities, |k| full_key(b"AccountMigration", b"IdentityOf", k));
+		log::info!("set `AccountMigration::IdentityOf`");
+		{
+			let ik = item_key(b"AccountMigration", b"IdentityOf");
+
+			self.shell_state.insert_map(identities, |h| format!("{ik}{h}"));
+		}
+
+		log::info!("set `AccountMigration::Registrars`");
 		self.shell_state.insert_value(b"AccountMigration", b"Registrars", "", registrars);
 
 		self

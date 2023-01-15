@@ -1,5 +1,3 @@
-use std::vec;
-
 // darwinia
 use crate::*;
 
