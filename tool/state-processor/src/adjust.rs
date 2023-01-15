@@ -74,9 +74,9 @@ impl Adjust for Unbonding {
 
 impl Adjust for Registration {
 	fn adjust(&mut self) {
-		self.deposit.adjust();
 		// Reset the judgements
-		self.judgements = vec![];
+		self.judgements.clear();
+		self.deposit.adjust();
 	}
 }
 

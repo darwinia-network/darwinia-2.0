@@ -72,11 +72,11 @@ where
 
 		self.process_system()
 			.process_indices()
+			.process_identity()
 			.process_vesting()
 			.process_proxy()
 			.process_staking()
-			.process_evm()
-			.process_identity();
+			.process_evm();
 
 		self.save()
 	}

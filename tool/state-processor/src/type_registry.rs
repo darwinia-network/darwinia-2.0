@@ -166,14 +166,12 @@ pub struct Registration {
 	pub deposit: u128,
 	pub info: IdentityInfo,
 }
-
 impl Decode for Registration {
 	fn decode<I: Input>(input: &mut I) -> Result<Self, Error> {
 		let (judgements, deposit, info) = Decode::decode(&mut AppendZerosInput::new(input))?;
 		Ok(Self { judgements, deposit, info })
 	}
 }
-
 #[derive(Debug, Encode, Decode)]
 pub enum Judgement {
 	Unknown,
@@ -184,7 +182,6 @@ pub enum Judgement {
 	LowQuality,
 	Erroneous,
 }
-
 #[derive(Default, Debug, Encode, Decode)]
 pub struct IdentityInfo {
 	pub additional: Vec<(Data, Data)>,
@@ -197,7 +194,6 @@ pub struct IdentityInfo {
 	pub image: Data,
 	pub twitter: Data,
 }
-
 #[derive(Debug, PartialEq, Eq)]
 pub enum Data {
 	None,
@@ -207,13 +203,11 @@ pub enum Data {
 	Keccak256([u8; 32]),
 	ShaThree256([u8; 32]),
 }
-
 impl Default for Data {
 	fn default() -> Self {
 		Data::None
 	}
 }
-
 impl Encode for Data {
 	fn encode(&self) -> Vec<u8> {
 		match self {
@@ -231,7 +225,6 @@ impl Encode for Data {
 		}
 	}
 }
-
 impl Decode for Data {
 	fn decode<I: Input>(input: &mut I) -> Result<Self, Error> {
 		let b = input.read_byte()?;
@@ -250,45 +243,7 @@ impl Decode for Data {
 		})
 	}
 }
-
 impl EncodeLike for Data {}
-
-#[derive(Debug, Encode, Decode, PartialEq, Eq)]
-pub struct RegistrarInfo {
-	pub account: [u8; 32],
-	pub fee: u128,
-	pub fields: IdentityFields,
-}
-
-#[derive(Debug, PartialEq, Eq)]
-pub struct IdentityFields(pub BitFlags<IdentityField>);
-
-impl Encode for IdentityFields {
-	fn using_encoded<R, F: FnOnce(&[u8]) -> R>(&self, f: F) -> R {
-		self.0.bits().using_encoded(f)
-	}
-}
-impl Decode for IdentityFields {
-	fn decode<I: Input>(input: &mut I) -> Result<Self, Error> {
-		let field = u64::decode(input)?;
-		Ok(Self(<BitFlags<IdentityField>>::from_bits(field as u64).map_err(|_| "invalid value")?))
-	}
-}
-
-#[bitflags]
-#[repr(u64)]
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
-pub enum IdentityField {
-	Display = 0b0000000000000000000000000000000000000000000000000000000000000001,
-	Legal = 0b0000000000000000000000000000000000000000000000000000000000000010,
-	Web = 0b0000000000000000000000000000000000000000000000000000000000000100,
-	Riot = 0b0000000000000000000000000000000000000000000000000000000000001000,
-	Email = 0b0000000000000000000000000000000000000000000000000000000000010000,
-	PgpFingerprint = 0b0000000000000000000000000000000000000000000000000000000000100000,
-	Image = 0b0000000000000000000000000000000000000000000000000000000001000000,
-	Twitter = 0b0000000000000000000000000000000000000000000000000000000010000000,
-}
-
 // Copied from substrate repo
 pub struct AppendZerosInput<'a, T>(&'a mut T);
 impl<'a, T> AppendZerosInput<'a, T> {
@@ -327,4 +282,37 @@ impl<'a, T: Input> Input for AppendZerosInput<'a, T> {
 		}
 		Ok(())
 	}
+}
+
+#[derive(Debug, Encode, Decode, PartialEq, Eq)]
+pub struct RegistrarInfo {
+	pub account: [u8; 32],
+	pub fee: u128,
+	pub fields: IdentityFields,
+}
+#[derive(Debug, PartialEq, Eq)]
+pub struct IdentityFields(pub BitFlags<IdentityField>);
+impl Encode for IdentityFields {
+	fn using_encoded<R, F: FnOnce(&[u8]) -> R>(&self, f: F) -> R {
+		self.0.bits().using_encoded(f)
+	}
+}
+impl Decode for IdentityFields {
+	fn decode<I: Input>(input: &mut I) -> Result<Self, Error> {
+		let field = u64::decode(input)?;
+		Ok(Self(<BitFlags<IdentityField>>::from_bits(field as u64).map_err(|_| "invalid value")?))
+	}
+}
+#[bitflags]
+#[repr(u64)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum IdentityField {
+	Display = 0b0000000000000000000000000000000000000000000000000000000000000001,
+	Legal = 0b0000000000000000000000000000000000000000000000000000000000000010,
+	Web = 0b0000000000000000000000000000000000000000000000000000000000000100,
+	Riot = 0b0000000000000000000000000000000000000000000000000000000000001000,
+	Email = 0b0000000000000000000000000000000000000000000000000000000000010000,
+	PgpFingerprint = 0b0000000000000000000000000000000000000000000000000000000000100000,
+	Image = 0b0000000000000000000000000000000000000000000000000000000001000000,
+	Twitter = 0b0000000000000000000000000000000000000000000000000000000010000000,
 }
