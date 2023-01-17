@@ -502,6 +502,13 @@ pub fn run() -> Result<()> {
 			let chain_spec = &runner.config().chain_spec;
 
 			set_default_ss58_version(chain_spec);
+
+			use sc_executor::{sp_wasm_interface::ExtendedHostFunctions, NativeExecutionDispatch};
+			type HostFunctionsOf<E> = ExtendedHostFunctions<
+				sp_io::SubstrateHostFunctions,
+				<E as NativeExecutionDispatch>::ExtendHostFunctions,
+			>;
+
 			// grab the task manager.
 			let registry = &runner.config().prometheus_config.as_ref().map(|cfg| &cfg.registry);
 			let task_manager = TaskManager::new(runner.config().tokio_handle.clone(), *registry)
@@ -509,15 +516,15 @@ pub fn run() -> Result<()> {
 
 			if chain_spec.is_crab() {
 				runner.async_run(|config| {
-					Ok((cmd.run::<Block, CrabRuntimeExecutor>(config), task_manager))
+					Ok((cmd.run::<Block, HostFunctionsOf<CrabRuntimeExecutor>>(), task_manager))
 				})
 			} else if chain_spec.is_pangolin() {
 				runner.async_run(|config| {
-					Ok((cmd.run::<Block, PangolinRuntimeExecutor>(config), task_manager))
+					Ok((cmd.run::<Block, HostFunctionsOf<PangolinRuntimeExecutor>>(), task_manager))
 				})
 			} else {
 				runner.async_run(|config| {
-					Ok((cmd.run::<Block, DarwiniaRuntimeExecutor>(config), task_manager))
+					Ok((cmd.run::<Block, HostFunctionsOf<DarwiniaRuntimeExecutor>>(), task_manager))
 				})
 			}
 		},
