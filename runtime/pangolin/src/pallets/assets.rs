@@ -33,6 +33,7 @@ impl pallet_assets::Config for Runtime {
 	type AssetAccountDeposit = ConstU128<0>;
 	type AssetDeposit = ConstU128<0>;
 	type AssetId = AssetId;
+	type AssetIdParameter = codec::Compact<AssetId>;
 	type Balance = Balance;
 	type CreateOrigin = AsEnsureOriginWithArg<EnsureSignedBy<IsInVec<Creators>, AccountId>>;
 	type Currency = Balances;
@@ -45,4 +46,6 @@ impl pallet_assets::Config for Runtime {
 	type StringLimit = ConstU32<50>;
 	type WeightInfo = ();
 	type RemoveItemsLimit = ConstU32<1000>;
+	#[cfg(feature = "runtime-benchmarks")]
+	type BenchmarkHelper = ();
 }
