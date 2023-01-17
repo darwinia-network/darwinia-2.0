@@ -14,6 +14,7 @@
 - use all previous data to build the new accounts and calculate total issuances
   - merge solo and para account infos
     - how to deal with the account references? - TODO
+  - burn parachain backing ring
 - set `Balances::TotalIssuance`
   - compare the calculated one with the storage one
   - remove para backing account
