@@ -38,6 +38,7 @@ use crate::frontier_service;
 use darwinia_runtime::AuraId;
 use dc_primitives::*;
 // substrate
+use sc_consensus::ImportQueue;
 use sc_network_common::service::NetworkBlock;
 use sp_core::Pair;
 use sp_runtime::app_crypto::AppKey;
@@ -329,7 +330,7 @@ where
 	let force_authoring = parachain_config.force_authoring;
 	let validator = parachain_config.role.is_authority();
 	let prometheus_registry = parachain_config.prometheus_registry().cloned();
-	let import_queue = cumulus_client_service::SharedImportQueue::new(import_queue);
+	let import_queue_service = import_queue.service();
 
 	let (network, system_rpc_tx, tx_handler_controller, start_network) =
 		sc_service::build_network(sc_service::BuildNetworkParams {
@@ -337,7 +338,7 @@ where
 			client: client.clone(),
 			transaction_pool: transaction_pool.clone(),
 			spawn_handle: task_manager.spawn_handle(),
-			import_queue: import_queue.clone(),
+			import_queue: import_queue,
 			block_announce_validator_builder: Some(Box::new(|_| {
 				Box::new(block_announce_validator)
 			})),
@@ -462,7 +463,7 @@ where
 			relay_chain_interface,
 			spawner,
 			parachain_consensus,
-			import_queue,
+			import_queue: import_queue_service,
 			collator_key: collator_key.expect("Command line arguments do not allow this. qed"),
 			relay_chain_slot_duration,
 		};
@@ -476,7 +477,7 @@ where
 			para_id,
 			relay_chain_interface,
 			relay_chain_slot_duration,
-			import_queue,
+			import_queue: import_queue_service,
 		};
 
 		cumulus_client_service::start_full_node(params)?;
