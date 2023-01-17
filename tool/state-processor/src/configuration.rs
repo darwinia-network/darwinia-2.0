@@ -5,7 +5,7 @@ pub const ROOT: [u8; 20] = [0x72, 0x6f, 0x6f, 0x74, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 
 pub trait Configurable {
 	const NAME: &'static str;
-	// This account's balance will be cleared.
+	// This account's balance will be burned.
 	// Please make sure no one transfer balance to this account.
 	const PARACHAIN_BACKING: &'static str;
 }
