@@ -28,7 +28,7 @@ sp-runtime    = { default-features = false, git = "https://github.com/paritytech
 sp-std        = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36" }
 
 [dev-dependencies]
-array-bytes  = { version = "4.1" }
+array-bytes  = { version = "6.0" }
 libsecp256k1 = { version = "0.5", features = ["static-context", "hmac"] }
 rlp          = { version = "0.5" }
 sha3         = { version = "0.9" }
