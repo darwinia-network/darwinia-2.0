@@ -216,35 +216,6 @@ where
 	})
 }
 
-async fn build_relay_chain_interface(
-	polkadot_config: sc_service::Configuration,
-	parachain_config: &sc_service::Configuration,
-	telemetry_worker_handle: Option<sc_telemetry::TelemetryWorkerHandle>,
-	task_manager: &mut sc_service::TaskManager,
-	collator_options: cumulus_client_cli::CollatorOptions,
-	hwbench: Option<sc_sysinfo::HwBench>,
-) -> cumulus_relay_chain_interface::RelayChainResult<(
-	Arc<(dyn 'static + cumulus_relay_chain_interface::RelayChainInterface)>,
-	Option<polkadot_service::CollatorPair>,
-)> {
-	match collator_options.relay_chain_rpc_url {
-		Some(relay_chain_url) =>
-			cumulus_relay_chain_minimal_node::build_minimal_relay_chain_node(
-				polkadot_config,
-				task_manager,
-				relay_chain_url,
-			)
-			.await,
-		None => cumulus_relay_chain_inprocess_interface::build_inprocess_relay_chain(
-			polkadot_config,
-			parachain_config,
-			telemetry_worker_handle,
-			task_manager,
-			hwbench,
-		),
-	}
-}
-
 /// Start a node with the given parachain `Configuration` and relay chain `Configuration`.
 ///
 /// This is the actual implementation that is abstract over the executor and the runtime api.
