@@ -102,7 +102,7 @@ impl pallet_balances::Config for TestRuntime {
 impl pallet_timestamp::Config for TestRuntime {
 	type MinimumPeriod = ();
 	type Moment = u64;
-	type OnTimestampSet = ();
+	type OnTimestampSet = Aura;
 	type WeightInfo = ();
 }
 pub struct TestPrecompiles<R>(PhantomData<R>);

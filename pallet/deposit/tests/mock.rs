@@ -52,7 +52,7 @@ impl frame_system::Config for Runtime {
 impl pallet_timestamp::Config for Runtime {
 	type MinimumPeriod = ();
 	type Moment = Moment;
-	type OnTimestampSet = ();
+	type OnTimestampSet = Aura;
 	type WeightInfo = ();
 }
 
