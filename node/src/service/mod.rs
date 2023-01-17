@@ -47,7 +47,7 @@ type FullBackend = sc_service::TFullBackend<Block>;
 type FullClient<RuntimeApi, Executor> =
 	sc_service::TFullClient<Block, RuntimeApi, sc_executor::NativeElseWasmExecutor<Executor>>;
 type ParachainBlockImport<RuntimeApi, Executor> =
-	cumulus_client_consensus_common::ParachainBlockImport<Arc<FullClient<RuntimeApi, Executor>>>;
+	cumulus_client_consensus_common::ParachainBlockImport<Block, Arc<FullClient<RuntimeApi, Executor>>, FullBackend>;
 
 /// Can be called for a `Configuration` to check if it is a configuration for the `Crab` network.
 pub trait IdentifyVariant {
@@ -177,7 +177,7 @@ where
 		client.clone(),
 	);
 
-	let block_import = ParachainBlockImport::new(client.clone());
+	let block_import = ParachainBlockImport::new(client.clone(), backend.clone());
 
 	let import_queue = parachain_build_import_queue(
 		client.clone(),
@@ -372,7 +372,7 @@ where
 		task_manager: &mut task_manager,
 		config: parachain_config,
 		keystore: keystore_container.sync_keystore(),
-		backend: backend.clone(),
+		backend,
 		network: network.clone(),
 		system_rpc_tx,
 		tx_handler_controller,
