@@ -74,7 +74,7 @@ impl Adjust for Registration {
 	fn adjust(&mut self) {
 		self.judgements.iter_mut().for_each(|(_, judgement)| {
 			if let Judgement::FeePaid(ref mut amount) = judgement {
-				*amount = *amount * GWEI;
+				amount.adjust();
 			}
 		});
 		self.deposit.adjust();
