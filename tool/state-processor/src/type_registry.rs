@@ -172,7 +172,7 @@ impl Decode for Registration {
 		Ok(Self { judgements, deposit, info })
 	}
 }
-#[derive(Debug, Encode, Decode, PartialEq)]
+#[derive(Debug, PartialEq, Eq, Encode, Decode)]
 pub enum Judgement {
 	Unknown,
 	FeePaid(u128),
