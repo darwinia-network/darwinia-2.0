@@ -53,3 +53,4 @@ std = [
 ]
 
 # TODO: runtime-benchmarks, try-runtime
+try-runtime = ["frame-support/try-runtime"]
