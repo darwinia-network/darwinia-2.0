@@ -314,7 +314,7 @@ try-runtime = [
 	"parachain-info/try-runtime",
 
 	# darwinia
-	# "darwinia-account-migration/try-runtime",
+	"darwinia-account-migration/try-runtime",
 	"darwinia-deposit/try-runtime",
 	"darwinia-ecdsa-authority/try-runtime",
 	"darwinia-message-gadget/try-runtime",
