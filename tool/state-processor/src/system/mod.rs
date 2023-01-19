@@ -269,7 +269,7 @@ where
 	}
 }
 
-fn try_get_evm_address(key: &str) -> Option<[u8; 20]> {
+fn try_get_evm_address(key: &str) -> Option<AccountId20> {
 	let k = array_bytes::hex2bytes_unchecked(key);
 
 	if is_evm_address(&k) {
@@ -282,7 +282,7 @@ fn try_get_evm_address(key: &str) -> Option<[u8; 20]> {
 fn new_kton_account(
 	account_info: &mut AccountInfo,
 	asset_details: &mut AssetDetails,
-	balance: u128,
+	balance: Balance,
 ) -> AssetAccount {
 	account_info.sufficients += 1;
 	asset_details.accounts += 1;

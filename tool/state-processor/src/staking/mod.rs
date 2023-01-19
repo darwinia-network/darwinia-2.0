@@ -102,7 +102,7 @@ impl<S> Processor<S> {
 		);
 
 		log::info!("set `Staking::ElapsedTime`");
-		self.shell_state.insert_value(b"Staking", b"ElapsedTime", "", elapsed_time as u128);
+		self.shell_state.insert_value(b"Staking", b"ElapsedTime", "", elapsed_time as Moment);
 
 		self
 	}
