@@ -321,6 +321,12 @@ try-runtime = [
 	"darwinia-message-transact/try-runtime",
 	"darwinia-staking/try-runtime",
 
+	# darwinia-messages-substrate
+	"pallet-bridge-dispatch/try-runtime",
+	"pallet-bridge-grandpa/try-runtime",
+	"pallet-bridge-messages/try-runtime",
+	"pallet-fee-market/try-runtime",
+
 	# frontier
 	"pallet-ethereum/try-runtime",
 	"pallet-evm/try-runtime",
