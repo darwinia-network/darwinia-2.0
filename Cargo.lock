@@ -7397,6 +7397,7 @@ dependencies = [
  "pallet-bridge-dispatch",
  "pallet-bridge-grandpa",
  "pallet-bridge-messages",
+ "pallet-bridge-parachains",
  "pallet-collective",
  "pallet-democracy",
  "pallet-elections-phragmen",

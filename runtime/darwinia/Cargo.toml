@@ -316,6 +316,13 @@ try-runtime = [
 	"cumulus-pallet-xcmp-queue/try-runtime",
 	"parachain-info/try-runtime",
 
+	# darwinia-messages-substrate
+	"pallet-bridge-dispatch/try-runtime",
+	"pallet-bridge-grandpa/try-runtime",
+	"pallet-bridge-messages/try-runtime",
+	"pallet-bridge-parachains/try-runtime",
+	"pallet-fee-market/try-runtime",
+
 	# frontier
 	"pallet-ethereum/try-runtime",
 	"pallet-evm/try-runtime",
