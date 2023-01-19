@@ -112,6 +112,7 @@ pub struct VestingInfo {
 pub struct Deposit {
 	pub id: u16,
 	pub value: u128,
+	pub start_time: u128,
 	pub expired_time: u128,
 	pub in_use: bool,
 }
@@ -172,7 +173,7 @@ impl Decode for Registration {
 		Ok(Self { judgements, deposit, info })
 	}
 }
-#[derive(Debug, Encode, Decode)]
+#[derive(Debug, PartialEq, Eq, Encode, Decode)]
 pub enum Judgement {
 	Unknown,
 	FeePaid(u128),
