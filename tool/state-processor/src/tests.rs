@@ -8,8 +8,8 @@ use crate::*;
 struct Tester {
 	// solo chain
 	solo_accounts: Map<AccountInfo>,
-	solo_remaining_ring: Map<u128>,
-	solo_remaining_kton: Map<u128>,
+	solo_remaining_ring: Map<Balance>,
+	solo_remaining_kton: Map<Balance>,
 	solo_evm_codes: Map<Vec<u8>>,
 	// para chain
 	para_accounts: Map<AccountInfo>,

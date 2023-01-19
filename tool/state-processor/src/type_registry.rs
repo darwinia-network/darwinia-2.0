@@ -6,10 +6,10 @@ use parity_scale_codec::{Decode, Encode, EncodeLike, Error, Input};
 
 pub type Balance = u128;
 pub type AssetBalance = u128;
-pub type BlockNumber = u32;
-pub type RefCount = u32;
 pub type AccountId20 = [u8; 20];
 pub type AccountId32 = [u8; 32];
+pub type BlockNumber = u32;
+pub type RefCount = u32;
 pub type Moment = u128;
 pub type DepositId = u16;
 
@@ -119,7 +119,7 @@ pub struct VestingInfo {
 
 #[derive(Default, Debug, Encode, Decode)]
 pub struct Deposit {
-	pub id: u16,
+	pub id: DepositId,
 	pub value: Balance,
 	pub start_time: Moment,
 	pub expired_time: Moment,
