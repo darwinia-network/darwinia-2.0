@@ -6,7 +6,7 @@ impl<S> Processor<S> {
 	pub fn process_identity(&mut self) -> &mut Self {
 		let mut identities = <Map<Registration>>::default();
 		let mut registrars = Vec::<Option<RegistrarInfo<[u8; 32]>>>::default();
-		let mut subs_of = Map::<(u128, Vec<[u8; 32]>)>::default();
+		let mut subs_of = Map::<(Balance, Vec<AccountId32>)>::default();
 
 		log::info!("take `Identity::IdentityOf`, `Identity::Registrars`, `Identity::SuperOf` and `Identity::SuperOf`");
 		self.solo_state

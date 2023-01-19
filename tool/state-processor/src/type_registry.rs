@@ -6,10 +6,10 @@ use parity_scale_codec::{Decode, Encode, EncodeLike, Error, Input};
 
 pub type Balance = u128;
 pub type AssetBalance = u128;
+pub type BlockNumber = u32;
 pub type RefCount = u32;
 pub type AccountId20 = [u8; 20];
 pub type AccountId32 = [u8; 32];
-pub type BlockNumber = u32;
 pub type Moment = u128;
 pub type DepositId = u16;
 
@@ -157,7 +157,7 @@ pub struct StakingLock {
 #[derive(Default, Debug, Encode, Decode)]
 pub struct Unbonding {
 	pub amount: Balance,
-	pub until: Moment,
+	pub until: BlockNumber,
 }
 
 #[derive(Default, Debug, Encode, Decode)]
