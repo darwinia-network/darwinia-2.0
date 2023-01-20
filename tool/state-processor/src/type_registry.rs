@@ -5,7 +5,6 @@ use enumflags2::{bitflags, BitFlags};
 use parity_scale_codec::{Decode, Encode, EncodeLike, Error, Input};
 
 pub type Balance = u128;
-pub type AssetBalance = u128;
 pub type AccountId20 = [u8; 20];
 pub type AccountId32 = [u8; 32];
 pub type BlockNumber = u32;
@@ -56,9 +55,9 @@ pub struct AssetDetails {
 	pub issuer: AccountId20,
 	pub admin: AccountId20,
 	pub freezer: AccountId20,
-	pub supply: AssetBalance,
+	pub supply: Balance,
 	pub deposit: Balance,
-	pub min_balance: AssetBalance,
+	pub min_balance: Balance,
 	pub is_sufficient: bool,
 	pub accounts: u32,
 	pub sufficients: u32,
@@ -69,7 +68,7 @@ pub struct AssetDetails {
 // https://github.dev/paritytech/substrate/blob/polkadot-v0.9.30/frame/assets/src/types.rs#L115
 #[derive(Default, Debug, Encode, Decode)]
 pub struct AssetAccount {
-	pub balance: AssetBalance,
+	pub balance: Balance,
 	pub is_frozen: bool,
 	pub reason: ExistenceReason,
 	pub extra: (),
@@ -96,7 +95,7 @@ impl Default for ExistenceReason {
 // https://github.dev/paritytech/substrate/blob/polkadot-v0.9.30/frame/assets/src/types.rs#L73
 #[derive(Debug, Encode, Decode)]
 pub struct Approval {
-	pub amount: AssetBalance,
+	pub amount: Balance,
 	pub deposit: Balance,
 }
 
