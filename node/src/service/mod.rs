@@ -279,7 +279,7 @@ where
 			),
 	} = new_partial::<RuntimeApi, Executor>(&parachain_config, eth_rpc_config)?;
 
-	let (relay_chain_interface, collator_key) = build_relay_chain_interface(
+	let (relay_chain_interface, collator_key) = cumulus_client_service::build_relay_chain_interface(
 		polkadot_config,
 		&parachain_config,
 		telemetry_worker_handle,
@@ -372,7 +372,7 @@ where
 		task_manager: &mut task_manager,
 		config: parachain_config,
 		keystore: keystore_container.sync_keystore(),
-		backend,
+		backend: backend.clone(),
 		network: network.clone(),
 		system_rpc_tx,
 		tx_handler_controller,
