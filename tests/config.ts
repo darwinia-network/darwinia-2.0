@@ -4,3 +4,8 @@ export const config = {
 	privKey: "0x99B3C12287537E38C90A9219D4CB074A89A16E9CDB20BF85728EBD97C343E342", // address private key
 	gas: 4000000
 }
+
+export const BLOCK_TIMESTAMP = 12; // 12 seconds per para chain block
+// TODO: CHECK AGAIN
+export const BLOCK_GAS_LIMIT = 9375000;
+export const CHAIN_ID = 43;
