@@ -76,12 +76,12 @@ precompile-utils = { default-features = false, git = "https://github.com/darwini
 xcm-primitives   = { default-features = false, git = "https://github.com/darwinia-network/moonbeam", branch = "polkadot-v0.9.36" }
 
 # polkadot
-pallet-xcm              = { default-features = false, git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.33" }
-polkadot-parachain      = { default-features = false, git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.33" }
-polkadot-runtime-common = { default-features = false, git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.33" }
-xcm                     = { default-features = false, git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.33" }
-xcm-builder             = { default-features = false, git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.33" }
-xcm-executor            = { default-features = false, git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.33" }
+pallet-xcm              = { default-features = false, git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.36" }
+polkadot-parachain      = { default-features = false, git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.36" }
+polkadot-runtime-common = { default-features = false, git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.36" }
+xcm                     = { default-features = false, git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.36" }
+xcm-builder             = { default-features = false, git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.36" }
+xcm-executor            = { default-features = false, git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.36" }
 
 # substrate
 frame-executive                            = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36" }

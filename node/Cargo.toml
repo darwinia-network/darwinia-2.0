@@ -52,11 +52,11 @@ fp-rpc          = { git = "https://github.com/darwinia-network/frontier", branch
 fp-storage      = { git = "https://github.com/darwinia-network/frontier", branch = "polkadot-v0.9.36" }
 
 # polkadot
-polkadot-cli        = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.33" }
-polkadot-parachain  = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.33" }
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.33" }
-polkadot-service    = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.33" }
-xcm                 = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.33" }
+polkadot-cli        = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.36" }
+polkadot-parachain  = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.36" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.36" }
+polkadot-service    = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.36" }
+xcm                 = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.36" }
 
 # substrate
 frame-benchmarking             = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36" }

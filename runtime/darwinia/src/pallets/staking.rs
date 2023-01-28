@@ -52,7 +52,7 @@ impl darwinia_staking::Stake for KtonStaking {
 	fn stake(who: &Self::AccountId, item: Self::Item) -> sp_runtime::DispatchResult {
 		Assets::transfer(
 			RuntimeOrigin::signed(*who),
-			AssetIds::Kton as AssetId,
+			codec::Compact(AssetIds::Kton as AssetId),
 			darwinia_staking::account_id(),
 			item,
 		)
@@ -61,7 +61,7 @@ impl darwinia_staking::Stake for KtonStaking {
 	fn unstake(who: &Self::AccountId, item: Self::Item) -> sp_runtime::DispatchResult {
 		Assets::transfer(
 			RuntimeOrigin::signed(darwinia_staking::account_id()),
-			AssetIds::Kton as AssetId,
+			codec::Compact(AssetIds::Kton as AssetId),
 			*who,
 			item,
 		)
