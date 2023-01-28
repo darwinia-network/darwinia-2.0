@@ -47,7 +47,11 @@ type FullBackend = sc_service::TFullBackend<Block>;
 type FullClient<RuntimeApi, Executor> =
 	sc_service::TFullClient<Block, RuntimeApi, sc_executor::NativeElseWasmExecutor<Executor>>;
 type ParachainBlockImport<RuntimeApi, Executor> =
-	cumulus_client_consensus_common::ParachainBlockImport<Block, Arc<FullClient<RuntimeApi, Executor>>, FullBackend>;
+	cumulus_client_consensus_common::ParachainBlockImport<
+		Block,
+		Arc<FullClient<RuntimeApi, Executor>>,
+		FullBackend,
+	>;
 
 /// Can be called for a `Configuration` to check if it is a configuration for the `Crab` network.
 pub trait IdentifyVariant {
@@ -279,21 +283,22 @@ where
 			),
 	} = new_partial::<RuntimeApi, Executor>(&parachain_config, eth_rpc_config)?;
 
-	let (relay_chain_interface, collator_key) = cumulus_client_service::build_relay_chain_interface(
-		polkadot_config,
-		&parachain_config,
-		telemetry_worker_handle,
-		&mut task_manager,
-		collator_options.clone(),
-		hwbench.clone(),
-	)
-	.await
-	.map_err(|e| match e {
-		cumulus_relay_chain_interface::RelayChainError::ServiceError(
-			polkadot_service::Error::Sub(x),
-		) => x,
-		s => s.to_string().into(),
-	})?;
+	let (relay_chain_interface, collator_key) =
+		cumulus_client_service::build_relay_chain_interface(
+			polkadot_config,
+			&parachain_config,
+			telemetry_worker_handle,
+			&mut task_manager,
+			collator_options.clone(),
+			hwbench.clone(),
+		)
+		.await
+		.map_err(|e| match e {
+			cumulus_relay_chain_interface::RelayChainError::ServiceError(
+				polkadot_service::Error::Sub(x),
+			) => x,
+			s => s.to_string().into(),
+		})?;
 
 	let block_announce_validator =
 		cumulus_client_network::BlockAnnounceValidator::new(relay_chain_interface.clone(), para_id);
@@ -309,7 +314,7 @@ where
 			client: client.clone(),
 			transaction_pool: transaction_pool.clone(),
 			spawn_handle: task_manager.spawn_handle(),
-			import_queue: import_queue,
+			import_queue,
 			block_announce_validator_builder: Some(Box::new(|_| {
 				Box::new(block_announce_validator)
 			})),
