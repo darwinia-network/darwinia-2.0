@@ -6,14 +6,14 @@ use crate::*;
 #[derive(Debug)]
 pub struct AccountAll {
 	pub nonce: u32,
-	pub consumers: u32,
-	pub providers: u32,
-	pub sufficients: u32,
-	pub ring: u128,
-	pub ring_reserved: u128,
+	pub consumers: RefCount,
+	pub providers: RefCount,
+	pub sufficients: RefCount,
+	pub ring: Balance,
+	pub ring_reserved: Balance,
 	pub ring_locks: Vec<BalanceLock>,
-	pub kton: u128,
-	pub kton_reserved: u128,
+	pub kton: Balance,
+	pub kton_reserved: Balance,
 	pub kton_locks: Vec<BalanceLock>,
 }
 
@@ -24,12 +24,30 @@ where
 	pub fn process_system(&mut self) -> &mut Self {
 		// System storage items.
 		// https://github.dev/darwinia-network/substrate/blob/darwinia-v0.12.5/frame/system/src/lib.rs#L545
-		let solo_account_infos = self.process_solo_account_infos();
-		let para_account_infos = self.process_para_account_infos();
+		let mut solo_account_infos = self.process_solo_account_infos();
+		let mut para_account_infos = self.process_para_account_infos();
 		let (ring_total_issuance_storage, kton_total_issuance_storage) = self.process_balances();
+		let (solo_validators, para_collators) = self.process_session();
 		let mut accounts = Map::default();
-		let mut ring_total_issuance = u128::default();
-		let mut kton_total_issuance = u128::default();
+		let mut ring_total_issuance = Balance::default();
+		let mut kton_total_issuance = Balance::default();
+
+		// Skip for testnets, due to https://github.com/paritytech/substrate/issues/13172.
+		// log::info!("decrease solo pallet-session account references");
+		// solo_validators.into_iter().for_each(|k| {
+		// 	if let Some(a) = solo_account_infos.get_mut(&k) {
+		// 		a.consumers -= 1;
+		// 	}
+		// });
+
+		// Skip, due to https://github.com/paritytech/substrate/issues/13172.
+		// log::info!("decrease para pallet-session account references");
+		// para_collators.into_iter().for_each(|k| {
+		// 	if let Some(a) = para_account_infos.get_mut(&k) {
+		// 		dbg!(get_last_64(&k));
+		// 		a.consumers -= 1;
+		// 	}
+		// });
 
 		log::info!("build accounts");
 		log::info!("calculate total issuance");
@@ -85,6 +103,14 @@ where
 			ring_total_issuance += v.data.free;
 			ring_total_issuance += v.data.reserved;
 		});
+
+		log::info!("burn parachain backing ring");
+		if let Some(a) = accounts.get_mut(&blake2_128_concat_to_string(
+			array_bytes::hex2array_unchecked::<_, 32>(S::PARACHAIN_BACKING),
+		)) {
+			ring_total_issuance -= a.ring;
+			a.ring = 0;
+		}
 
 		log::info!("`ring_total_issuance({ring_total_issuance})`");
 		log::info!("`ring_total_issuance_storage({ring_total_issuance_storage})`");
@@ -226,6 +252,7 @@ where
 				);
 			}
 		});
+
 		log::info!("total_remaining_ring({total_remaining_ring})");
 		log::info!("total_remaining_kton({total_remaining_kton})");
 
@@ -242,7 +269,7 @@ where
 	}
 }
 
-fn try_get_evm_address(key: &str) -> Option<[u8; 20]> {
+fn try_get_evm_address(key: &str) -> Option<AccountId20> {
 	let k = array_bytes::hex2bytes_unchecked(key);
 
 	if is_evm_address(&k) {
@@ -255,7 +282,7 @@ fn try_get_evm_address(key: &str) -> Option<[u8; 20]> {
 fn new_kton_account(
 	account_info: &mut AccountInfo,
 	asset_details: &mut AssetDetails,
-	balance: u128,
+	balance: Balance,
 ) -> AssetAccount {
 	account_info.sufficients += 1;
 	asset_details.accounts += 1;
