@@ -1,10 +1,10 @@
 import Web3 from "web3";
 import { describe } from "mocha";
 import { expect } from "chai";
-import { config, CHAIN_ID} from "../config";
+import { HOST_URL, CHAIN_ID } from "../config";
 
-const web3 = new Web3(config.host);
-describe("Test Block RPC", () => {
+const web3 = new Web3(HOST_URL);
+describe("Test constants RPC", () => {
 	it("Should have 0 hashrate", async () => {
 		expect(await web3.eth.getHashrate()).to.equal(0);
 	});
