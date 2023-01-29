@@ -93,15 +93,23 @@ pub mod pallet {
 		+ darwinia_staking::Config
 	{
 		/// Override the [`frame_system::Config::RuntimeEvent`].
-		type RuntimeEvent: From<Event> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
+		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 	}
 
 	#[allow(missing_docs)]
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
-	pub enum Event {
+	pub enum Event<T: Config> {
 		/// An account has been migrated.
-		Migrated { from: AccountId32, to: AccountId20 },
+		Migrated {
+			from: AccountId32,
+			to: AccountId20,
+			account_ring: Box<AccountData<Balance>>,
+			vested_ring: Option<Vec<VestingInfo<Balance, BlockNumber>>>,
+			deposited_ring: Option<Vec<Deposit>>,
+			account_kton: Option<AssetAccount>,
+			staking_ledger: Box<Option<LedgerForEvent>>,
+		},
 	}
 
 	#[pallet::error]
@@ -172,96 +180,22 @@ pub mod pallet {
 		) -> DispatchResult {
 			ensure_none(origin)?;
 
-			let account = <Accounts<T>>::take(&from)
-				.ok_or("[pallet::account-migration] already checked in `pre_dispatch`; qed")?;
+			let account_ring = Box::new(Self::migrate_system(&from, &to)?);
+			let account_kton = Self::migrate_assets(&from, &to);
+			let vested_ring = Self::migrate_vesting(&from, &to)?;
+			Self::migrate_identity(&from, &to);
+			let (deposited_ring, staking_ledger) = Self::migrate_staking(&from, &to)?;
+			let staking_ledger = Box::new(staking_ledger);
 
-			<frame_system::Account<T>>::insert(to, account);
-
-			if let Some(a) = <KtonAccounts<T>>::take(&from) {
-				migration::put_storage_value(
-					b"Assets",
-					b"Account",
-					&[
-						Blake2_128Concat::hash(&KTON_ID.encode()),
-						Blake2_128Concat::hash(&to.encode()),
-					]
-					.concat(),
-					a,
-				);
-			}
-			if let Some(v) = <Vestings<T>>::take(&from) {
-				let locked = v.iter().map(|v| v.locked()).sum();
-
-				<pallet_vesting::Vesting<T>>::insert(
-					to,
-					BoundedVec::try_from(v).map_err(|_| <Error<T>>::ExceedMaxVestings)?,
-				);
-
-				// https://github.dev/paritytech/substrate/blob/19162e43be45817b44c7d48e50d03f074f60fbf4/frame/vesting/src/lib.rs#L248
-				let reasons = WithdrawReasons::TRANSFER | WithdrawReasons::RESERVE;
-
-				// https://github.dev/paritytech/substrate/blob/19162e43be45817b44c7d48e50d03f074f60fbf4/frame/vesting/src/lib.rs#L86
-				<pallet_balances::Pallet<T>>::set_lock(*b"vesting ", &to, locked, reasons);
-			}
-			if let Some(i) = <Identities<T>>::take(&from) {
-				migration::put_storage_value(
-					b"Identity",
-					b"IdentityOf",
-					&Twox64Concat::hash(&to.encode()),
-					i,
-				);
-			}
-			{
-				let mut rs = <pallet_identity::Pallet<T>>::registrars();
-
-				for r in rs.iter_mut().flatten() {
-					if r.account.0 == <AccountId32 as AsRef<[u8; 32]>>::as_ref(&from)[..20] {
-						r.account = to;
-
-						break;
-					}
-				}
-
-				migration::put_storage_value(b"Identity", b"Registrars", &[], rs);
-			}
-			if let Some(l) = <Ledgers<T>>::take(&from) {
-				if let Some(ds) = <Deposits<T>>::take(&from) {
-					<pallet_balances::Pallet<T> as Currency<_>>::transfer(
-						&to,
-						&darwinia_deposit::account_id(),
-						ds.iter().map(|d| d.value).sum(),
-						KeepAlive,
-					)?;
-					<darwinia_deposit::Deposits<T>>::insert(
-						to,
-						BoundedVec::try_from(ds).map_err(|_| <Error<T>>::ExceedMaxDeposits)?,
-					);
-				}
-
-				let staking_pot = darwinia_staking::account_id();
-				<pallet_balances::Pallet<T> as Currency<_>>::transfer(
-					&to,
-					&staking_pot,
-					l.staked_ring + l.unstaking_ring.iter().map(|(r, _)| r).sum::<Balance>(),
-					KeepAlive,
-				)?;
-
-				let sum = l.staked_kton + l.unstaking_kton.iter().map(|(k, _)| k).sum::<Balance>();
-				if let Some(amount) = <pallet_assets::Pallet<T>>::maybe_balance(KTON_ID, to) {
-					if amount >= sum {
-						<pallet_assets::Pallet<T>>::transfer(
-							RawOrigin::Signed(to).into(),
-							KTON_ID,
-							staking_pot,
-							sum,
-						)?;
-					}
-				}
-
-				<darwinia_staking::Ledgers<T>>::insert(to, l);
-			}
-
-			Self::deposit_event(Event::Migrated { from, to });
+			Self::deposit_event(Event::Migrated {
+				from,
+				to,
+				account_ring,
+				vested_ring,
+				deposited_ring,
+				account_kton,
+				staking_ledger,
+			});
 
 			Ok(())
 		}
@@ -305,13 +239,153 @@ pub mod pallet {
 			}
 		}
 	}
+	impl<T> Pallet<T>
+	where
+		T: Config,
+	{
+		fn migrate_system(
+			from: &AccountId32,
+			to: &AccountId20,
+		) -> Result<AccountData<Balance>, DispatchError> {
+			let a = <Accounts<T>>::take(from)
+				.ok_or("[pallet::account-migration] already checked in `pre_dispatch`; qed")?;
+
+			<frame_system::Account<T>>::insert(to, &a);
+
+			Ok(a.data)
+		}
+
+		fn migrate_assets(from: &AccountId32, to: &AccountId20) -> Option<AssetAccount> {
+			if let Some(a) = <KtonAccounts<T>>::take(from) {
+				migration::put_storage_value(
+					b"Assets",
+					b"Account",
+					&[
+						Blake2_128Concat::hash(&KTON_ID.encode()),
+						Blake2_128Concat::hash(&to.encode()),
+					]
+					.concat(),
+					&a,
+				);
+
+				Some(a)
+			} else {
+				None
+			}
+		}
+
+		fn migrate_vesting(
+			from: &AccountId32,
+			to: &AccountId20,
+		) -> Result<Option<Vec<VestingInfo<Balance, BlockNumber>>>, DispatchError> {
+			if let Some(v) = <Vestings<T>>::take(from) {
+				let locked = v.iter().map(|v| v.locked()).sum();
+
+				<pallet_vesting::Vesting<T>>::insert(
+					to,
+					BoundedVec::try_from(v.clone()).map_err(|_| <Error<T>>::ExceedMaxVestings)?,
+				);
+
+				// https://github.dev/paritytech/substrate/blob/19162e43be45817b44c7d48e50d03f074f60fbf4/frame/vesting/src/lib.rs#L248
+				let reasons = WithdrawReasons::TRANSFER | WithdrawReasons::RESERVE;
+
+				// https://github.dev/paritytech/substrate/blob/19162e43be45817b44c7d48e50d03f074f60fbf4/frame/vesting/src/lib.rs#L86
+				<pallet_balances::Pallet<T>>::set_lock(*b"vesting ", to, locked, reasons);
+
+				Ok(Some(v))
+			} else {
+				Ok(None)
+			}
+		}
+
+		fn migrate_identity(from: &AccountId32, to: &AccountId20) {
+			if let Some(i) = <Identities<T>>::take(from) {
+				migration::put_storage_value(
+					b"Identity",
+					b"IdentityOf",
+					&Twox64Concat::hash(&to.encode()),
+					i,
+				);
+			}
+			{
+				let mut rs = <pallet_identity::Pallet<T>>::registrars();
+
+				for r in rs.iter_mut().flatten() {
+					if r.account.0 == <AccountId32 as AsRef<[u8; 32]>>::as_ref(from)[..20] {
+						r.account = *to;
+
+						break;
+					}
+				}
+
+				migration::put_storage_value(b"Identity", b"Registrars", &[], rs);
+			}
+		}
+
+		fn migrate_staking(
+			from: &AccountId32,
+			to: &AccountId20,
+		) -> Result<(Option<Vec<Deposit>>, Option<LedgerForEvent>), DispatchError> {
+			if let Some(l) = <Ledgers<T>>::take(from) {
+				let ds = Self::migrate_deposit(from, to)?;
+
+				let staking_pot = darwinia_staking::account_id();
+				<pallet_balances::Pallet<T> as Currency<_>>::transfer(
+					to,
+					&staking_pot,
+					l.staked_ring + l.unstaking_ring.iter().map(|(r, _)| r).sum::<Balance>(),
+					KeepAlive,
+				)?;
+
+				let sum = l.staked_kton + l.unstaking_kton.iter().map(|(k, _)| k).sum::<Balance>();
+				if let Some(amount) = <pallet_assets::Pallet<T>>::maybe_balance(KTON_ID, to) {
+					if amount >= sum {
+						<pallet_assets::Pallet<T>>::transfer(
+							RawOrigin::Signed(*to).into(),
+							KTON_ID,
+							staking_pot,
+							sum,
+						)?;
+					}
+				}
+
+				<darwinia_staking::Ledgers<T>>::insert(to, &l);
+
+				Ok((ds, Some(l.into())))
+			} else {
+				Ok((None, None))
+			}
+		}
+
+		fn migrate_deposit(
+			from: &AccountId32,
+			to: &AccountId20,
+		) -> Result<Option<Vec<Deposit>>, DispatchError> {
+			if let Some(ds) = <Deposits<T>>::take(from) {
+				<pallet_balances::Pallet<T> as Currency<_>>::transfer(
+					to,
+					&darwinia_deposit::account_id(),
+					ds.iter().map(|d| d.value).sum(),
+					KeepAlive,
+				)?;
+				<darwinia_deposit::Deposits<T>>::insert(
+					to,
+					BoundedVec::try_from(ds.clone()).map_err(|_| <Error<T>>::ExceedMaxDeposits)?,
+				);
+
+				Ok(Some(ds))
+			} else {
+				Ok(None)
+			}
+		}
+	}
 }
 pub use pallet::*;
 
 // Copy from <https://github.dev/paritytech/substrate/blob/polkadot-v0.9.30/frame/assets/src/types.rs#L115>.
 // Due to its visibility.
 #[allow(missing_docs)]
-#[derive(PartialEq, Eq, Encode, Decode, MaxEncodedLen, TypeInfo, RuntimeDebug)]
+#[derive(Clone, PartialEq, Eq, Encode, Decode, MaxEncodedLen, TypeInfo, RuntimeDebug)]
 pub struct AssetAccount {
 	balance: Balance,
 	is_frozen: bool,
@@ -319,7 +393,7 @@ pub struct AssetAccount {
 	extra: (),
 }
 #[allow(missing_docs)]
-#[derive(PartialEq, Eq, Encode, Decode, MaxEncodedLen, TypeInfo, RuntimeDebug)]
+#[derive(Clone, PartialEq, Eq, Encode, Decode, MaxEncodedLen, TypeInfo, RuntimeDebug)]
 pub enum ExistenceReason {
 	#[codec(index = 0)]
 	Consumer,
@@ -329,6 +403,25 @@ pub enum ExistenceReason {
 	DepositHeld(Balance),
 	#[codec(index = 3)]
 	DepositRefunded,
+}
+
+#[allow(missing_docs)]
+#[derive(Clone, PartialEq, Eq, Encode, Decode, TypeInfo, RuntimeDebug)]
+pub struct LedgerForEvent {
+	pub staked_ring: Balance,
+	pub staked_kton: Balance,
+	pub staked_deposits: Vec<u16>,
+	pub unstaking_ring: Vec<(Balance, BlockNumber)>,
+	pub unstaking_kton: Vec<(Balance, BlockNumber)>,
+	pub unstaking_deposits: Vec<(u16, BlockNumber)>,
+}
+impl<T> From<Ledger<T>> for LedgerForEvent
+where
+	T: Config,
+{
+	fn from(l: Ledger<T>) -> Self {
+		unsafe { core::mem::transmute(l) }
+	}
 }
 
 /// Build a Darwinia account migration message.

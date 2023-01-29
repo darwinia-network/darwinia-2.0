@@ -49,7 +49,7 @@ use frame_support::{
 	log,
 	pallet_prelude::*,
 	traits::{Currency, OnUnbalanced, UnixTime},
-	EqNoBound, PalletId, PartialEqNoBound,
+	CloneNoBound, EqNoBound, PalletId, PartialEqNoBound,
 };
 use frame_system::pallet_prelude::*;
 #[cfg(feature = "std")]
@@ -108,7 +108,9 @@ impl<T> Convert<T, Option<T>> for IdentityCollator {
 }
 
 /// Staking ledger.
-#[derive(PartialEqNoBound, EqNoBound, Encode, Decode, MaxEncodedLen, TypeInfo, RuntimeDebug)]
+#[derive(
+	CloneNoBound, PartialEqNoBound, EqNoBound, Encode, Decode, MaxEncodedLen, TypeInfo, RuntimeDebug,
+)]
 #[scale_info(skip_type_params(T))]
 pub struct Ledger<T>
 where

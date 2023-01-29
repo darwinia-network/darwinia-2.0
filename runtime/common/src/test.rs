@@ -4,11 +4,13 @@ macro_rules! impl_account_migration_tests {
 		mod account_migration {
 			// darwinia
 			use super::mock::*;
+			use darwinia_account_migration::LedgerForEvent;
 			use darwinia_deposit::Deposit as DepositS;
 			use darwinia_staking::Ledger;
 			// substrate
 			use frame_support::{
-				assert_err, assert_ok, migration, traits::Get, Blake2_128Concat, StorageHasher,
+				assert_err, assert_ok, migration, traits::Get, Blake2_128Concat, BoundedVec,
+				StorageHasher,
 			};
 			use frame_system::AccountInfo;
 			use pallet_assets::ExistenceReason;
@@ -235,6 +237,28 @@ macro_rules! impl_account_migration_tests {
 					assert_ok!(migrate(from, to));
 					assert_eq!(Vesting::vesting(to).unwrap().len(), 2);
 					assert_eq!(Balances::locks(to).len(), 1);
+				});
+			}
+
+			#[test]
+			fn staking_unsafe_conversion_should_work() {
+				ExtBuilder::default().build().execute_with(|| {
+					let l = Ledger::<Runtime> {
+						staked_ring: 456,
+						staked_kton: 789,
+						staked_deposits: BoundedVec::truncate_from(vec![0, 1, 2]),
+						unstaking_ring: BoundedVec::truncate_from(vec![(123, 4)]),
+						unstaking_kton: BoundedVec::truncate_from(vec![(456, 5)]),
+						unstaking_deposits: BoundedVec::truncate_from(vec![(3, 123)]),
+					};
+					let le = LedgerForEvent::from(l.clone());
+
+					assert_eq!(l.staked_ring, le.staked_ring);
+					assert_eq!(l.staked_kton, le.staked_kton);
+					assert_eq!(l.staked_deposits, le.staked_deposits);
+					assert_eq!(l.unstaking_ring, le.unstaking_ring);
+					assert_eq!(l.unstaking_kton, le.unstaking_kton);
+					assert_eq!(l.unstaking_deposits, le.unstaking_deposits);
 				});
 			}
 
