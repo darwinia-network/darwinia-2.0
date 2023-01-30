@@ -16,9 +16,9 @@ ethereum   = { version = "0.14", default-features = false, features = ["with-cod
 scale-info = { version = "2.3", default-features = false, features = ["derive"] }
 
 # frontier
-fp-ethereum = { default-features = false, git = "https://github.com/darwinia-network/frontier", branch = "polkadot-v0.9.36" }
-fp-evm      = { default-features = false, git = "https://github.com/darwinia-network/frontier", branch = "polkadot-v0.9.36" }
-pallet-evm  = { default-features = false, git = "https://github.com/darwinia-network/frontier", branch = "polkadot-v0.9.36" }
+fp-ethereum = { default-features = false, git = "https://github.com/paritytech/frontier", branch = "polkadot-v0.9.36" }
+fp-evm      = { default-features = false, git = "https://github.com/paritytech/frontier", branch = "polkadot-v0.9.36" }
+pallet-evm  = { default-features = false, git = "https://github.com/paritytech/frontier", branch = "polkadot-v0.9.36" }
 
 # substrate
 frame-support = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36" }
@@ -39,8 +39,8 @@ bp-runtime             = { git = "https://github.com/darwinia-network/darwinia-m
 pallet-bridge-dispatch = { git = "https://github.com/darwinia-network/darwinia-messages-substrate", branch = "prepare-polkadot-v0.9.36" }
 
 # frontier
-fp-self-contained = { git = "https://github.com/darwinia-network/frontier", branch = "polkadot-v0.9.36" }
-pallet-ethereum  = {  git = "https://github.com/darwinia-network/frontier", branch = "polkadot-v0.9.36" }
+fp-self-contained = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v0.9.36" }
+pallet-ethereum  = {  git = "https://github.com/paritytech/frontier", branch = "polkadot-v0.9.36" }
 
 # moonbeam
 precompile-utils = { git = "https://github.com/darwinia-network/moonbeam", branch = "polkadot-v0.9.36", features = ["testing"] }

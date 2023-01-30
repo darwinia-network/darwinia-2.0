@@ -16,7 +16,7 @@ impl<S> Processor<S> {
 		self.process_ethereum_schema();
 
 		// Storage items.
-		// https://github.dev/darwinia-network/frontier/blob/darwinia-v0.12.5/frame/evm/src/lib.rs#L407
+		// https://github.dev/paritytech/frontier/blob/darwinia-v0.12.5/frame/evm/src/lib.rs#L407
 		let mut account_codes = Map::default();
 		let mut account_storages = Map::default();
 

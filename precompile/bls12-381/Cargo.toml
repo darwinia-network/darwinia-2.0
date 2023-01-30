@@ -14,8 +14,8 @@ version     = "6.0.0"
 milagro_bls = { default-features = false, git = "https://github.com/darwinia-network/milagro_bls" }
 
 # frontier
-fp-evm     = { default-features = false, git = "https://github.com/darwinia-network/frontier", branch = "polkadot-v0.9.36" }
-pallet-evm = { default-features = false, git = "https://github.com/darwinia-network/frontier", branch = "polkadot-v0.9.36" }
+fp-evm     = { default-features = false, git = "https://github.com/paritytech/frontier", branch = "polkadot-v0.9.36" }
+pallet-evm = { default-features = false, git = "https://github.com/paritytech/frontier", branch = "polkadot-v0.9.36" }
 
 # moonbeam
 precompile-utils = { default-features = false, git = "https://github.com/darwinia-network/moonbeam", branch = "polkadot-v0.9.36" }
