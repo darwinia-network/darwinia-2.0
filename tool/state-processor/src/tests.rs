@@ -23,22 +23,12 @@ struct Tester {
 	para_state: State<()>,
 	shell_state: State<()>,
 }
-
-pub fn two_x64_concat_to_string<D>(data: D) -> String
-where
-	D: AsRef<[u8]>,
-{
-	array_bytes::bytes2hex("", subhasher::twox64_concat(data))
-}
-
-fn get_last_40(key: &str, _: &str) -> String {
-	format!("0x{}", &key[key.len() - 40..])
-}
-
 impl Tester {
 	fn new() -> Self {
-		// This test is only used to ensure the correctness of  the state processor and is only
+		// This test is only used to ensure the correctness of the state processor and is only
 		// applicable to Crab, Crab Parachain.
+		<Processor<Crab>>::new().unwrap().test().process().save().unwrap();
+
 		let mut solo_state = State::from_file("data/crab-solo.json").unwrap();
 		let mut para_state = State::from_file("data/crab-para.json").unwrap();
 		let mut shell_state = State::from_file("data/crab-processed.json").unwrap();
@@ -102,6 +92,17 @@ impl Tester {
 			shell_state,
 		}
 	}
+}
+
+fn two_x64_concat_to_string<D>(data: D) -> String
+where
+	D: AsRef<[u8]>,
+{
+	array_bytes::bytes2hex("", subhasher::twox64_concat(data))
+}
+
+fn get_last_40(key: &str, _: &str) -> String {
+	format!("0x{}", &key[key.len() - 40..])
 }
 
 fn run_test<T>(test: T)
