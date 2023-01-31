@@ -138,7 +138,7 @@ jobs:
         run: |
           cd tool/state-processor
           unset RUSTC_WRAPPER
-          CARGO_LOG=debug cargo test --release --locked
+          cargo test --release --locked
 
   # checks-cleaning:
   #   name: Task checks cleaning
