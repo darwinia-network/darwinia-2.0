@@ -127,6 +127,7 @@ jobs:
       - name: Setup test environment
         run: |
           mkdir -p target/release
+          chmod u+x darwinia
           mv darwinia target/release/darwinia
           cd tool/state-processor
           mkdir -p data
