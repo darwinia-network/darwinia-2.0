@@ -214,8 +214,8 @@ impl<R> State<R> {
 		self.mutate_value(p, i, &blake2_128_concat_to_string(h), |a: &mut AccountInfo| {
 			a.data.free += amount;
 
-			if let Some(amount) = a.data.reserved.checked_sub(amount) {
-				a.data.reserved -= amount;
+			if let Some(r) = a.data.reserved.checked_sub(amount) {
+				a.data.reserved = r;
 			} else {
 				log::error!(
 					"insufficient reservation of account({})",
