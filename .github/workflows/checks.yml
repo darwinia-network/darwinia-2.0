@@ -137,7 +137,7 @@ jobs:
       - name: Check state
         run: |
           cd tool/state-processor
-          rustup default nightly-2022-11-15
+          unset RUSTC_WRAPPER
           CARGO_LOG=debug cargo test --release --locked
 
   # checks-cleaning:
