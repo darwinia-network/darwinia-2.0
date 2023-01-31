@@ -114,8 +114,7 @@ fn run_test<T>(test: T)
 where
 	T: FnOnce(&Tester) + UnwindSafe,
 {
-	let tester = T.clone();
-	let result = panic::catch_unwind(|| test(&tester));
+	let result = panic::catch_unwind(|| test(&T));
 
 	assert!(result.is_ok())
 }
