@@ -134,15 +134,10 @@ jobs:
           cd data
           curl -L https://github.com/darwinia-network/darwinia-2.0/releases/download/crab2/crab-state.tar.zst | tar x -I pzstd
           cd ..
-          rustup default nightly-2022-11-15
-          rustup toolchain list
-          rustup target list
       - name: Check state
         run: |
-          pwd
-          ls -al
           cd tool/state-processor
-          unset RUSTC_WRAPPER
+          rustup default nightly-2022-11-15
           CARGO_LOG=debug cargo test --release --locked
 
   # checks-cleaning:

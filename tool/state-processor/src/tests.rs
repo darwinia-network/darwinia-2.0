@@ -1,9 +1,15 @@
+// std
+use std::panic::{self, UnwindSafe};
 // crates.io
+use once_cell::sync::Lazy;
 use parity_scale_codec::Encode;
 use primitive_types::H256;
 // darwinia
 use crate::*;
 
+static T: Lazy<Tester> = Lazy::new(|| Tester::new());
+
+#[derive(Clone)]
 struct Tester {
 	// solo chain
 	solo_accounts: Map<AccountInfo>,
@@ -106,10 +112,11 @@ fn get_last_40(key: &str, _: &str) -> String {
 
 fn run_test<T>(test: T)
 where
-	T: FnOnce(&Tester) + std::panic::UnwindSafe,
+	T: FnOnce(&Tester) + UnwindSafe,
 {
-	let tester = Tester::new();
-	let result = std::panic::catch_unwind(|| test(&tester));
+	let tester = T.clone();
+	let result = panic::catch_unwind(|| test(&tester));
+
 	assert!(result.is_ok())
 }
 

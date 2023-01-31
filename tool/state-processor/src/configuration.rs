@@ -14,6 +14,7 @@ impl Configurable for () {
 	const PARACHAIN_BACKING: &'static str = "";
 }
 
+#[derive(Clone)]
 pub struct Darwinia;
 impl Configurable for Darwinia {
 	const NAME: &'static str = "darwinia";
@@ -21,6 +22,7 @@ impl Configurable for Darwinia {
 		"0x1000000000000000000000000000000000000000000000000000000000000000";
 }
 
+#[derive(Clone)]
 pub struct Crab;
 impl Configurable for Crab {
 	const NAME: &'static str = "crab";
@@ -28,6 +30,7 @@ impl Configurable for Crab {
 		"0x64766d3a0000000000000035a314e53e2fddfeca7b743042aacfb1abaf0adea3";
 }
 
+#[derive(Clone)]
 pub struct Pangolin;
 impl Configurable for Pangolin {
 	const NAME: &'static str = "pangolin";

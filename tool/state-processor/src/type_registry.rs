@@ -12,7 +12,7 @@ pub type RefCount = u32;
 pub type Moment = u128;
 pub type DepositId = u16;
 
-#[derive(Default, Debug, PartialEq, Eq, Encode, Decode)]
+#[derive(Clone, Default, Debug, PartialEq, Eq, Encode, Decode)]
 pub struct AccountInfo {
 	pub nonce: u32,
 	pub consumers: RefCount,
@@ -20,7 +20,7 @@ pub struct AccountInfo {
 	pub sufficients: RefCount,
 	pub data: AccountData,
 }
-#[derive(Default, Debug, PartialEq, Eq, Encode, Decode)]
+#[derive(Clone, Default, Debug, PartialEq, Eq, Encode, Decode)]
 pub struct AccountData {
 	pub free: Balance,
 	pub reserved: Balance,
@@ -66,7 +66,7 @@ pub struct AssetDetails {
 }
 
 // https://github.dev/paritytech/substrate/blob/polkadot-v0.9.30/frame/assets/src/types.rs#L115
-#[derive(Default, Debug, Encode, Decode)]
+#[derive(Clone, Default, Debug, Encode, Decode)]
 pub struct AssetAccount {
 	pub balance: Balance,
 	pub is_frozen: bool,
@@ -75,7 +75,7 @@ pub struct AssetAccount {
 }
 
 // https://github.dev/paritytech/substrate/blob/polkadot-v0.9.30/frame/assets/src/types.rs#L88
-#[derive(Debug, Encode, Decode)]
+#[derive(Clone, Debug, Encode, Decode)]
 pub enum ExistenceReason {
 	#[codec(index = 0)]
 	Consumer,
