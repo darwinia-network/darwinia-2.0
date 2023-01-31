@@ -8,6 +8,7 @@ const web3 = new Web3(HOST_URL);
 describe("Test balances", () => {
 	let init;
 	const value = "0x200";
+
 	step("Account has correct balance", async function () {
 		init = await web3.eth.getBalance(FAITH);
 		expect(Number(init)).to.be.greaterThan(Number(value));

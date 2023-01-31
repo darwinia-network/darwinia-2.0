@@ -6,6 +6,7 @@ export const HOST_URL = "http://127.0.0.1:9933";
 export const BLOCK_TIMESTAMP = 12; // 12 seconds per para chain block
 // TODO: CHECK AGAIN
 export const BLOCK_GAS_LIMIT = 9375000;
+export const DEFAULT_GAS = 4000000;
 
 // Accounts builtin
 export const FAITH = "0xC0F0f4ab324C46e55D02D0033343B4Be8A55532d";
