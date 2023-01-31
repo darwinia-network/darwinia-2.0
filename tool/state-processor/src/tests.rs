@@ -1,5 +1,4 @@
 // crates.io
-use array_bytes::hex_n_into_unchecked;
 use parity_scale_codec::Encode;
 use primitive_types::H256;
 // darwinia
@@ -216,8 +215,8 @@ fn evm_account_adjust() {
 
 		//  the kton part moved to the asset pallet
 		let mut asset_account = AssetAccount::default();
-		let migrate_addr: [u8; 20] =
-			hex_n_into_unchecked::<_, _, 20>("0xaef71b03670f1c52cd3d8efc2ced3ad68ad91e33");
+		let migrate_addr =
+			array_bytes::hex2array_unchecked::<_, 20>("0xaef71b03670f1c52cd3d8efc2ced3ad68ad91e33");
 		tester.shell_state.get_value(
 			b"Assets",
 			b"Account",
@@ -376,8 +375,8 @@ fn precompiles_code_should_work() {
 fn evm_account_storage_migrate() {
 	run_test(|tester| {
 		// https://crab.subscan.io/account/0x0050f880c35c31c13bfd9cbb7d28aafaeca3abd2
-		let test_addr: [u8; 20] =
-			hex_n_into_unchecked::<_, _, 20>("0x0050f880c35c31c13bfd9cbb7d28aafaeca3abd2");
+		let test_addr =
+			array_bytes::hex2array_unchecked::<_, 20>("0x0050f880c35c31c13bfd9cbb7d28aafaeca3abd2");
 
 		let storage_item_len = tester.solo_state.map.iter().fold(0u32, |sum, (k, _)| {
 			if k.starts_with(&full_key(
@@ -392,7 +391,7 @@ fn evm_account_storage_migrate() {
 		});
 		assert_ne!(storage_item_len, 0);
 
-		let storage_key: [u8; 32] = hex_n_into_unchecked::<_, _, 32>(
+		let storage_key = array_bytes::hex2array_unchecked::<_, 32>(
 			"0x2093bcd1218dc1519493ee712ddfee3f4ced2d74096331d39d4247147baf17e2",
 		);
 		let mut storage_value = H256::zero();
@@ -443,7 +442,7 @@ fn evm_account_storage_migrate() {
 fn deposit_items_migrate() {
 	run_test(|tester| {
 		// https://crab.subscan.io/account/5Dfh9agy74KFmdYqxNGEWae9fE9pdzYnyCUJKqK47Ac64zqM
-		let test_addr: [u8; 32] = hex_n_into_unchecked::<_, _, 32>(
+		let test_addr = array_bytes::hex2array_unchecked::<_, 32>(
 			"0x46eb701bdc7f74ffda9c4335d82b3ae8d4e52c5ac630e50d68ab99822e29b3f6",
 		);
 
@@ -481,7 +480,7 @@ fn deposit_items_migrate() {
 fn ledgers_staked_value_migrate() {
 	run_test(|tester| {
 		// https://crab.subscan.io/account/5Dfh9agy74KFmdYqxNGEWae9fE9pdzYnyCUJKqK47Ac64zqM
-		let test_addr: [u8; 32] = hex_n_into_unchecked::<_, _, 32>(
+		let test_addr = array_bytes::hex2array_unchecked::<_, 32>(
 			"0x46eb701bdc7f74ffda9c4335d82b3ae8d4e52c5ac630e50d68ab99822e29b3f6",
 		);
 
@@ -512,7 +511,7 @@ fn ledgers_staked_value_migrate() {
 fn ledgers_unbondings_migrate() {
 	run_test(|tester| {
 		// https://crab.subscan.io/account/5FGL7pMZFZK4zWX2y3CRABeqMpMjBq77LhfYipWoBAT9gJsa
-		let test_addr: [u8; 32] = hex_n_into_unchecked::<_, _, 32>(
+		let test_addr = array_bytes::hex2array_unchecked::<_, 32>(
 			"0x8d92774046fd3dc60d41825023506ad5ad91bd0d66e9c1df325fc3cf89c2d317",
 		);
 
@@ -592,7 +591,7 @@ fn elapsed_time_migrate() {
 fn vesting_info_adjust() {
 	run_test(|tester| {
 		// https://crab.subscan.io/account/5EFJA3K6uRfkLxqjhHyrkJoQjfhmhyVyVEG5XtPPBM6yCCxM
-		let test_addr: [u8; 32] = hex_n_into_unchecked::<_, _, 32>(
+		let test_addr = array_bytes::hex2array_unchecked::<_, 32>(
 			"0x608c62275934b164899ca6270c4b89c5d84b2390d4316fda980cd1b3acfad525",
 		);
 
@@ -705,7 +704,7 @@ fn proxy_reserved_adjust() {
 fn identities_adjust() {
 	run_test(|tester| {
 		// https://crab.subscan.io/account/5Ct3V8cbYgJiUoQQhYMyyWChL5YwJnZ4yak7MKegNkpPptAP
-		let test_addr: [u8; 32] = hex_n_into_unchecked::<_, _, 32>(
+		let test_addr = array_bytes::hex2array_unchecked::<_, 32>(
 			"0x241a9c2aa8a83e1c5f02fc2b7112bd1873249a8e55a4f919c7d42cf1164be35c",
 		);
 
@@ -770,7 +769,7 @@ fn super_of_adjust() {
 	run_test(|tester| {
 		// https://crab.subscan.io/account/5HizvHpWBowXaH3VmVsVXF7V1YkdbX7LWpbb9ToevnvxdHpg
 		let addr = "0xfa61ee117cf487dc39620fac6c3e855111f68435827a1c6468a45b8ab73b7a93";
-		let account_id: [u8; 32] = hex_n_into_unchecked::<_, _, 32>(addr);
+		let account_id = array_bytes::hex2array_unchecked::<_, 32>(addr);
 
 		let mut subs_of = (0u128, Vec::<[u8; 32]>::default());
 		tester.solo_state.get_value(
