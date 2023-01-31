@@ -10,10 +10,8 @@ pub struct AccountAll {
 	pub providers: RefCount,
 	pub sufficients: RefCount,
 	pub ring: Balance,
-	pub ring_reserved: Balance,
 	pub ring_locks: Vec<BalanceLock>,
 	pub kton: Balance,
-	pub kton_reserved: Balance,
 	pub kton_locks: Vec<BalanceLock>,
 }
 
@@ -52,10 +50,6 @@ where
 		log::info!("build accounts");
 		log::info!("calculate total issuance");
 		solo_account_infos.into_iter().for_each(|(k, v)| {
-			if v.data.reserved_kton_or_fee_frozen != 0 {
-				log::error!("there shouldn't be any reserved kton on account({k})");
-			}
-
 			accounts.insert(
 				k,
 				AccountAll {
@@ -66,17 +60,14 @@ where
 					providers: v.providers,
 					sufficients: v.sufficients,
 					// ---
-					ring: v.data.free,
-					ring_reserved: v.data.reserved,
+					ring: v.data.free + v.data.reserved,
 					ring_locks: Default::default(),
-					kton: v.data.free_kton_or_misc_frozen,
-					kton_reserved: v.data.reserved_kton_or_fee_frozen,
+					kton: v.data.free_kton_or_misc_frozen + v.data.reserved_kton_or_fee_frozen,
 					kton_locks: Default::default(),
 				},
 			);
 
 			ring_total_issuance += v.data.free;
-			ring_total_issuance += v.data.reserved;
 			kton_total_issuance += v.data.free_kton_or_misc_frozen;
 		});
 		para_account_infos.into_iter().for_each(|(k, v)| {
@@ -84,24 +75,20 @@ where
 				.entry(k)
 				.and_modify(|a| {
 					a.nonce = v.nonce.max(a.nonce);
-					a.ring += v.data.free;
-					a.ring_reserved += v.data.reserved;
+					a.ring += v.data.free + v.data.reserved;
 				})
 				.or_insert(AccountAll {
 					nonce: v.nonce,
 					consumers: v.consumers,
 					providers: v.providers,
 					sufficients: v.sufficients,
-					ring: v.data.free,
-					ring_reserved: v.data.reserved,
+					ring: v.data.free + v.data.reserved,
 					ring_locks: Default::default(),
-					kton: 0,
-					kton_reserved: 0,
+					kton: Default::default(),
 					kton_locks: Default::default(),
 				});
 
 			ring_total_issuance += v.data.free;
-			ring_total_issuance += v.data.reserved;
 		});
 
 		log::info!("burn parachain backing ring");
@@ -127,12 +114,12 @@ where
 			admin: ROOT,
 			freezer: ROOT,
 			supply: kton_total_issuance,
-			deposit: 0,
+			deposit: Default::default(),
 			min_balance: 1,      // The same as the value in the runtime.
 			is_sufficient: true, // The same as the value in the runtime.
-			sufficients: 0,
-			accounts: 0,
-			approvals: 0,
+			sufficients: Default::default(),
+			accounts: Default::default(),
+			approvals: Default::default(),
 			is_frozen: false,
 		};
 
@@ -146,7 +133,7 @@ where
 				sufficients: v.sufficients,
 				data: AccountData {
 					free: v.ring,
-					reserved: v.ring_reserved,
+					reserved: Default::default(),
 					free_kton_or_misc_frozen: Default::default(),
 					reserved_kton_or_fee_frozen: Default::default(),
 				},

@@ -71,13 +71,7 @@ where
 
 		assert!(*_guard != 0);
 
-		self.process_system()
-			.process_indices()
-			.process_identity()
-			.process_vesting()
-			.process_proxy()
-			.process_staking()
-			.process_evm();
+		self.process_system().process_identity().process_vesting().process_staking().process_evm();
 
 		self.save()
 	}
@@ -195,7 +189,7 @@ impl<R> State<R> {
 		self.map.keys().into_iter().any(|k| k.starts_with(&item_key(pallet, item)))
 	}
 
-	pub fn unreserve<A>(&mut self, account_id_32: A, amount: u128)
+	pub fn reserve<A>(&mut self, account_id_32: A, amount: u128)
 	where
 		A: AsRef<[u8]>,
 	{
@@ -207,8 +201,8 @@ impl<R> State<R> {
 		};
 
 		self.mutate_value(p, i, &blake2_128_concat_to_string(h), |a: &mut AccountInfo| {
-			a.data.free += amount;
-			a.data.reserved -= amount;
+			a.data.free -= amount;
+			a.data.reserved += amount;
 		});
 	}
 

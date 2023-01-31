@@ -6,21 +6,11 @@ impl<S> Processor<S> {
 	pub fn process_identity(&mut self) -> &mut Self {
 		let mut identities = <Map<Registration>>::default();
 		let mut registrars = Vec::<Option<RegistrarInfo<AccountId32>>>::default();
-		let mut subs_of = Map::<(Balance, Vec<AccountId32>)>::default();
 
 		log::info!("take `Identity::IdentityOf`, `Identity::Registrars`, `Identity::SubsOf`");
 		self.solo_state
 			.take_map(b"Identity", b"IdentityOf", &mut identities, get_hashed_key)
-			.take_value(b"Identity", b"Registrars", "", &mut registrars)
-			.take_map(b"Identity", b"SubsOf", &mut subs_of, get_last_64_key);
-
-		log::info!("free super_id's reservation");
-		subs_of.into_iter().for_each(|(super_id, (mut subs_deposit, _))| {
-			subs_deposit.adjust();
-
-			self.shell_state
-				.unreserve(array_bytes::hex2array_unchecked::<_, 32>(super_id), subs_deposit);
-		});
+			.take_value(b"Identity", b"Registrars", "", &mut registrars);
 
 		log::info!("adjust identities' deposit and judgement decimal");
 		identities.iter_mut().for_each(|(_, v)| v.adjust());
