@@ -105,7 +105,6 @@ where
 	}
 }
 
-#[derive(Clone)]
 pub struct State<R> {
 	pub map: Map<String>,
 	_runtime: PhantomData<R>,

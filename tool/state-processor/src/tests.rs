@@ -9,7 +9,6 @@ use crate::*;
 
 static T: Lazy<Tester> = Lazy::new(|| Tester::new());
 
-#[derive(Clone)]
 struct Tester {
 	// solo chain
 	solo_accounts: Map<AccountInfo>,
