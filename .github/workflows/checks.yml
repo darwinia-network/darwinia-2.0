@@ -115,7 +115,7 @@ jobs:
   state-checks:
     name: Task check state
     if: github.event_name == 'push' || !github.event.pull_request.draft
-    # needs: [basic-checks]
+    needs: [basic-checks]
     runs-on: ubuntu-latest
     steps:
       - name: Fetch latest code
