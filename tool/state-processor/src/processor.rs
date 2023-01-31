@@ -1,6 +1,6 @@
 // std
 use std::{
-	fs::File,
+	fs::{self, File},
 	io::{Read, Write},
 	marker::PhantomData,
 	mem,
@@ -36,6 +36,10 @@ where
 	S: Configurable,
 {
 	pub fn new() -> Result<Self> {
+		if !Path::new("data").is_dir() {
+			fs::create_dir("data")?;
+		}
+
 		build_spec(S::NAME)?;
 
 		let mut shell_chain_spec = from_file::<ChainSpec>(&format!("data/{}-shell.json", S::NAME))?;
@@ -64,7 +68,7 @@ where
 		self
 	}
 
-	pub fn process(mut self) -> Result<()> {
+	pub fn process(mut self) -> Self {
 		self.solo_state.get_value(b"System", b"Number", "", &mut *NOW.write().unwrap());
 
 		let _guard = NOW.read().unwrap();
@@ -73,7 +77,7 @@ where
 
 		self.process_system().process_identity().process_vesting().process_staking().process_evm();
 
-		self.save()
+		self
 	}
 
 	pub fn save(mut self) -> Result<()> {
