@@ -50,6 +50,9 @@ where
 		log::info!("build accounts");
 		log::info!("calculate total issuance");
 		solo_account_infos.into_iter().for_each(|(k, v)| {
+			let ring = v.data.free + v.data.reserved;
+			let kton = v.data.free_kton_or_misc_frozen + v.data.reserved_kton_or_fee_frozen;
+
 			accounts.insert(
 				k,
 				AccountAll {
@@ -60,35 +63,37 @@ where
 					providers: v.providers,
 					sufficients: v.sufficients,
 					// ---
-					ring: v.data.free + v.data.reserved,
+					ring,
 					ring_locks: Default::default(),
-					kton: v.data.free_kton_or_misc_frozen + v.data.reserved_kton_or_fee_frozen,
+					kton,
 					kton_locks: Default::default(),
 				},
 			);
 
-			ring_total_issuance += v.data.free;
-			kton_total_issuance += v.data.free_kton_or_misc_frozen;
+			ring_total_issuance += ring;
+			kton_total_issuance += kton;
 		});
 		para_account_infos.into_iter().for_each(|(k, v)| {
+			let ring = v.data.free + v.data.reserved;
+
 			accounts
 				.entry(k)
 				.and_modify(|a| {
 					a.nonce = v.nonce.max(a.nonce);
-					a.ring += v.data.free + v.data.reserved;
+					a.ring += ring;
 				})
 				.or_insert(AccountAll {
 					nonce: v.nonce,
 					consumers: v.consumers,
 					providers: v.providers,
 					sufficients: v.sufficients,
-					ring: v.data.free + v.data.reserved,
+					ring,
 					ring_locks: Default::default(),
 					kton: Default::default(),
 					kton_locks: Default::default(),
 				});
 
-			ring_total_issuance += v.data.free;
+			ring_total_issuance += ring;
 		});
 
 		log::info!("burn parachain backing ring");

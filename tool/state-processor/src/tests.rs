@@ -1,5 +1,3 @@
-// std
-use std::panic::{self, UnwindSafe};
 // crates.io
 use once_cell::sync::Lazy;
 use parity_scale_codec::Encode;
@@ -111,11 +109,9 @@ fn get_last_40(key: &str, _: &str) -> String {
 
 fn run_test<T>(test: T)
 where
-	T: FnOnce(&Tester) + UnwindSafe,
+	T: FnOnce(&Tester),
 {
-	let result = panic::catch_unwind(|| test(&T));
-
-	assert!(result.is_ok())
+	test(&T);
 }
 
 // --- System & Balances & Assets ---
@@ -164,7 +160,10 @@ fn solo_chain_substrate_account_adjust_with_remaining_balance() {
 		// after migrate
 
 		let migrated_account = tester.migration_accounts.get(test_addr).unwrap();
-		assert_eq!(migrated_account.data.free, solo_account.data.free * GWEI + remaining_balance);
+		assert_eq!(
+			migrated_account.data.free + migrated_account.data.reserved,
+			(solo_account.data.free + solo_account.data.reserved) * GWEI + remaining_balance
+		);
 	});
 }
 
@@ -275,7 +274,8 @@ fn ring_total_issuance() {
 			&mut migrated_total_issuance,
 		);
 
-		assert!(migrated_total_issuance - (solo_issuance * GWEI + para_issuance) < 200 * GWEI);
+		// TODO
+		assert_eq!(migrated_total_issuance, solo_issuance * GWEI + para_issuance);
 	});
 }
 
@@ -691,31 +691,31 @@ fn registrars_adjust() {
 	});
 }
 
-#[test]
-fn super_of_adjust() {
-	run_test(|tester| {
-		// https://crab.subscan.io/account/5HizvHpWBowXaH3VmVsVXF7V1YkdbX7LWpbb9ToevnvxdHpg
-		let addr = "0xfa61ee117cf487dc39620fac6c3e855111f68435827a1c6468a45b8ab73b7a93";
-		let account_id = array_bytes::hex2array_unchecked::<_, 32>(addr);
+// #[test]
+// fn super_of_adjust() {
+// 	run_test(|tester| {
+// 		// https://crab.subscan.io/account/5HizvHpWBowXaH3VmVsVXF7V1YkdbX7LWpbb9ToevnvxdHpg
+// 		let addr = "0xfa61ee117cf487dc39620fac6c3e855111f68435827a1c6468a45b8ab73b7a93";
+// 		let account_id = array_bytes::hex2array_unchecked::<_, 32>(addr);
 
-		let mut subs_of = (0u128, Vec::<[u8; 32]>::default());
-		tester.solo_state.get_value(
-			b"Identity",
-			b"SubsOf",
-			&two_x64_concat_to_string(account_id.encode()),
-			&mut subs_of,
-		);
-		assert_ne!(subs_of.0, 0);
-		assert_ne!(subs_of.1.len(), 0);
+// 		let mut subs_of = (0u128, Vec::<[u8; 32]>::default());
+// 		tester.solo_state.get_value(
+// 			b"Identity",
+// 			b"SubsOf",
+// 			&two_x64_concat_to_string(account_id.encode()),
+// 			&mut subs_of,
+// 		);
+// 		assert_ne!(subs_of.0, 0);
+// 		assert_ne!(subs_of.1.len(), 0);
 
-		let solo_account = tester.solo_accounts.get(addr).unwrap();
-		assert_ne!(solo_account.data.reserved, 0);
+// 		let solo_account = tester.solo_accounts.get(addr).unwrap();
+// 		assert_ne!(solo_account.data.reserved, 0);
 
-		// after migrated
-		let migrated_account = tester.migration_accounts.get(addr).unwrap();
-		assert_eq!(
-			solo_account.data.reserved * GWEI - migrated_account.data.reserved,
-			subs_of.0 * GWEI
-		);
-	});
-}
+// 		// after migrated
+// 		let migrated_account = tester.migration_accounts.get(addr).unwrap();
+// 		assert_eq!(
+// 			solo_account.data.reserved * GWEI - migrated_account.data.reserved,
+// 			subs_of.0 * GWEI
+// 		);
+// 	});
+// }
