@@ -5,67 +5,67 @@ export const incrementerInfo = {
 		"PUSH1 0x80 PUSH1 0x40 MSTORE CALLVALUE DUP1 ISZERO PUSH2 0x10 JUMPI PUSH1 0x0 DUP1 REVERT JUMPDEST POP PUSH1 0x40 MLOAD PUSH2 0x18C CODESIZE SUB DUP1 PUSH2 0x18C DUP4 CODECOPY DUP2 DUP2 ADD PUSH1 0x40 MSTORE PUSH1 0x20 DUP2 LT ISZERO PUSH2 0x33 JUMPI PUSH1 0x0 DUP1 REVERT JUMPDEST DUP2 ADD SWAP1 DUP1 DUP1 MLOAD SWAP1 PUSH1 0x20 ADD SWAP1 SWAP3 SWAP2 SWAP1 POP POP POP DUP1 PUSH1 0x0 DUP2 SWAP1 SSTORE POP POP PUSH2 0x131 DUP1 PUSH2 0x5B PUSH1 0x0 CODECOPY PUSH1 0x0 RETURN INVALID PUSH1 0x80 PUSH1 0x40 MSTORE CALLVALUE DUP1 ISZERO PUSH1 0xF JUMPI PUSH1 0x0 DUP1 REVERT JUMPDEST POP PUSH1 0x4 CALLDATASIZE LT PUSH1 0x3C JUMPI PUSH1 0x0 CALLDATALOAD PUSH1 0xE0 SHR DUP1 PUSH4 0x7CF5DAB0 EQ PUSH1 0x41 JUMPI DUP1 PUSH4 0x8381F58A EQ PUSH1 0x6C JUMPI DUP1 PUSH4 0xD826F88F EQ PUSH1 0x88 JUMPI JUMPDEST PUSH1 0x0 DUP1 REVERT JUMPDEST PUSH1 0x6A PUSH1 0x4 DUP1 CALLDATASIZE SUB PUSH1 0x20 DUP2 LT ISZERO PUSH1 0x55 JUMPI PUSH1 0x0 DUP1 REVERT JUMPDEST DUP2 ADD SWAP1 DUP1 DUP1 CALLDATALOAD SWAP1 PUSH1 0x20 ADD SWAP1 SWAP3 SWAP2 SWAP1 POP POP POP PUSH1 0x90 JUMP JUMPDEST STOP JUMPDEST PUSH1 0x72 PUSH1 0xEC JUMP JUMPDEST PUSH1 0x40 MLOAD DUP1 DUP3 DUP2 MSTORE PUSH1 0x20 ADD SWAP2 POP POP PUSH1 0x40 MLOAD DUP1 SWAP2 SUB SWAP1 RETURN JUMPDEST PUSH1 0x8E PUSH1 0xF2 JUMP JUMPDEST STOP JUMPDEST DUP1 PUSH1 0x0 SLOAD ADD PUSH1 0x0 DUP2 SWAP1 SSTORE POP CALLER PUSH20 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF AND PUSH32 0xB182275171042022FF972A26EDBD0171BCCC74463BD22E56DBBEBA4E93B7A668 DUP3 PUSH1 0x40 MLOAD DUP1 DUP3 DUP2 MSTORE PUSH1 0x20 ADD SWAP2 POP POP PUSH1 0x40 MLOAD DUP1 SWAP2 SUB SWAP1 LOG2 POP JUMP JUMPDEST PUSH1 0x0 SLOAD DUP2 JUMP JUMPDEST PUSH1 0x0 DUP1 DUP2 SWAP1 SSTORE POP JUMP INVALID LOG2 PUSH5 0x6970667358 0x22 SLT KECCAK256 0xE2 0xE DUP8 0xBC RETURN ADDMOD 0x5E SWAP4 MUL CALLER SIGNEXTEND 0xFC 0xFC TIMESTAMP 0xAF SWAP15 0xEF RETURN 0xA8 0x2C RETURN 0xD5 0xBB PUSH4 0x6C607AE9 CALLDATASIZE EXTCODECOPY MSIZE GAS PUSH5 0x736F6C6343 STOP MOD 0xC STOP CALLER ",
 	abi: [
 		{
-			"inputs": [
+			inputs: [
 				{
-					"internalType": "uint256",
-					"name": "_initialNumber",
-					"type": "uint256"
-				}
+					internalType: "uint256",
+					name: "_initialNumber",
+					type: "uint256",
+				},
 			],
-			"stateMutability": "nonpayable",
-			"type": "constructor"
+			stateMutability: "nonpayable",
+			type: "constructor",
 		},
 		{
-			"anonymous": false,
-			"inputs": [
+			anonymous: false,
+			inputs: [
 				{
-					"indexed": true,
-					"internalType": "address",
-					"name": "sender",
-					"type": "address"
+					indexed: true,
+					internalType: "address",
+					name: "sender",
+					type: "address",
 				},
 				{
-					"indexed": false,
-					"internalType": "uint256",
-					"name": "value",
-					"type": "uint256"
-				}
+					indexed: false,
+					internalType: "uint256",
+					name: "value",
+					type: "uint256",
+				},
 			],
-			"name": "Increment",
-			"type": "event"
+			name: "Increment",
+			type: "event",
 		},
 		{
-			"inputs": [
+			inputs: [
 				{
-					"internalType": "uint256",
-					"name": "_value",
-					"type": "uint256"
-				}
+					internalType: "uint256",
+					name: "_value",
+					type: "uint256",
+				},
 			],
-			"name": "increment",
-			"outputs": [],
-			"stateMutability": "nonpayable",
-			"type": "function"
+			name: "increment",
+			outputs: [],
+			stateMutability: "nonpayable",
+			type: "function",
 		},
 		{
-			"inputs": [],
-			"name": "number",
-			"outputs": [
+			inputs: [],
+			name: "number",
+			outputs: [
 				{
-					"internalType": "uint256",
-					"name": "",
-					"type": "uint256"
-				}
+					internalType: "uint256",
+					name: "",
+					type: "uint256",
+				},
 			],
-			"stateMutability": "view",
-			"type": "function"
+			stateMutability: "view",
+			type: "function",
 		},
 		{
-			"inputs": [],
-			"name": "reset",
-			"outputs": [],
-			"stateMutability": "nonpayable",
-			"type": "function"
-		}
+			inputs: [],
+			name: "reset",
+			outputs: [],
+			stateMutability: "nonpayable",
+			type: "function",
+		},
 	],
 };

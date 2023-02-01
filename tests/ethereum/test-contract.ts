@@ -31,6 +31,10 @@ describe("Test contract", () => {
 		contract_address = receipt.contractAddress;
 	}).timeout(60000);
 
+	step("Get contract code", async function () {
+		expect(await web3.eth.getCode(contract_address), incrementerInfo.bytecode);
+	});
+
 	step("Get default number", async function () {
 		const inc = new web3.eth.Contract(incrementerInfo.abi as AbiItem[], contract_address);
 		expect(await inc.methods.number().call()).to.be.equal("5");
@@ -54,7 +58,7 @@ describe("Test contract", () => {
 		expect(await inc.methods.number().call()).to.be.equal("8");
 	}).timeout(60000);
 
-	step(("Transaction bloom and Block bloom"), async function () {
+	step("Transaction bloom and Block bloom", async function () {
 		// transaction bloom
 		let receipt = await web3.eth.getTransactionReceipt(transact_hash);
 		expect(web3.utils.isInBloom(receipt.logsBloom, receipt.logs[0].address)).to.be.true;
