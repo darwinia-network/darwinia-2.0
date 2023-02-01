@@ -10,6 +10,7 @@ const web3 = new Web3(HOST_URL);
 describe("Test contract", () => {
 	const inc = new web3.eth.Contract(incrementerInfo.abi as AbiItem[]);
 	let contract_address;
+	let transact_hash;
 
 	step("Deploy contract", async () => {
 		let data = inc.deploy({
@@ -47,10 +48,27 @@ describe("Test contract", () => {
 			FAITH_P
 		);
 		let receipt = await web3.eth.sendSignedTransaction(tx.rawTransaction);
+		transact_hash = receipt.transactionHash;
 
 		expect(receipt.transactionHash).to.not.be.null;
 		expect(await inc.methods.number().call()).to.be.equal("8");
 	}).timeout(60000);
+
+	step(("Transaction bloom and Block bloom"), async function () {
+		// transaction bloom
+		let receipt = await web3.eth.getTransactionReceipt(transact_hash);
+		expect(web3.utils.isInBloom(receipt.logsBloom, receipt.logs[0].address)).to.be.true;
+		for (let topic of receipt.logs[0].topics) {
+			expect(web3.utils.isInBloom(receipt.logsBloom, topic)).to.be.true;
+		}
+
+		// block bloom
+		let block = await web3.eth.getBlock(receipt.blockHash);
+		expect(web3.utils.isInBloom(block.logsBloom, receipt.logs[0].address)).to.be.true;
+		for (let topic of receipt.logs[0].topics) {
+			expect(web3.utils.isInBloom(block.logsBloom, topic)).to.be.true;
+		}
+	});
 
 	step("Reset number", async function () {
 		const inc = new web3.eth.Contract(incrementerInfo.abi as AbiItem[], contract_address);
