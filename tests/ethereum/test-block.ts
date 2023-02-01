@@ -1,9 +1,9 @@
 import Web3 from "web3";
 import { describe } from "mocha";
 import { expect } from "chai";
-import { HOST_URL, BLOCK_TIMESTAMP, BLOCK_GAS_LIMIT } from "../config";
+import { HOST_HTTP_URL, BLOCK_TIMESTAMP, BLOCK_GAS_LIMIT } from "../config";
 
-const web3 = new Web3(HOST_URL);
+const web3 = new Web3(HOST_HTTP_URL);
 describe("Test Block RPC", () => {
 	it("The block number should not be zero", async () => {
 		expect(await web3.eth.getBlockNumber()).to.not.equal(0);

@@ -120,3 +120,248 @@ export const opcodesInfo = {
 		},
 	],
 };
+
+export const eventInfo = {
+	bytecode:
+		"608060405234801561001057600080fd5b5061031b806100206000396000f3fe608060405234801561001057600080fd5b50600436106100885760003560e01c8063a67808571161005b578063a6780857146100b5578063b61c0503146100bf578063e8beef5b146100c9578063f38b0600146100d357610088565b8063102accc11461008d5780634e7ad3671461009757806365538c73146100a157806376bc21d9146100ab575b600080fd5b6100956100dd565b005b61009f610132565b005b6100a961014f565b005b6100b3610189565b005b6100bd6101bd565b005b6100c76101d6565b005b6100d1610214565b005b6100db61026c565b005b3373ffffffffffffffffffffffffffffffffffffffff16600115157f0e216b62efbb97e751a2ce09f607048751720397ecfb9eef1e48a6644948985b602a6040518082815260200191505060405180910390a3565b60011515602a6040518082815260200191505060405180910390a1565b7f65c9ac8011e286e89d02a269890f41d67ca2cc597b2c76c7c69321ff492be580602a6040518082815260200191505060405180910390a1565b3373ffffffffffffffffffffffffffffffffffffffff1660011515602a6040518082815260200191505060405180910390a2565b602a6040518082815260200191505060405180910390a0565b600115157f81933b308056e7e85668661dcd102b1f22795b4431f9cf4625794f381c271c6b602a6040518082815260200191505060405180910390a2565b7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff60001b3373ffffffffffffffffffffffffffffffffffffffff1660011515602a6040518082815260200191505060405180910390a3565b7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff60001b3373ffffffffffffffffffffffffffffffffffffffff16600115157f317b31292193c2a4f561cc40a95ea0d97a2733f14af6d6d59522473e1f3ae65f602a6040518082815260200191505060405180910390a456fea2646970667358221220153d53b462c5c7cf5d26f62987030b4c78e85c6c87a3b3e742769581438308c864736f6c634300060c0033",
+	opcode: "PUSH1 0x80 PUSH1 0x40 MSTORE CALLVALUE DUP1 ISZERO PUSH2 0x10 JUMPI PUSH1 0x0 DUP1 REVERT JUMPDEST POP PUSH2 0x31B DUP1 PUSH2 0x20 PUSH1 0x0 CODECOPY PUSH1 0x0 RETURN INVALID PUSH1 0x80 PUSH1 0x40 MSTORE CALLVALUE DUP1 ISZERO PUSH2 0x10 JUMPI PUSH1 0x0 DUP1 REVERT JUMPDEST POP PUSH1 0x4 CALLDATASIZE LT PUSH2 0x88 JUMPI PUSH1 0x0 CALLDATALOAD PUSH1 0xE0 SHR DUP1 PUSH4 0xA6780857 GT PUSH2 0x5B JUMPI DUP1 PUSH4 0xA6780857 EQ PUSH2 0xB5 JUMPI DUP1 PUSH4 0xB61C0503 EQ PUSH2 0xBF JUMPI DUP1 PUSH4 0xE8BEEF5B EQ PUSH2 0xC9 JUMPI DUP1 PUSH4 0xF38B0600 EQ PUSH2 0xD3 JUMPI PUSH2 0x88 JUMP JUMPDEST DUP1 PUSH4 0x102ACCC1 EQ PUSH2 0x8D JUMPI DUP1 PUSH4 0x4E7AD367 EQ PUSH2 0x97 JUMPI DUP1 PUSH4 0x65538C73 EQ PUSH2 0xA1 JUMPI DUP1 PUSH4 0x76BC21D9 EQ PUSH2 0xAB JUMPI JUMPDEST PUSH1 0x0 DUP1 REVERT JUMPDEST PUSH2 0x95 PUSH2 0xDD JUMP JUMPDEST STOP JUMPDEST PUSH2 0x9F PUSH2 0x132 JUMP JUMPDEST STOP JUMPDEST PUSH2 0xA9 PUSH2 0x14F JUMP JUMPDEST STOP JUMPDEST PUSH2 0xB3 PUSH2 0x189 JUMP JUMPDEST STOP JUMPDEST PUSH2 0xBD PUSH2 0x1BD JUMP JUMPDEST STOP JUMPDEST PUSH2 0xC7 PUSH2 0x1D6 JUMP JUMPDEST STOP JUMPDEST PUSH2 0xD1 PUSH2 0x214 JUMP JUMPDEST STOP JUMPDEST PUSH2 0xDB PUSH2 0x26C JUMP JUMPDEST STOP JUMPDEST CALLER PUSH20 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF AND PUSH1 0x1 ISZERO ISZERO PUSH32 0xE216B62EFBB97E751A2CE09F607048751720397ECFB9EEF1E48A6644948985B PUSH1 0x2A PUSH1 0x40 MLOAD DUP1 DUP3 DUP2 MSTORE PUSH1 0x20 ADD SWAP2 POP POP PUSH1 0x40 MLOAD DUP1 SWAP2 SUB SWAP1 LOG3 JUMP JUMPDEST PUSH1 0x1 ISZERO ISZERO PUSH1 0x2A PUSH1 0x40 MLOAD DUP1 DUP3 DUP2 MSTORE PUSH1 0x20 ADD SWAP2 POP POP PUSH1 0x40 MLOAD DUP1 SWAP2 SUB SWAP1 LOG1 JUMP JUMPDEST PUSH32 0x65C9AC8011E286E89D02A269890F41D67CA2CC597B2C76C7C69321FF492BE580 PUSH1 0x2A PUSH1 0x40 MLOAD DUP1 DUP3 DUP2 MSTORE PUSH1 0x20 ADD SWAP2 POP POP PUSH1 0x40 MLOAD DUP1 SWAP2 SUB SWAP1 LOG1 JUMP JUMPDEST CALLER PUSH20 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF AND PUSH1 0x1 ISZERO ISZERO PUSH1 0x2A PUSH1 0x40 MLOAD DUP1 DUP3 DUP2 MSTORE PUSH1 0x20 ADD SWAP2 POP POP PUSH1 0x40 MLOAD DUP1 SWAP2 SUB SWAP1 LOG2 JUMP JUMPDEST PUSH1 0x2A PUSH1 0x40 MLOAD DUP1 DUP3 DUP2 MSTORE PUSH1 0x20 ADD SWAP2 POP POP PUSH1 0x40 MLOAD DUP1 SWAP2 SUB SWAP1 LOG0 JUMP JUMPDEST PUSH1 0x1 ISZERO ISZERO PUSH32 0x81933B308056E7E85668661DCD102B1F22795B4431F9CF4625794F381C271C6B PUSH1 0x2A PUSH1 0x40 MLOAD DUP1 DUP3 DUP2 MSTORE PUSH1 0x20 ADD SWAP2 POP POP PUSH1 0x40 MLOAD DUP1 SWAP2 SUB SWAP1 LOG2 JUMP JUMPDEST PUSH32 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF PUSH1 0x0 SHL CALLER PUSH20 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF AND PUSH1 0x1 ISZERO ISZERO PUSH1 0x2A PUSH1 0x40 MLOAD DUP1 DUP3 DUP2 MSTORE PUSH1 0x20 ADD SWAP2 POP POP PUSH1 0x40 MLOAD DUP1 SWAP2 SUB SWAP1 LOG3 JUMP JUMPDEST PUSH32 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF PUSH1 0x0 SHL CALLER PUSH20 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF AND PUSH1 0x1 ISZERO ISZERO PUSH32 0x317B31292193C2A4F561CC40A95EA0D97A2733F14AF6D6D59522473E1F3AE65F PUSH1 0x2A PUSH1 0x40 MLOAD DUP1 DUP3 DUP2 MSTORE PUSH1 0x20 ADD SWAP2 POP POP PUSH1 0x40 MLOAD DUP1 SWAP2 SUB SWAP1 LOG4 JUMP INVALID LOG2 PUSH5 0x6970667358 0x22 SLT KECCAK256 ISZERO RETURNDATASIZE MSTORE8 0xB4 PUSH3 0xC5C7CF 0x5D 0x26 0xF6 0x29 DUP8 SUB SIGNEXTEND 0x4C PUSH25 0xE85C6C87A3B3E742769581438308C864736F6C634300060C00 CALLER ",
+	abi: [
+		{
+			inputs: [],
+			stateMutability: "nonpayable",
+			type: "constructor",
+		},
+		{
+			anonymous: false,
+			inputs: [
+				{
+					indexed: false,
+					internalType: "uint256",
+					name: "value",
+					type: "uint256",
+				},
+			],
+			name: "Log0",
+			type: "event",
+		},
+		{
+			anonymous: true,
+			inputs: [
+				{
+					indexed: false,
+					internalType: "uint256",
+					name: "value",
+					type: "uint256",
+				},
+			],
+			name: "Log0Anonym",
+			type: "event",
+		},
+		{
+			anonymous: false,
+			inputs: [
+				{
+					indexed: true,
+					internalType: "bool",
+					name: "aBool",
+					type: "bool",
+				},
+				{
+					indexed: false,
+					internalType: "uint256",
+					name: "value",
+					type: "uint256",
+				},
+			],
+			name: "Log1",
+			type: "event",
+		},
+		{
+			anonymous: true,
+			inputs: [
+				{
+					indexed: true,
+					internalType: "bool",
+					name: "aBool",
+					type: "bool",
+				},
+				{
+					indexed: false,
+					internalType: "uint256",
+					name: "value",
+					type: "uint256",
+				},
+			],
+			name: "Log1Anonym",
+			type: "event",
+		},
+		{
+			anonymous: false,
+			inputs: [
+				{
+					indexed: true,
+					internalType: "bool",
+					name: "aBool",
+					type: "bool",
+				},
+				{
+					indexed: true,
+					internalType: "address",
+					name: "aAddress",
+					type: "address",
+				},
+				{
+					indexed: false,
+					internalType: "uint256",
+					name: "value",
+					type: "uint256",
+				},
+			],
+			name: "Log2",
+			type: "event",
+		},
+		{
+			anonymous: true,
+			inputs: [
+				{
+					indexed: true,
+					internalType: "bool",
+					name: "aBool",
+					type: "bool",
+				},
+				{
+					indexed: true,
+					internalType: "address",
+					name: "aAddress",
+					type: "address",
+				},
+				{
+					indexed: false,
+					internalType: "uint256",
+					name: "value",
+					type: "uint256",
+				},
+			],
+			name: "Log2Anonym",
+			type: "event",
+		},
+		{
+			anonymous: false,
+			inputs: [
+				{
+					indexed: true,
+					internalType: "bool",
+					name: "aBool",
+					type: "bool",
+				},
+				{
+					indexed: true,
+					internalType: "address",
+					name: "aAddress",
+					type: "address",
+				},
+				{
+					indexed: true,
+					internalType: "bytes32",
+					name: "aBytes32",
+					type: "bytes32",
+				},
+				{
+					indexed: false,
+					internalType: "uint256",
+					name: "value",
+					type: "uint256",
+				},
+			],
+			name: "Log3",
+			type: "event",
+		},
+		{
+			anonymous: true,
+			inputs: [
+				{
+					indexed: true,
+					internalType: "bool",
+					name: "aBool",
+					type: "bool",
+				},
+				{
+					indexed: true,
+					internalType: "address",
+					name: "aAddress",
+					type: "address",
+				},
+				{
+					indexed: true,
+					internalType: "bytes32",
+					name: "aBytes32",
+					type: "bytes32",
+				},
+				{
+					indexed: false,
+					internalType: "uint256",
+					name: "value",
+					type: "uint256",
+				},
+			],
+			name: "Log3Anonym",
+			type: "event",
+		},
+		{
+			inputs: [],
+			name: "fireEventLog0",
+			outputs: [],
+			stateMutability: "nonpayable",
+			type: "function",
+		},
+		{
+			inputs: [],
+			name: "fireEventLog0Anonym",
+			outputs: [],
+			stateMutability: "nonpayable",
+			type: "function",
+		},
+		{
+			inputs: [],
+			name: "fireEventLog1",
+			outputs: [],
+			stateMutability: "nonpayable",
+			type: "function",
+		},
+		{
+			inputs: [],
+			name: "fireEventLog1Anonym",
+			outputs: [],
+			stateMutability: "nonpayable",
+			type: "function",
+		},
+		{
+			inputs: [],
+			name: "fireEventLog2",
+			outputs: [],
+			stateMutability: "nonpayable",
+			type: "function",
+		},
+		{
+			inputs: [],
+			name: "fireEventLog2Anonym",
+			outputs: [],
+			stateMutability: "nonpayable",
+			type: "function",
+		},
+		{
+			inputs: [],
+			name: "fireEventLog3",
+			outputs: [],
+			stateMutability: "nonpayable",
+			type: "function",
+		},
+		{
+			inputs: [],
+			name: "fireEventLog3Anonym",
+			outputs: [],
+			stateMutability: "nonpayable",
+			type: "function",
+		},
+	],
+};

@@ -2,9 +2,9 @@ import Web3 from "web3";
 import { describe } from "mocha";
 import { step } from "mocha-steps";
 import { expect } from "chai";
-import { HOST_URL, FAITH, FAITH_P } from "../config";
+import { HOST_HTTP_URL, FAITH, FAITH_P } from "../config";
 
-const web3 = new Web3(HOST_URL);
+const web3 = new Web3(HOST_HTTP_URL);
 describe("Test balances", () => {
 	let init_nonce;
 	step("Get the init nonce", async function () {
