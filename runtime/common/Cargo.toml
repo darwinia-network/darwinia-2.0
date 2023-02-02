@@ -24,9 +24,9 @@ bp-darwinia-core = { default-features = false, git = "https://github.com/darwini
 account = { default-features = false, git = "https://github.com/darwinia-network/moonbeam", branch = "polkadot-v0.9.36" }
 
 # polkadot
-xcm          = { default-features = false, git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.36" }
-xcm-builder  = { default-features = false, git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.36" }
-xcm-executor = { default-features = false, git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.36" }
+xcm          = { default-features = false, git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.38" }
+xcm-builder  = { default-features = false, git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.38" }
+xcm-executor = { default-features = false, git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.38" }
 
 # substrate
 frame-support     = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36" }
