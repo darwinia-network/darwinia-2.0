@@ -305,11 +305,11 @@ impl<R> State<R> {
 		self.mutate_value(p, i, &blake2_128_concat_to_string(h), f);
 	}
 
-	pub fn inc_consumers<A>(&mut self, account_id_32: A)
+	pub fn inc_consumers_by<A>(&mut self, account_id_32: A, x: RefCount)
 	where
 		A: AsRef<[u8]>,
 	{
-		self.mutate_account(account_id_32, |a| a.consumers += 1);
+		self.mutate_account(account_id_32, |a| a.consumers += x);
 	}
 
 	pub fn reserve<A>(&mut self, account_id_32: A, amount: u128)

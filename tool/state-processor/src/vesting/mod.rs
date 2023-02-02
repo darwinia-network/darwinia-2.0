@@ -15,9 +15,7 @@ impl<S> Processor<S> {
 
 		log::info!("set `AccountMigration::Vestings`");
 		vestings.into_iter().for_each(|(k, v)| {
-			let a = get_last_64(&k);
-
-			self.shell_state.inc_consumers(a);
+			self.shell_state.inc_consumers_by(get_last_64(&k), 1);
 			self.shell_state.insert_value(b"AccountMigration", b"Vestings", &k, v);
 		});
 

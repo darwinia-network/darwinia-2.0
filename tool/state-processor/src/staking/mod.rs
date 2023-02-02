@@ -23,6 +23,7 @@ impl<S> Processor<S> {
 		{
 			let staking_ik = item_key(b"AccountMigration", b"Ledgers");
 			let deposit_ik = item_key(b"AccountMigration", b"Deposits");
+			let mut consumers = 1;
 
 			ledgers.into_iter().for_each(|(_, mut v)| {
 				v.adjust();
@@ -33,6 +34,8 @@ impl<S> Processor<S> {
 				let mut staked_deposits = Vec::default();
 
 				if !v.deposit_items.is_empty() {
+					consumers += 1;
+
 					let mut deposit_ring = Balance::default();
 
 					self.shell_state.insert_raw_key_value(
@@ -61,6 +64,7 @@ impl<S> Processor<S> {
 				ring_pool += v.active;
 				kton_pool += v.active_kton;
 
+				self.shell_state.inc_consumers_by(get_last_64(&staking_k), consumers);
 				self.shell_state.insert_raw_key_value(
 					staking_k,
 					Ledger {
