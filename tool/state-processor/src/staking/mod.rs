@@ -23,7 +23,6 @@ impl<S> Processor<S> {
 		{
 			let staking_ik = item_key(b"AccountMigration", b"Ledgers");
 			let deposit_ik = item_key(b"AccountMigration", b"Deposits");
-			let mut consumers = 1;
 
 			ledgers.into_iter().for_each(|(_, mut v)| {
 				v.adjust();
@@ -31,6 +30,7 @@ impl<S> Processor<S> {
 				let hash_k = blake2_128_concat_to_string(v.stash);
 				let deposit_k = format!("{deposit_ik}{hash_k}");
 				let staking_k = format!("{staking_ik}{hash_k}");
+				let mut consumers = 1;
 				let mut staked_deposits = Vec::default();
 
 				if !v.deposit_items.is_empty() {
@@ -64,7 +64,10 @@ impl<S> Processor<S> {
 				ring_pool += v.active;
 				kton_pool += v.active_kton;
 
-				self.shell_state.inc_consumers_by(get_last_64(&staking_k), consumers);
+				// Some accounts might be killed.
+				// But their staking data didn't get deleted.
+				// TODO: https://github.com/darwinia-network/darwinia-2.0/issues/6
+				self.shell_state.inc_consumers_by(&array_bytes::bytes2hex("", v.stash), consumers);
 				self.shell_state.insert_raw_key_value(
 					staking_k,
 					Ledger {

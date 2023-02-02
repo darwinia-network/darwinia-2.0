@@ -133,7 +133,7 @@ fn solo_chain_substrate_account_adjust() {
 		// after migrate
 
 		let migrated_account = tester.migration_accounts.get(test_addr).unwrap();
-		assert_eq!(migrated_account.consumers, 0);
+		assert_eq!(migrated_account.consumers, 2);
 		assert_eq!(solo_account.providers, migrated_account.providers);
 		assert_eq!(solo_account.sufficients + 1, migrated_account.sufficients);
 		// nonce reset

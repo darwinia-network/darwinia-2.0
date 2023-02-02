@@ -31,10 +31,10 @@ fn main() -> Result<()> {
 	pretty_env_logger::init();
 
 	// <Processor<Pangolin>>::new()?.process().save()?;
-	<Processor<Pangolin>>::new()?.test().process().save()?;
+	// <Processor<Pangolin>>::new()?.test().process().save()?;
 	// <Processor<Pangoro>>::new()?.process().save()?;
 	// <Processor<Pangoro>>::new()?.test().process().save()?;
-	// <Processor<Crab>>::new()?.process().save()?;
+	<Processor<Crab>>::new()?.process().save()?;
 	// <Processor<Crab>>::new()?.test().process().save()?;
 	// <Processor<Darwinia>>::new()?.process().save()?;
 	// <Processor<Darwinia>>::new()?.test().process().save()?;

@@ -302,35 +302,37 @@ impl<R> State<R> {
 		self
 	}
 
-	fn mutate_account<A, F>(&mut self, account_id_32: A, f: F)
+	fn mutate_account<F>(&mut self, account_id_32: &str, f: F)
 	where
-		A: AsRef<[u8]>,
 		F: FnOnce(&mut AccountInfo),
 	{
-		let account_id_32 = account_id_32.as_ref();
-		let (p, i, h) = if is_evm_address(account_id_32) {
+		let account_id_32 = array_bytes::hex2array_unchecked::<_, 32>(account_id_32);
+		let (p, i, h) = if is_evm_address(&account_id_32) {
 			(&b"System"[..], &b"Account"[..], &account_id_32[11..31])
 		} else {
-			(&b"AccountMigration"[..], &b"Accounts"[..], account_id_32)
+			(&b"AccountMigration"[..], &b"Accounts"[..], &account_id_32[..])
 		};
 
 		self.mutate_value(p, i, &blake2_128_concat_to_string(h), f);
 	}
 
-	pub fn inc_consumers_by<A>(&mut self, account_id_32: A, x: RefCount)
-	where
-		A: AsRef<[u8]>,
-	{
+	pub fn inc_consumers_by(&mut self, account_id_32: &str, x: RefCount) {
 		self.mutate_account(account_id_32, |a| a.consumers += x);
 	}
 
-	pub fn reserve<A>(&mut self, account_id_32: A, amount: u128)
-	where
-		A: AsRef<[u8]>,
-	{
+	pub fn reserve(&mut self, account_id_32: &str, amount: u128) {
 		self.mutate_account(account_id_32, |a| {
-			a.data.free -= amount;
-			a.data.reserved += amount;
+			if a.data.free < amount {
+				log::warn!(
+					"`Account({account_id_32})` can't afford the latest runtime reservation amount"
+				);
+
+				a.data.reserved += a.data.free;
+				a.data.free = 0;
+			} else {
+				a.data.free -= amount;
+				a.data.reserved += amount;
+			}
 		});
 	}
 }
