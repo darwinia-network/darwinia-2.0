@@ -127,8 +127,7 @@ jobs:
           chmod u+x darwinia
           sudo mv darwinia /usr/bin
       - name: Launch darwinia
-        run: |
-          darwinia --chain pangolin-dev --tmp --alice&
+        run: darwinia --chain pangolin-dev --tmp --alice &
       - name: Install Node 19
         uses: actions/setup-node@v2
         with:
