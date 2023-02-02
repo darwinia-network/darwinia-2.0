@@ -38,6 +38,7 @@ use pallet_evm::{FeeCalculator, GasWeightMapping};
 use frame_support::{traits::EnsureOrigin, PalletError, RuntimeDebug};
 use sp_core::{H160, U256};
 use sp_std::boxed::Box;
+use sp_core::Get;
 
 pub use pallet::*;
 
@@ -91,7 +92,7 @@ pub mod pallet {
 		/// Handler for applying an already validated transaction
 		type ValidatedTransaction: ValidatedTransaction;
 		/// Origin for message transact
-		type LcmpEthOrigin: EnsureOrigin<Self::RuntimeOrigin, Success = H160>;
+		type LcmpEthOrigin: EnsureOrigin<<Self as frame_system::Config>::RuntimeOrigin, Success = H160>;
 	}
 
 	#[pallet::error]

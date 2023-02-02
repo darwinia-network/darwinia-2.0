@@ -18,7 +18,7 @@ pallet-evm = { default-features = false, git = "https://github.com/darwinia-netw
 darwinia-deposit = { default-features = false, path = "../../pallet/deposit"}
 
 # moonbeam
-precompile-utils = { default-features = false, git = "https://github.com/darwinia-network/moonbeam", branch = "polkadot-v0.9.36" }
+precompile-utils = { default-features = false, git = "https://github.com/darwinia-network/moonbeam", branch = "xcm-v3-test" }
 
 # substrate
 frame-support = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.38" }
@@ -32,7 +32,7 @@ codec      = { package = "parity-scale-codec", version = "3.2" }
 scale-info = { version = "2.3", features = ["derive"] }
 
 # moonbeam
-precompile-utils = { git = "https://github.com/darwinia-network/moonbeam", branch = "polkadot-v0.9.36", features = ["testing"] }
+precompile-utils = { git = "https://github.com/darwinia-network/moonbeam", branch = "xcm-v3-test", features = ["testing"] }
 
 # substrate
 pallet-balances  = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.38" }
