@@ -11,7 +11,7 @@ use std::{
 use crate::*;
 // crates.io
 use anyhow::Result;
-use fxhash::{FxHashMap, FxHashSet};
+use fxhash::FxHashMap;
 use once_cell::sync::Lazy;
 use parity_scale_codec::{Decode, Encode};
 use serde::de::DeserializeOwned;
@@ -19,7 +19,6 @@ use serde_json::Value;
 // hack-ink
 use subspector::ChainSpec;
 
-pub type Set = FxHashSet<String>;
 pub type Map<V> = FxHashMap<String, V>;
 
 pub static NOW: Lazy<RwLock<u32>> = Lazy::new(|| RwLock::new(0));
@@ -173,41 +172,12 @@ impl<R> State<R> {
 		self
 	}
 
-	pub fn insert_map<E, F>(&mut self, pairs: Map<E>, process_key: F) -> &mut Self
-	where
-		E: Encode,
-		F: Fn(&str) -> String,
-	{
-		pairs.into_iter().for_each(|(k, v)| {
-			self.map.insert(process_key(&k), encode_value(v));
-		});
-
-		self
-	}
-
 	pub fn contains_key(&self, key: &str) -> bool {
 		self.map.contains_key(key)
 	}
 
 	pub fn exists(&self, pallet: &[u8], item: &[u8]) -> bool {
 		self.map.keys().into_iter().any(|k| k.starts_with(&item_key(pallet, item)))
-	}
-
-	pub fn reserve<A>(&mut self, account_id_32: A, amount: u128)
-	where
-		A: AsRef<[u8]>,
-	{
-		let account_id_32 = account_id_32.as_ref();
-		let (p, i, h) = if is_evm_address(account_id_32) {
-			(&b"System"[..], &b"Account"[..], &account_id_32[11..31])
-		} else {
-			(&b"AccountMigration"[..], &b"Accounts"[..], account_id_32)
-		};
-
-		self.mutate_value(p, i, &blake2_128_concat_to_string(h), |a: &mut AccountInfo| {
-			a.data.free -= amount;
-			a.data.reserved += amount;
-		});
 	}
 
 	pub fn take_raw_map<F>(
@@ -222,23 +192,6 @@ impl<R> State<R> {
 		self.map.retain(|k, v| {
 			if k.starts_with(prefix) {
 				buffer.insert(process_key(k, prefix), v.to_owned());
-
-				false
-			} else {
-				true
-			}
-		});
-
-		self
-	}
-
-	pub fn take_keys<F>(&mut self, prefix: &str, keys: &mut Set, process_key: F) -> &mut Self
-	where
-		F: Fn(&str, &str) -> String,
-	{
-		self.map.retain(|k, _| {
-			if k.starts_with(prefix) {
-				keys.insert(process_key(k, prefix));
 
 				false
 			} else {
@@ -335,6 +288,38 @@ impl<R> State<R> {
 		self.insert_value(pallet, item, hash, v);
 
 		self
+	}
+
+	fn mutate_account<A, F>(&mut self, account_id_32: A, f: F)
+	where
+		A: AsRef<[u8]>,
+		F: FnOnce(&mut AccountInfo),
+	{
+		let account_id_32 = account_id_32.as_ref();
+		let (p, i, h) = if is_evm_address(account_id_32) {
+			(&b"System"[..], &b"Account"[..], &account_id_32[11..31])
+		} else {
+			(&b"AccountMigration"[..], &b"Accounts"[..], account_id_32)
+		};
+
+		self.mutate_value(p, i, &blake2_128_concat_to_string(h), f);
+	}
+
+	pub fn inc_consumers<A>(&mut self, account_id_32: A)
+	where
+		A: AsRef<[u8]>,
+	{
+		self.mutate_account(account_id_32, |a| a.consumers += 1);
+	}
+
+	pub fn reserve<A>(&mut self, account_id_32: A, amount: u128)
+	where
+		A: AsRef<[u8]>,
+	{
+		self.mutate_account(account_id_32, |a| {
+			a.data.free -= amount;
+			a.data.reserved += amount;
+		});
 	}
 }
 

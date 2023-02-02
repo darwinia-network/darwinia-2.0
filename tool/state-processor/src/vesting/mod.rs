@@ -14,11 +14,12 @@ impl<S> Processor<S> {
 		vestings.iter_mut().for_each(|(_, v)| v.adjust());
 
 		log::info!("set `AccountMigration::Vestings`");
-		{
-			let ik = item_key(b"AccountMigration", b"Vestings");
+		vestings.into_iter().for_each(|(k, v)| {
+			let a = get_last_64(&k);
 
-			self.shell_state.insert_map(vestings, |h| format!("{ik}{h}"));
-		}
+			self.shell_state.inc_consumers(a);
+			self.shell_state.insert_value(b"AccountMigration", b"Vestings", &k, v);
+		});
 
 		self
 	}

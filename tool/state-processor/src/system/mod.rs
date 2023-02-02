@@ -19,8 +19,8 @@ where
 	pub fn process_system(&mut self) -> &mut Self {
 		// System storage items.
 		// https://github.dev/darwinia-network/substrate/blob/darwinia-v0.12.5/frame/system/src/lib.rs#L545
-		let mut solo_account_infos = self.process_solo_account_infos();
-		let mut para_account_infos = self.process_para_account_infos();
+		let solo_account_infos = self.process_solo_account_infos();
+		let para_account_infos = self.process_para_account_infos();
 		let (ring_total_issuance_storage, kton_total_issuance_storage) = self.process_balances();
 		let mut accounts = Map::default();
 		let mut ring_total_issuance = Balance::default();
