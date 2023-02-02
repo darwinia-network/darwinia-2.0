@@ -64,7 +64,7 @@ impl<S> Processor<S> {
 				ring_pool += v.active;
 				kton_pool += v.active_kton;
 
-				// Some accounts might be killed.
+				// Some accounts were killed.
 				// But their staking data didn't get deleted.
 				// TODO: https://github.com/darwinia-network/darwinia-2.0/issues/6
 				self.shell_state.inc_consumers_by(&array_bytes::bytes2hex("", v.stash), consumers);
