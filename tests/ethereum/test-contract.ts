@@ -15,10 +15,7 @@ describe("Test contract", () => {
 
 	let transact_hash;
 	step("Deploy contract", async () => {
-		let data = inc.deploy({
-			data: incrementerInfo.bytecode,
-			arguments: [5],
-		});
+		let data = inc.deploy({ data: incrementerInfo.bytecode, arguments: [5] });
 		let tx = await web3.eth.accounts.signTransaction(
 			{
 				from: FAITH,

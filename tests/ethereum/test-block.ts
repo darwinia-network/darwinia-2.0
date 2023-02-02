@@ -1,7 +1,7 @@
 import Web3 from "web3";
 import { describe } from "mocha";
 import { expect } from "chai";
-import { HOST_HTTP_URL, BLOCK_TIMESTAMP, BLOCK_GAS_LIMIT } from "../config";
+import { HOST_HTTP_URL, BLOCK_GAS_LIMIT } from "../config";
 
 const web3 = new Web3(HOST_HTTP_URL);
 describe("Test Block RPC", () => {
@@ -65,26 +65,10 @@ describe("Test Block RPC", () => {
 		expect(block.parentHash).to.equal(previous_block.hash);
 	});
 
-	// TODO: FIX ME
-	it.skip("Should have valid timestamp after block production", async () => {
-		const block = await web3.eth.getBlock("latest");
-		// previous block
-		const previous_block = await web3.eth.getBlock(block.number - 1);
-
-		expect(Number(block.timestamp) - Number(previous_block.timestamp)).to.be.eq(
-			BLOCK_TIMESTAMP
-		);
-	});
-
 	it("Should the taged block valid", async () => {
 		expect((await web3.eth.getBlock("earliest")).number).to.equal(0);
 		expect((await web3.eth.getBlock("latest")).number).gt(0);
 	});
-
-	// TODO: FIND A BETTER PLACE
-	// it("Should get transactions count by pending block", async () => {
-	// 	expect(await web3.eth.getBlockTransactionCount("pending")).to.equal(0);
-	// });
 
 	it("Should return null if the block doesnt exist", async () => {
 		expect(
