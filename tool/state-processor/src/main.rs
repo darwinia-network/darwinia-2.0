@@ -16,8 +16,6 @@ use type_registry::*;
 mod balances;
 mod evm;
 mod identity;
-mod indices;
-mod proxy;
 mod session;
 mod staking;
 mod system;
@@ -33,10 +31,14 @@ fn main() -> Result<()> {
 	std::env::set_var("RUST_LOG", "state_processor");
 	pretty_env_logger::init();
 
-	// <Processor<Pangoro>>::new()?.process()?;
-	<Processor<Pangolin>>::new()?.test().process()?;
-	// <Processor<Darwinia>>::new()?.process()?;
-	// <Processor<Crab>>::new()?.process()?;
+	// <Processor<Pangolin>>::new()?.process().save()?;
+	<Processor<Pangolin>>::new()?.test().process().save()?;
+	// <Processor<Pangoro>>::new()?.process().save()?;
+	// <Processor<Pangoro>>::new()?.test().process().save()?;
+	// <Processor<Crab>>::new()?.process().save()?;
+	// <Processor<Crab>>::new()?.test().process().save()?;
+	// <Processor<Darwinia>>::new()?.process().save()?;
+	// <Processor<Darwinia>>::new()?.test().process().save()?;
 
 	Ok(())
 }

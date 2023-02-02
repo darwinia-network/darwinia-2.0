@@ -1,6 +1,6 @@
 // std
 use std::{
-	fs::File,
+	fs::{self, File},
 	io::{Read, Write},
 	marker::PhantomData,
 	mem,
@@ -36,6 +36,10 @@ where
 	S: Configurable,
 {
 	pub fn new() -> Result<Self> {
+		if !Path::new("data").is_dir() {
+			fs::create_dir("data")?;
+		}
+
 		build_spec(S::NAME)?;
 
 		let mut shell_chain_spec = from_file::<ChainSpec>(&format!("data/{}-shell.json", S::NAME))?;
@@ -64,22 +68,16 @@ where
 		self
 	}
 
-	pub fn process(mut self) -> Result<()> {
+	pub fn process(mut self) -> Self {
 		self.solo_state.get_value(b"System", b"Number", "", &mut *NOW.write().unwrap());
 
 		let _guard = NOW.read().unwrap();
 
 		assert!(*_guard != 0);
 
-		self.process_system()
-			.process_indices()
-			.process_identity()
-			.process_vesting()
-			.process_proxy()
-			.process_staking()
-			.process_evm();
+		self.process_system().process_identity().process_vesting().process_staking().process_evm();
 
-		self.save()
+		self
 	}
 
 	pub fn save(mut self) -> Result<()> {
@@ -195,7 +193,7 @@ impl<R> State<R> {
 		self.map.keys().into_iter().any(|k| k.starts_with(&item_key(pallet, item)))
 	}
 
-	pub fn unreserve<A>(&mut self, account_id_32: A, amount: u128)
+	pub fn reserve<A>(&mut self, account_id_32: A, amount: u128)
 	where
 		A: AsRef<[u8]>,
 	{
@@ -207,8 +205,8 @@ impl<R> State<R> {
 		};
 
 		self.mutate_value(p, i, &blake2_128_concat_to_string(h), |a: &mut AccountInfo| {
-			a.data.free += amount;
-			a.data.reserved -= amount;
+			a.data.free -= amount;
+			a.data.reserved += amount;
 		});
 	}
 
