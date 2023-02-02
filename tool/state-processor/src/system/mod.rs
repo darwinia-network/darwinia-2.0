@@ -116,7 +116,7 @@ where
 			};
 
 			if let Some(k) = try_get_evm_address(&key) {
-				// TODO: GitHub link
+				// https://github.dev/paritytech/frontier/blob/ab0f4a47e42ad17e4d8551fb9b3c3a6b4c5df2db/frame/evm/src/lib.rs#L705
 				if self.solo_state.contains_key(&full_key(
 					b"EVM",
 					b"AccountCodes",

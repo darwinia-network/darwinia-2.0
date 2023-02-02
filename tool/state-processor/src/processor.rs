@@ -172,6 +172,18 @@ impl<R> State<R> {
 		self
 	}
 
+	pub fn insert_map<E, F>(&mut self, pairs: Map<E>, process_key: F) -> &mut Self
+	where
+		E: Encode,
+		F: Fn(&str) -> String,
+	{
+		pairs.into_iter().for_each(|(k, v)| {
+			self.map.insert(process_key(&k), encode_value(v));
+		});
+
+		self
+	}
+
 	pub fn contains_key(&self, key: &str) -> bool {
 		self.map.contains_key(key)
 	}
