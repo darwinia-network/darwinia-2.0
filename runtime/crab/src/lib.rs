@@ -145,13 +145,13 @@ where
 	}
 }
 
-impl_self_contained_call!();
-
 /// The version information used to identify this runtime when compiled natively.
 #[cfg(feature = "std")]
 pub fn native_version() -> NativeVersion {
 	NativeVersion { runtime_version: VERSION, can_author_with: Default::default() }
 }
+
+impl_self_contained_call!();
 
 bridge_runtime_common::generate_bridge_reject_obsolete_headers_and_messages! {
 	RuntimeCall, AccountId,
@@ -224,7 +224,7 @@ frame_support::construct_runtime! {
 		Evm: pallet_evm = 37,
 		MessageTransact: darwinia_message_transact = 38,
 
-		// S2S stuff.
+		// Crab <> Darwinia
 		BridgeKusamaGrandpa: pallet_bridge_grandpa::<Instance1> = 39,
 		BridgeKusamaParachain: pallet_bridge_parachains::<Instance1> = 40,
 		BridgeDarwiniaMessages: pallet_bridge_messages::<Instance1> = 41,
