@@ -26,7 +26,7 @@ impl darwinia_deposit::SimpleAsset for PKtonMinting {
 	fn mint(beneficiary: &Self::AccountId, amount: Balance) -> sp_runtime::DispatchResult {
 		Assets::mint(
 			RuntimeOrigin::signed(ROOT),
-			codec::Compact(AssetIds::PKton as _),
+			(AssetIds::PKton as _).into(),
 			*beneficiary,
 			amount,
 		)
@@ -39,7 +39,7 @@ impl darwinia_deposit::SimpleAsset for PKtonMinting {
 			Err(<pallet_assets::Error<Runtime>>::BalanceLow)?;
 		}
 
-		Assets::burn(RuntimeOrigin::signed(ROOT), codec::Compact(asset_id), *who, amount)
+		Assets::burn(RuntimeOrigin::signed(ROOT), asset_id.into(), *who, amount)
 	}
 }
 
