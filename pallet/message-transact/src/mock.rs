@@ -98,7 +98,7 @@ frame_support::parameter_types! {
 impl pallet_timestamp::Config for TestRuntime {
 	type MinimumPeriod = MinimumPeriod;
 	type Moment = u64;
-	type OnTimestampSet = Aura;
+	type OnTimestampSet = ();
 	type WeightInfo = ();
 }
 

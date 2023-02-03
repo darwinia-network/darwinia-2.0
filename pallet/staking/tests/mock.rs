@@ -54,7 +54,7 @@ impl frame_system::Config for Runtime {
 impl pallet_timestamp::Config for Runtime {
 	type MinimumPeriod = ();
 	type Moment = Moment;
-	type OnTimestampSet = Aura;
+	type OnTimestampSet = ();
 	type WeightInfo = ();
 }
 
@@ -75,6 +75,7 @@ impl pallet_assets::Config for Runtime {
 	type AssetAccountDeposit = ();
 	type AssetDeposit = ();
 	type AssetId = AssetId;
+	type AssetIdParameter = u64;
 	type Balance = Balance;
 	type CreateOrigin = frame_support::traits::AsEnsureOriginWithArg<
 		frame_system::EnsureSignedBy<frame_support::traits::IsInVec<()>, u32>,
@@ -85,6 +86,7 @@ impl pallet_assets::Config for Runtime {
 	type Freezer = ();
 	type MetadataDepositBase = ();
 	type MetadataDepositPerByte = ();
+	type RemoveItemsLimit = ();
 	type RuntimeEvent = RuntimeEvent;
 	type StringLimit = frame_support::traits::ConstU32<4>;
 	type WeightInfo = ();

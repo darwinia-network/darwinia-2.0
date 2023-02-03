@@ -91,7 +91,7 @@ impl pallet_balances::Config for TestRuntime {
 impl pallet_timestamp::Config for TestRuntime {
 	type MinimumPeriod = ();
 	type Moment = u128;
-	type OnTimestampSet = Aura;
+	type OnTimestampSet = ();
 	type WeightInfo = ();
 }
 

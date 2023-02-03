@@ -102,7 +102,7 @@ impl pallet_balances::Config for TestRuntime {
 impl pallet_timestamp::Config for TestRuntime {
 	type MinimumPeriod = ();
 	type Moment = u64;
-	type OnTimestampSet = Aura;
+	type OnTimestampSet = ();
 	type WeightInfo = ();
 }
 pub struct TestPrecompiles<R>(PhantomData<R>);
@@ -176,6 +176,7 @@ impl pallet_assets::Config for TestRuntime {
 	type AssetAccountDeposit = ();
 	type AssetDeposit = ();
 	type AssetId = AssetId;
+	type AssetIdParameter = u64;
 	type Balance = Balance;
 	type CreateOrigin = frame_support::traits::AsEnsureOriginWithArg<
 		frame_system::EnsureSignedBy<frame_support::traits::IsInVec<()>, AccountId>,
@@ -186,6 +187,7 @@ impl pallet_assets::Config for TestRuntime {
 	type Freezer = ();
 	type MetadataDepositBase = ();
 	type MetadataDepositPerByte = ();
+	type RemoveItemsLimit = ();
 	type RuntimeEvent = RuntimeEvent;
 	type StringLimit = frame_support::traits::ConstU32<50>;
 	type WeightInfo = ();
