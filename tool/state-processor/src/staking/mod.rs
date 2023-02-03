@@ -24,15 +24,27 @@ impl<S> Processor<S> {
 			let staking_ik = item_key(b"AccountMigration", b"Ledgers");
 			let deposit_ik = item_key(b"AccountMigration", b"Deposits");
 
-			ledgers.into_iter().for_each(|(_, mut v)| {
+			for (_, mut v) in ledgers {
+				if v.is_empty() {
+					log::info!(
+						"clean empty ledger for Account({})",
+						array_bytes::bytes2hex("0x", v.stash)
+					);
+
+					continue;
+				}
+
 				v.adjust();
 
 				let hash_k = blake2_128_concat_to_string(v.stash);
 				let deposit_k = format!("{deposit_ik}{hash_k}");
 				let staking_k = format!("{staking_ik}{hash_k}");
+				let mut consumers = 1;
 				let mut staked_deposits = Vec::default();
 
 				if !v.deposit_items.is_empty() {
+					consumers += 1;
+
 					let mut deposit_ring = Balance::default();
 
 					self.shell_state.insert_raw_key_value(
@@ -61,6 +73,7 @@ impl<S> Processor<S> {
 				ring_pool += v.active;
 				kton_pool += v.active_kton;
 
+				self.shell_state.inc_consumers_by(&array_bytes::bytes2hex("", v.stash), consumers);
 				self.shell_state.insert_raw_key_value(
 					staking_k,
 					Ledger {
@@ -82,7 +95,7 @@ impl<S> Processor<S> {
 						unstaking_deposits: Default::default(),
 					},
 				);
-			});
+			}
 		}
 
 		ring_pool_storage.adjust();
