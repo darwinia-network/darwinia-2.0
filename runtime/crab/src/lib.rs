@@ -156,11 +156,11 @@ impl_self_contained_call!();
 bridge_runtime_common::generate_bridge_reject_obsolete_headers_and_messages! {
 	RuntimeCall, AccountId,
 	// Grandpa
-	BridgeKusamaGrandpa,
+	BridgePolkadotGrandpa,
 	// Messages
 	BridgeDarwiniaMessages,
 	// Parachain
-	BridgeKusamaParachain
+	BridgePolkadotParachain
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
@@ -225,8 +225,8 @@ frame_support::construct_runtime! {
 		MessageTransact: darwinia_message_transact = 38,
 
 		// Crab <> Darwinia
-		BridgeKusamaGrandpa: pallet_bridge_grandpa::<Instance1> = 39,
-		BridgeKusamaParachain: pallet_bridge_parachains::<Instance1> = 40,
+		BridgePolkadotGrandpa: pallet_bridge_grandpa::<Instance1> = 39,
+		BridgePolkadotParachain: pallet_bridge_parachains::<Instance1> = 40,
 		BridgeDarwiniaMessages: pallet_bridge_messages::<Instance1> = 41,
 		BridgeDarwiniaDispatch: pallet_bridge_dispatch::<Instance1> = 42,
 		DarwiniaFeeMarket: pallet_fee_market::<Instance1> = 43

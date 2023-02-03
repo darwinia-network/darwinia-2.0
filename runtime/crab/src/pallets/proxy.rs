@@ -92,8 +92,8 @@ impl frame_support::traits::InstanceFilter<RuntimeCall> for ProxyType {
 			ProxyType::SubstrateBridge => {
 				matches!(
 					c,
-					RuntimeCall::BridgeKusamaGrandpa(..)
-						| RuntimeCall::BridgeKusamaParachain(..)
+					RuntimeCall::BridgePolkadotGrandpa(..)
+						| RuntimeCall::BridgePolkadotParachain(..)
 						| RuntimeCall::BridgeDarwiniaMessages(..)
 						| RuntimeCall::BridgeDarwiniaDispatch(..)
 						| RuntimeCall::DarwiniaFeeMarket(..)
