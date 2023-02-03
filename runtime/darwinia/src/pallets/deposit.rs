@@ -26,7 +26,7 @@ impl darwinia_deposit::SimpleAsset for KtonAsset {
 	fn mint(beneficiary: &Self::AccountId, amount: Balance) -> sp_runtime::DispatchResult {
 		Assets::mint(
 			RuntimeOrigin::signed(ROOT),
-			(AssetIds::Kton as _).into(),
+			(AssetIds::Kton as AssetId).into(),
 			*beneficiary,
 			amount,
 		)
