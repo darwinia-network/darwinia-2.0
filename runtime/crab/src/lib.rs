@@ -151,18 +151,6 @@ pub fn native_version() -> NativeVersion {
 	NativeVersion { runtime_version: VERSION, can_author_with: Default::default() }
 }
 
-impl_self_contained_call!();
-
-bridge_runtime_common::generate_bridge_reject_obsolete_headers_and_messages! {
-	RuntimeCall, AccountId,
-	// Grandpa
-	BridgePolkadotGrandpa,
-	// Messages
-	BridgeDarwiniaMessages,
-	// Parachain
-	BridgePolkadotParachain
-}
-
 // Create the runtime by composing the FRAME pallets that were previously configured.
 frame_support::construct_runtime! {
 	pub enum Runtime where
@@ -241,6 +229,18 @@ frame_benchmarking::define_benchmarks! {
 	[pallet_timestamp, Timestamp]
 	[pallet_collator_selection, CollatorSelection]
 	[cumulus_pallet_xcmp_queue, XcmpQueue]
+}
+
+impl_self_contained_call!();
+
+bridge_runtime_common::generate_bridge_reject_obsolete_headers_and_messages! {
+	RuntimeCall, AccountId,
+	// Grandpa
+	BridgePolkadotGrandpa,
+	// Messages
+	BridgeDarwiniaMessages,
+	// Parachain
+	BridgePolkadotParachain
 }
 
 sp_api::impl_runtime_apis! {
