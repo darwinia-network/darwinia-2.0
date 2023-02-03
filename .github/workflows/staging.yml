@@ -1,0 +1,17 @@
+name: Staging
+
+on:
+  push:
+    branches: [ master ]
+  workflow_dispatch:
+
+
+jobs:
+  build-binary:
+    name: Build package [linux]
+    runs-on: ubuntu-latest
+    container:
+      image: ubuntu:16.04
+    steps:
+      - uses: actions/checkout@v2
+
