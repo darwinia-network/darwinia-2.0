@@ -332,6 +332,7 @@ try-runtime = [
 	"pallet-fee-market/try-runtime",
 
 	# frontier
+	"fp-self-contained/try-runtime",
 	"pallet-ethereum/try-runtime",
 	"pallet-evm/try-runtime",
 

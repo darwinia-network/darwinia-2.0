@@ -19,7 +19,6 @@ sp-debug-derive = { git = "https://github.com/darwinia-network/substrate", branc
 frame-support-procedural-tools-derive = { git = "https://github.com/darwinia-network/substrate", branch="polkadot-v0.9.36" }
 sc-utils = { git = "https://github.com/darwinia-network/substrate", branch="polkadot-v0.9.36" }
 substrate-prometheus-endpoint = { git = "https://github.com/darwinia-network/substrate", branch="polkadot-v0.9.36" }
-sp-serializer = { git = "https://github.com/darwinia-network/substrate", branch="polkadot-v0.9.36" }
 frame-support-procedural-tools = { git = "https://github.com/darwinia-network/substrate", branch="polkadot-v0.9.36" }
 sp-runtime-interface-proc-macro = { git = "https://github.com/darwinia-network/substrate", branch="polkadot-v0.9.36" }
 sp-api-proc-macro = { git = "https://github.com/darwinia-network/substrate", branch="polkadot-v0.9.36" }

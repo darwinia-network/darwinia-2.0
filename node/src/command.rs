@@ -517,15 +517,15 @@ pub fn run() -> Result<()> {
 				.map_err(|e| format!("Error: {:?}", e))?;
 
 			if chain_spec.is_crab() {
-				runner.async_run(|config| {
+				runner.async_run(|_| {
 					Ok((cmd.run::<Block, HostFunctionsOf<CrabRuntimeExecutor>>(), task_manager))
 				})
 			} else if chain_spec.is_pangolin() {
-				runner.async_run(|config| {
+				runner.async_run(|_| {
 					Ok((cmd.run::<Block, HostFunctionsOf<PangolinRuntimeExecutor>>(), task_manager))
 				})
 			} else {
-				runner.async_run(|config| {
+				runner.async_run(|_| {
 					Ok((cmd.run::<Block, HostFunctionsOf<DarwiniaRuntimeExecutor>>(), task_manager))
 				})
 			}
