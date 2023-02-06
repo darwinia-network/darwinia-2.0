@@ -93,13 +93,7 @@ pub type Executive = frame_executive::Executive<
 	frame_system::ChainContext<Runtime>,
 	Runtime,
 	AllPalletsWithSystem,
-	Migrations,
 >;
-
-type Migrations = (
-	// pallet_balances::migration::MigrateToTrackInactive<Runtime, CheckingAccount>,
-	pallet_assets::migration::v1::MigrateToV1<Runtime>,
-);
 
 /// Darwinia proposal base fee.
 pub const DARWINIA_PROPOSAL_REQUIREMENT: Balance = 5000 * UNIT;
