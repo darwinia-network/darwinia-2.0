@@ -85,6 +85,7 @@ jobs:
         uses: docker/build-push-action@v3
         with:
           push: true
+          context: .
           file: .maintain/docker/Dockerfile
           tags: ${{ env.DOCKER_REGISTRY }}/${{ github.repository }}:sha-${{ env.SHA }}
 
