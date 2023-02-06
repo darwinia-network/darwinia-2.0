@@ -65,7 +65,7 @@ pub struct AssetDetails {
 	pub status: AssetStatus,
 }
 
-// todo: Add link
+// https://github.com/paritytech/substrate/blob/polkadot-v0.9.36/frame/assets/src/types.rs#L35
 #[derive(Debug, Encode, Decode, PartialEq)]
 pub enum AssetStatus {
 	Live,
