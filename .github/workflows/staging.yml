@@ -47,7 +47,7 @@ jobs:
             shared/darwinia2-x86_64-linux-gnu.tar.bz2 \
             -C \
             target/release \
-            darwinia-parachain
+            darwinia
       - name: Upload shared
         uses: actions/upload-artifact@v2
         with:
