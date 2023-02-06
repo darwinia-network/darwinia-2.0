@@ -150,7 +150,7 @@ fn solo_chain_substrate_account_adjust() {
 			// after migrate
 
 			let migrated_account = tester.migration_accounts.get(test_addr).unwrap();
-			assert_eq!(migrated_account.none, 0);
+			assert_eq!(migrated_account.nonce, 0);
 		}
 
 		// account staking without deposit items
