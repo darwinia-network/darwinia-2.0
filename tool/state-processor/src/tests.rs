@@ -340,6 +340,25 @@ fn asset_metadata() {
 	});
 }
 
+#[test]
+fn identities_reservation_adjust() {
+	run_test(|tester| {
+		// https://crab.subscan.io/account/5CXHjmXetspzSTWci8UKXnPjBeJGpibitrWX7fDDMqbggyap
+		let test_addr = "0x14466f29bc873ce014367d897940e3a4d4a22c1c70d83469bcd7647e921d1557";
+
+		let solo_account = tester.solo_accounts.get(test_addr).unwrap();
+		let remaining = tester.solo_remaining_ring.get(test_addr).unwrap();
+		assert_eq!(solo_account.data.reserved, 10000000000);
+		let total = (solo_account.data.free + solo_account.data.reserved) * GWEI + remaining;
+
+		// after migrate
+
+		let migrated_account = tester.migration_accounts.get(test_addr).unwrap();
+		assert_eq!(migrated_account.data.reserved, 100025800000000000000);
+		assert_eq!(migrated_account.data.reserved + migrated_account.data.free, total);
+	});
+}
+
 // --- EVM & Ethereum ---
 
 #[test]
