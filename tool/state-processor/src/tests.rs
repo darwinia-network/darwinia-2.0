@@ -116,7 +116,6 @@ where
 
 // --- System & Balances & Assets ---
 
-// TODO: more testcases about the account references and reservations
 #[test]
 fn solo_chain_substrate_account_adjust() {
 	run_test(|tester| {
@@ -125,7 +124,7 @@ fn solo_chain_substrate_account_adjust() {
 		let solo_account = tester.solo_accounts.get(test_addr).unwrap();
 		assert_ne!(solo_account.nonce, 0);
 		assert_ne!(solo_account.consumers, 0);
-		assert_ne!(solo_account.providers, 0);
+		assert_eq!(solo_account.providers, 1);
 		assert_eq!(solo_account.sufficients, 0);
 		assert_ne!(solo_account.data.free, 0);
 		assert_ne!(solo_account.data.free_kton_or_misc_frozen, 0);
@@ -133,6 +132,7 @@ fn solo_chain_substrate_account_adjust() {
 		// after migrate
 
 		let migrated_account = tester.migration_accounts.get(test_addr).unwrap();
+		// involved in the staking, ledger and deposit items are not empty.
 		assert_eq!(migrated_account.consumers, 2);
 		assert_eq!(solo_account.providers, migrated_account.providers);
 		assert_eq!(solo_account.sufficients + 1, migrated_account.sufficients);
