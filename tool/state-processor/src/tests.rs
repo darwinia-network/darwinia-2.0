@@ -141,6 +141,18 @@ fn solo_chain_substrate_account_adjust() {
 			assert_eq!(migrated_account.data.reserved, 0);
 		}
 
+		// account nonce reset
+		{
+			let test_addr = "0x82e54b190ef8dbe7864b7cdca3de6b3e8b5483e0a3e9419ba2a41a16531aaa0b";
+			let solo_account = tester.solo_accounts.get(test_addr).unwrap();
+			assert_ne!(solo_account.nonce, 0);
+
+			// after migrate
+
+			let migrated_account = tester.migration_accounts.get(test_addr).unwrap();
+			assert_eq!(migrated_account.none, 0);
+		}
+
 		// account staking without deposit items
 		{
 			let test_addr = "0x82e54b190ef8dbe7864b7cdca3de6b3e8b5483e0a3e9419ba2a41a16531aaa0b";
@@ -157,8 +169,7 @@ fn solo_chain_substrate_account_adjust() {
 		{
 			let test_addr = "0xf4171e1b64c96cc17f601f28d002cb5fcd27eab8b6585e296f4652be5bf05550";
 			let solo_account = tester.solo_accounts.get(test_addr).unwrap();
-			assert_ne!(solo_account.nonce, 0);
-			assert_ne!(solo_account.consumers, 0);
+			assert_eq!(solo_account.consumers, 3);
 			assert_eq!(solo_account.providers, 1);
 			assert_eq!(solo_account.sufficients, 0);
 			assert_ne!(solo_account.data.free, 0);
@@ -167,15 +178,10 @@ fn solo_chain_substrate_account_adjust() {
 			// after migrate
 
 			let migrated_account = tester.migration_accounts.get(test_addr).unwrap();
-			// involved in the staking, ledger and deposit items are not empty.
 			assert_eq!(migrated_account.consumers, 2);
-			assert_eq!(solo_account.providers, migrated_account.providers);
-			assert_eq!(solo_account.sufficients + 1, migrated_account.sufficients);
-			// nonce reset
-			assert_eq!(migrated_account.nonce, 0);
-			// decimal adjust
-			assert_eq!(solo_account.data.free * GWEI, migrated_account.data.free);
-			// the kton part has been removed.
+			assert_eq!(migrated_account.providers, 1);
+			assert_eq!(migrated_account.sufficients, 1);
+			assert_eq!(migrated_account.data.free, solo_account.data.free * GWEI);
 			assert_eq!(migrated_account.data.free_kton_or_misc_frozen, 0);
 			//  the kton part moved to the asset pallet
 			let asset_account = tester.migration_kton_accounts.get(test_addr).unwrap();
