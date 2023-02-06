@@ -343,19 +343,39 @@ fn asset_metadata() {
 #[test]
 fn identities_reservation_adjust() {
 	run_test(|tester| {
-		// https://crab.subscan.io/account/5CXHjmXetspzSTWci8UKXnPjBeJGpibitrWX7fDDMqbggyap
-		let test_addr = "0x14466f29bc873ce014367d897940e3a4d4a22c1c70d83469bcd7647e921d1557";
+		{
+			// https://crab.subscan.io/account/5CXHjmXetspzSTWci8UKXnPjBeJGpibitrWX7fDDMqbggyap
+			let test_addr = "0x14466f29bc873ce014367d897940e3a4d4a22c1c70d83469bcd7647e921d1557";
 
-		let solo_account = tester.solo_accounts.get(test_addr).unwrap();
-		let remaining = tester.solo_remaining_ring.get(test_addr).unwrap();
-		assert_eq!(solo_account.data.reserved, 10000000000);
-		let total = (solo_account.data.free + solo_account.data.reserved) * GWEI + remaining;
+			let solo_account = tester.solo_accounts.get(test_addr).unwrap();
+			let remaining = tester.solo_remaining_ring.get(test_addr).unwrap();
+			assert_eq!(solo_account.data.reserved, 10000000000);
+			let total = (solo_account.data.free + solo_account.data.reserved) * GWEI + remaining;
 
-		// after migrate
+			// after migrate
 
-		let migrated_account = tester.migration_accounts.get(test_addr).unwrap();
-		assert_eq!(migrated_account.data.reserved, 100025800000000000000);
-		assert_eq!(migrated_account.data.reserved + migrated_account.data.free, total);
+			let migrated_account = tester.migration_accounts.get(test_addr).unwrap();
+			assert_eq!(migrated_account.data.reserved, 100025800000000000000);
+			assert_eq!(migrated_account.data.reserved + migrated_account.data.free, total);
+		}
+
+		// can not afford the latest reservation amount
+		{
+			// https://crab.subscan.io/account/5HTysESF4MCRABBJ2Pmm8Sx3JrJToQgz1nwiBctGXGUKZLeP
+			let test_addr = "0xeeedb4805e781b16db87edc6fc2bb0982bf70a435e6a5acac37ede09131d8b8b";
+
+			let solo_account = tester.solo_accounts.get(test_addr).unwrap();
+			assert_ne!(solo_account.data.free, 0);
+			assert_eq!(solo_account.data.reserved, 10000000000);
+			let total = solo_account.data.free + solo_account.data.reserved * GWEI;
+
+			// after migrate
+
+			let migrated_account = tester.migration_accounts.get(test_addr).unwrap();
+			assert_eq!(migrated_account.data.free, 0);
+			assert_eq!(migrated_account.data.reserved, 10800000000000000000);
+			assert_eq!(migrated_account.data.reserved + migrated_account.data.free, total);
+		}
 	});
 }
 
