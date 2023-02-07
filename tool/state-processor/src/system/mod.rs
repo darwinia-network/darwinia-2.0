@@ -100,7 +100,7 @@ where
 		};
 
 		log::info!("increase `EVM::AccountCodes`'s `sufficients` and set `Assets::Account`, `System::Account`, `AccountMigration::KtonAccounts` and `AccountMigration::Accounts`");
-		for (k, v) in accounts {
+		accounts.into_iter().for_each(|(k, v)| {
 			let key = get_last_64(&k);
 			let mut a = AccountInfo {
 				nonce: v.nonce,
@@ -160,11 +160,7 @@ where
 					&blake2_128_concat_to_string(k),
 					a,
 				);
-
-				continue;
-			}
-
-			if let Some(k) = try_get_evm_address(&key) {
+			} else if let Some(k) = try_get_evm_address(&key) {
 				// https://github.dev/paritytech/frontier/blob/ab0f4a47e42ad17e4d8551fb9b3c3a6b4c5df2db/frame/evm/src/lib.rs#L705
 				if self.solo_state.contains_key(&full_key(
 					b"EVM",
@@ -193,23 +189,21 @@ where
 					&blake2_128_concat_to_string(k),
 					a,
 				);
+			} else {
+				a.nonce = 0;
 
-				continue;
+				if v.kton != 0 {
+					self.shell_state.insert_value(
+						b"AccountMigration",
+						b"KtonAccounts",
+						&k,
+						new_kton_account(&mut a, &mut kton_details, v.kton),
+					);
+				}
+
+				self.shell_state.insert_value(b"AccountMigration", b"Accounts", &k, a);
 			}
-
-			a.nonce = 0;
-
-			if v.kton != 0 {
-				self.shell_state.insert_value(
-					b"AccountMigration",
-					b"KtonAccounts",
-					&k,
-					new_kton_account(&mut a, &mut kton_details, v.kton),
-				);
-			}
-
-			self.shell_state.insert_value(b"AccountMigration", b"Accounts", &k, a);
-		}
+		});
 
 		log::info!("set `Assets::Asset`");
 		log::info!("kton_total_issuance({kton_total_issuance})");
