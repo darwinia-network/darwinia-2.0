@@ -153,7 +153,7 @@ pub fn genesis_config() -> ChainSpec {
 				},
 				transaction_payment: Default::default(),
 				assets: AssetsConfig {
-					assets: vec![(AssetIds::Kton as AssetId, ROOT, true, 1)],
+					assets: vec![(AssetIds::Kton as _, ROOT, true, 1)],
 					metadata: vec![(
 						AssetIds::Kton as _,
 						b"Darwinia Commitment Token".to_vec(),
@@ -257,7 +257,7 @@ fn testnet_genesis(
 		},
 		transaction_payment: Default::default(),
 		assets: AssetsConfig {
-			assets: vec![(AssetIds::Kton as AssetId, ROOT, true, 1)],
+			assets: vec![(AssetIds::Kton as _, ROOT, true, 1)],
 			metadata: vec![(
 				AssetIds::Kton as _,
 				b"Darwinia Commitment Token".to_vec(),
