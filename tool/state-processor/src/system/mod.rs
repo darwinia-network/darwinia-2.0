@@ -100,7 +100,7 @@ where
 		};
 
 		log::info!("increase `EVM::AccountCodes`'s `sufficients` and set `Assets::Account`, `System::Account`, `AccountMigration::KtonAccounts` and `AccountMigration::Accounts`");
-		accounts.into_iter().for_each(|(k, v)| {
+		for (k, v) in accounts {
 			let key = get_last_64(&k);
 			let mut a = AccountInfo {
 				nonce: v.nonce,
@@ -115,6 +115,54 @@ where
 					reserved_kton_or_fee_frozen: Default::default(),
 				},
 			};
+			let mut handled = false;
+
+			if key.ends_with("000000000000") {
+				if let Some(s) = try_get_sub_seed(&key) {
+					log::info!("migrate special Account(`{s}`)");
+
+					handled = true;
+				} else if key
+					== "0x0000000000000000000000000000000000000000000000000000000000000000"
+				{
+					log::info!("migrate special Account(0x0000000000000000000000000000000000000000000000000000000000000000)");
+
+					handled = true;
+				} else {
+					log::info!(
+						"found zeros-ending Account(`{key}`), it might be a special account"
+					);
+				};
+			}
+
+			if handled {
+				a.nonce = 0;
+
+				// "0x".len() + 20 * 2 = 42
+				let k = array_bytes::hex2array_unchecked::<_, 20>(&key[..42]);
+
+				if v.kton != 0 {
+					self.shell_state.insert_value(
+						b"Assets",
+						b"Account",
+						&format!(
+							"{}{}",
+							blake2_128_concat_to_string(KTON_ID.encode()),
+							blake2_128_concat_to_string(k.encode()),
+						),
+						new_kton_account(&mut a, &mut kton_details, v.kton),
+					);
+				}
+
+				self.shell_state.insert_value(
+					b"System",
+					b"Account",
+					&blake2_128_concat_to_string(k),
+					a,
+				);
+
+				continue;
+			}
 
 			if let Some(k) = try_get_evm_address(&key) {
 				// https://github.dev/paritytech/frontier/blob/ab0f4a47e42ad17e4d8551fb9b3c3a6b4c5df2db/frame/evm/src/lib.rs#L705
@@ -145,48 +193,23 @@ where
 					&blake2_128_concat_to_string(k),
 					a,
 				);
-			} else if let Some(s) = try_get_sub_seed(&key) {
-				log::info!("migrate special account `{s}`");
 
-				a.nonce = 0;
-
-				// "0x".len() + 20 * 2 = 42
-				let k = array_bytes::hex2array_unchecked::<_, 20>(&key[..42]);
-
-				if v.kton != 0 {
-					self.shell_state.insert_value(
-						b"Assets",
-						b"Account",
-						&format!(
-							"{}{}",
-							blake2_128_concat_to_string(KTON_ID.encode()),
-							blake2_128_concat_to_string(k.encode()),
-						),
-						new_kton_account(&mut a, &mut kton_details, v.kton),
-					);
-				}
-
-				self.shell_state.insert_value(
-					b"System",
-					b"Account",
-					&blake2_128_concat_to_string(k),
-					a,
-				);
-			} else {
-				a.nonce = 0;
-
-				if v.kton != 0 {
-					self.shell_state.insert_value(
-						b"AccountMigration",
-						b"KtonAccounts",
-						&k,
-						new_kton_account(&mut a, &mut kton_details, v.kton),
-					);
-				}
-
-				self.shell_state.insert_value(b"AccountMigration", b"Accounts", &k, a);
+				continue;
 			}
-		});
+
+			a.nonce = 0;
+
+			if v.kton != 0 {
+				self.shell_state.insert_value(
+					b"AccountMigration",
+					b"KtonAccounts",
+					&k,
+					new_kton_account(&mut a, &mut kton_details, v.kton),
+				);
+			}
+
+			self.shell_state.insert_value(b"AccountMigration", b"Accounts", &k, a);
+		}
 
 		log::info!("set `Assets::Asset`");
 		log::info!("kton_total_issuance({kton_total_issuance})");

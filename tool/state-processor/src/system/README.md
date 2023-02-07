@@ -36,6 +36,6 @@
 - some remaining accounts, bridge endpoint accounts - TODO
 - special accounts
   - parachain backing account DONE
-  - bridge root account 0x726f6f7400000000000000000000000000000000 TODO
+  - bridge root account 0x726f6f7400000000000000000000000000000000 DONE
   - pallet accounts DONE
   - para accounts DONE
