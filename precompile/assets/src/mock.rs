@@ -176,7 +176,7 @@ impl pallet_assets::Config for TestRuntime {
 	type AssetAccountDeposit = ();
 	type AssetDeposit = ();
 	type AssetId = AssetId;
-	type AssetIdParameter = u64;
+	type AssetIdParameter = codec::Compact<AssetId>;
 	type Balance = Balance;
 	type CreateOrigin = frame_support::traits::AsEnsureOriginWithArg<
 		frame_system::EnsureSignedBy<frame_support::traits::IsInVec<()>, AccountId>,

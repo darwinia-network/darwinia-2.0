@@ -75,7 +75,7 @@ impl pallet_assets::Config for Runtime {
 	type AssetAccountDeposit = ();
 	type AssetDeposit = ();
 	type AssetId = AssetId;
-	type AssetIdParameter = u64;
+	type AssetIdParameter = codec::Compact<AssetId>;
 	type Balance = Balance;
 	type CreateOrigin = frame_support::traits::AsEnsureOriginWithArg<
 		frame_system::EnsureSignedBy<frame_support::traits::IsInVec<()>, u32>,
@@ -110,7 +110,7 @@ impl darwinia_deposit::SimpleAsset for KtonAsset {
 	type AccountId = u32;
 
 	fn mint(beneficiary: &Self::AccountId, amount: Balance) -> sp_runtime::DispatchResult {
-		Assets::mint(RuntimeOrigin::signed(0), 0, *beneficiary, amount)
+		Assets::mint(RuntimeOrigin::signed(0), 0.into(), *beneficiary, amount)
 	}
 
 	fn burn(who: &Self::AccountId, amount: Balance) -> sp_runtime::DispatchResult {
@@ -118,7 +118,7 @@ impl darwinia_deposit::SimpleAsset for KtonAsset {
 			Err(<pallet_assets::Error<Runtime>>::BalanceLow)?;
 		}
 
-		Assets::burn(RuntimeOrigin::signed(0), 0, *who, amount)
+		Assets::burn(RuntimeOrigin::signed(0), 0.into(), *who, amount)
 	}
 }
 impl darwinia_deposit::Config for Runtime {
@@ -204,11 +204,21 @@ impl darwinia_staking::Stake for KtonStaking {
 	type Item = Balance;
 
 	fn stake(who: &Self::AccountId, item: Self::Item) -> sp_runtime::DispatchResult {
-		Assets::transfer(RuntimeOrigin::signed(*who), 0, darwinia_staking::account_id(), item)
+		Assets::transfer(
+			RuntimeOrigin::signed(*who),
+			0.into(),
+			darwinia_staking::account_id(),
+			item,
+		)
 	}
 
 	fn unstake(who: &Self::AccountId, item: Self::Item) -> sp_runtime::DispatchResult {
-		Assets::transfer(RuntimeOrigin::signed(darwinia_staking::account_id()), 0, *who, item)
+		Assets::transfer(
+			RuntimeOrigin::signed(darwinia_staking::account_id()),
+			0.into(),
+			*who,
+			item,
+		)
 	}
 }
 frame_support::parameter_types! {
