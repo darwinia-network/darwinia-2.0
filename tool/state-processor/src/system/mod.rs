@@ -115,19 +115,19 @@ where
 					reserved_kton_or_fee_frozen: Default::default(),
 				},
 			};
-			let mut handled = false;
+			let mut is_special_account = false;
 
 			if key.ends_with("000000000000") {
 				if let Some(s) = try_get_sub_seed(&key) {
 					log::info!("migrate special Account(`{s}`)");
 
-					handled = true;
+					is_special_account = true;
 				} else if key
 					== "0x0000000000000000000000000000000000000000000000000000000000000000"
 				{
 					log::info!("migrate special Account(0x0000000000000000000000000000000000000000000000000000000000000000)");
 
-					handled = true;
+					is_special_account = true;
 				} else {
 					log::info!(
 						"found zeros-ending Account(`{key}`), it might be a special account"
@@ -135,7 +135,11 @@ where
 				};
 			}
 
-			if handled {
+			if is_special_account {
+				// Truncate the special accounts to 20 bytes length.
+				//
+				// Put the truncated account into `System` and `Assets` pallets directly.
+
 				a.nonce = 0;
 
 				// "0x".len() + 20 * 2 = 42
@@ -161,6 +165,10 @@ where
 					a,
 				);
 			} else if let Some(k) = try_get_evm_address(&key) {
+				// Recover the EVM accounts from Substrate accounts.
+				//
+				// Put the recovered accounts into `System` and `Assets` pallets directly.
+
 				// https://github.dev/paritytech/frontier/blob/ab0f4a47e42ad17e4d8551fb9b3c3a6b4c5df2db/frame/evm/src/lib.rs#L705
 				if self.solo_state.contains_key(&full_key(
 					b"EVM",
@@ -190,6 +198,8 @@ where
 					a,
 				);
 			} else {
+				// Put the normal Substrate accounts into `AccountMigration` pallet.
+
 				a.nonce = 0;
 
 				if v.kton != 0 {
