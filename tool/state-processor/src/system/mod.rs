@@ -1,5 +1,6 @@
 // crates.io
 use parity_scale_codec::Encode;
+use subalfred_core::key::{PalletId, ParaId, SiblId};
 // darwinia
 use crate::*;
 
@@ -144,6 +145,33 @@ where
 					&blake2_128_concat_to_string(k),
 					a,
 				);
+			} else if let Some(s) = try_get_sub_seed(&key) {
+				log::info!("migrate special account `{s}`");
+
+				a.nonce = 0;
+
+				// "0x".len() + 20 * 2 = 42
+				let k = array_bytes::hex2array_unchecked::<_, 20>(&key[..42]);
+
+				if v.kton != 0 {
+					self.shell_state.insert_value(
+						b"Assets",
+						b"Account",
+						&format!(
+							"{}{}",
+							blake2_128_concat_to_string(KTON_ID.encode()),
+							blake2_128_concat_to_string(k.encode()),
+						),
+						new_kton_account(&mut a, &mut kton_details, v.kton),
+					);
+				}
+
+				self.shell_state.insert_value(
+					b"System",
+					b"Account",
+					&blake2_128_concat_to_string(k),
+					a,
+				);
 			} else {
 				a.nonce = 0;
 
@@ -238,6 +266,18 @@ fn try_get_evm_address(key: &str) -> Option<AccountId20> {
 	} else {
 		None
 	}
+}
+
+// https://github.com/hack-ink/subalfred/blob/008d042dc7984f13ae3fa76483dafa12fafbc93d/bin/subalfred/src/command/key.rs#L100
+fn try_get_sub_seed(key: &str) -> Option<String> {
+	let k = array_bytes::hex2bytes_unchecked(key);
+	let k = k.as_slice();
+
+	PalletId::try_from(k)
+		.map(|k| k.to_string())
+		.or_else(|_| ParaId::try_from(k).map(|k| ToString::to_string(&k)))
+		.or_else(|_| SiblId::try_from(k).map(|k| ToString::to_string(&k)))
+		.ok()
 }
 
 fn new_kton_account(
