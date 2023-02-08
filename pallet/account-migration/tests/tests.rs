@@ -106,7 +106,7 @@ fn migrate_multisig_should_work() {
 		assert!(<Multisigs<Runtime>>::get(&multisig).is_none());
 		assert_eq!(<frame_system::Account<Runtime>>::get(&to).consumers, 0);
 
-		// Alice start the migration.
+		// Alice starts the migration.
 		let signature = a.sign(&message);
 
 		assert_ok!(AccountMigration::pre_dispatch(&Call::migrate_multisig {
@@ -128,7 +128,7 @@ fn migrate_multisig_should_work() {
 		assert!(<Multisigs<Runtime>>::get(&multisig).is_some());
 		assert_eq!(<frame_system::Account<Runtime>>::get(&to).consumers, 0);
 
-		// Dave try to hack the multisig.
+		// Dave tries to hack the multisig.
 		let signature = d.sign(&message);
 
 		assert_noop!(
@@ -140,7 +140,7 @@ fn migrate_multisig_should_work() {
 			TransactionValidityError::Invalid(InvalidTransaction::Custom(E_NOT_MULTISIG_MEMBER))
 		);
 
-		// Charlie complete the migration.
+		// Charlie completes the migration.
 		let signature = c.sign(&message);
 
 		assert_ok!(AccountMigration::pre_dispatch(&Call::complete_multisig_migration {

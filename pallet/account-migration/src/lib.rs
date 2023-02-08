@@ -220,7 +220,7 @@ pub mod pallet {
 					.expect("[pallet::account-migration] `members` will never be empty; qed")
 					.1 = true;
 
-				<Multisigs<T>>::insert(multisig, Multisig { to, members, threshold });
+				<Multisigs<T>>::insert(multisig, Multisig { migrate_to: to, members, threshold });
 			}
 
 			Ok(())
@@ -255,7 +255,7 @@ pub mod pallet {
 			if multisig_info.members.iter().fold(0, |acc, (_, ok)| if *ok { acc + 1 } else { acc })
 				>= multisig_info.threshold
 			{
-				Self::migrate_inner(multisig, multisig_info.to)?;
+				Self::migrate_inner(multisig, multisig_info.migrate_to)?;
 			} else {
 				<Multisigs<T>>::insert(multisig, multisig_info);
 			}
@@ -290,7 +290,7 @@ pub mod pallet {
 						return InvalidTransaction::Custom(E_NOT_MULTISIG_MEMBER).into();
 					}
 
-					Self::pre_check_signature(submitter, &multisig_info.to, signature)
+					Self::pre_check_signature(submitter, &multisig_info.migrate_to, signature)
 				},
 				_ => InvalidTransaction::Call.into(),
 			}
@@ -457,7 +457,7 @@ pub enum ExistenceReason {
 #[allow(missing_docs)]
 #[derive(Encode, Decode, TypeInfo, RuntimeDebug)]
 pub struct Multisig {
-	pub to: AccountId20,
+	pub migrate_to: AccountId20,
 	pub members: Vec<(AccountId32, bool)>,
 	pub threshold: u16,
 }
