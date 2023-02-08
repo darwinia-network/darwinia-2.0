@@ -72,7 +72,6 @@ pub enum AssetStatus {
 	Frozen,
 	Destroying,
 }
-
 impl Default for AssetStatus {
 	fn default() -> Self {
 		AssetStatus::Live
