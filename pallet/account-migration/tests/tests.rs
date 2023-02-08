@@ -16,9 +16,13 @@
 // You should have received a copy of the GNU General Public License
 // along with Darwinia. If not, see <https://www.gnu.org/licenses/>.
 
+mod mock;
+use mock::*;
+
 // darwinia
-use crate::*;
+use darwinia_account_migration::*;
 // substrate
+use frame_support::{assert_noop, assert_ok, traits::Get};
 use sp_keyring::sr25519::Keyring;
 
 #[test]

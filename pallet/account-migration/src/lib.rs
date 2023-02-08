@@ -43,9 +43,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![deny(missing_docs)]
 
-#[cfg(test)]
-mod tests;
-
 // darwinia
 use darwinia_deposit::Deposit;
 use darwinia_staking::Ledger;
@@ -62,8 +59,9 @@ use pallet_balances::AccountData;
 use pallet_identity::Registration;
 use pallet_vesting::VestingInfo;
 use sp_core::sr25519::{Public, Signature};
+use sp_io::hashing;
 use sp_runtime::{
-	traits::{IdentityLookup, Verify},
+	traits::{IdentityLookup, TrailingZeroInput, Verify},
 	AccountId32, RuntimeDebug,
 };
 use sp_std::prelude::*;
@@ -73,6 +71,15 @@ pub mod pallet {
 	use super::*;
 
 	const KTON_ID: u64 = 1026;
+
+	// The migration destination was already taken by someone.
+	const E_ACCOUNT_ALREADY_EXISTED: u8 = 0;
+	// The migration source was not exist.
+	const E_ACCOUNT_NOT_FOUND: u8 = 1;
+	// Invalid signature.
+	const E_INVALID_SIGNATURE: u8 = 2;
+	// The account is not a member of the multisig.
+	const E_NOT_MULTISIG_MEMBER: u8 = 4;
 
 	#[pallet::pallet]
 	pub struct Pallet<T>(PhantomData<T>);
@@ -123,7 +130,6 @@ pub mod pallet {
 	/// [`pallet_asset::AssetAccount`] data.
 	///
 	/// https://github.dev/paritytech/substrate/blob/polkadot-v0.9.30/frame/assets/src/types.rs#L115
-	// The size of encoded `pallet_asset::AssetAccount` is 18 bytes.
 	#[pallet::storage]
 	#[pallet::getter(fn kton_account_of)]
 	pub type KtonAccounts<T: Config> = StorageMap<_, Blake2_128Concat, AccountId32, AssetAccount>;
@@ -160,6 +166,12 @@ pub mod pallet {
 	#[pallet::getter(fn ledger_of)]
 	pub type Ledgers<T: Config> = StorageMap<_, Blake2_128Concat, AccountId32, Ledger<T>>;
 
+	/// Multisig migration caches.
+	#[pallet::storage]
+	#[pallet::unbounded]
+	#[pallet::getter(fn multisig_of)]
+	pub type Multisigs<T: Config> = StorageMap<_, Identity, AccountId32, Multisig>;
+
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		/// Migrate all the account data under the `from` to `to`.
@@ -173,8 +185,160 @@ pub mod pallet {
 		) -> DispatchResult {
 			ensure_none(origin)?;
 
+			Self::migrate_inner(from, to)?;
+
+			Ok(())
+		}
+
+		/// Similar to `migrate` but for multisig accounts.
+		///
+		/// The `_signature` should be provided by `who`.
+		#[pallet::call_index(1)]
+		#[pallet::weight(0)]
+		pub fn migrate_multisig(
+			origin: OriginFor<T>,
+			who: AccountId32,
+			others: Vec<AccountId32>,
+			threshold: u16,
+			to: AccountId20,
+			_signature: Signature,
+		) -> DispatchResult {
+			ensure_none(origin)?;
+
+			let mut members = others;
+
+			members.push(who);
+
+			let multisig = multisig_of(&members, threshold);
+
+			if threshold < 2 {
+				Self::migrate_inner(multisig, to)?;
+			} else {
+				let mut members = members.into_iter().map(|m| (m, false)).collect::<Vec<_>>();
+
+				// Set the status to `true`.
+				//
+				// Because the `_signature` was already been verified in `pre_dispatch`.
+				members
+					.last_mut()
+					.expect("[pallet::account-migration] `members` will never be empty; qed")
+					.1 = true;
+
+				<Multisigs<T>>::insert(multisig, Multisig { to, members, threshold });
+			}
+
+			Ok(())
+		}
+
+		/// To complete the pending multisig migration.
+		///
+		/// The `_signature` should be provided by `submitter`.
+		#[pallet::call_index(2)]
+		#[pallet::weight(0)]
+		pub fn complete_multisig_migration(
+			origin: OriginFor<T>,
+			multisig: AccountId32,
+			submitter: AccountId32,
+			_signature: Signature,
+		) -> DispatchResult {
+			ensure_none(origin)?;
+
+			let mut multisig_info = <Multisigs<T>>::get(&multisig)
+				.expect("[pallet::account-migration] already checked in `pre_dispatch`; qed");
+
+			// Set the status to `true`.
+			//
+			// Because the `_signature` was already been verified in `pre_dispatch`.
+			multisig_info
+				.members
+				.iter_mut()
+				.find(|(a, _)| a == &submitter)
+				.expect("[pallet::account-migration] already checked in `pre_dispatch`; qed")
+				.1 = true;
+
+			if multisig_info.members.iter().fold(0, |acc, (_, ok)| if *ok { acc + 1 } else { acc })
+				>= multisig_info.threshold
+			{
+				Self::migrate_inner(multisig, multisig_info.to)?;
+			} else {
+				<Multisigs<T>>::insert(multisig, multisig_info);
+			}
+
+			Ok(())
+		}
+	}
+	#[pallet::validate_unsigned]
+	impl<T: Config> ValidateUnsigned for Pallet<T> {
+		type Call = Call<T>;
+
+		fn validate_unsigned(_source: TransactionSource, call: &Self::Call) -> TransactionValidity {
+			match call {
+				Call::migrate { from, to, signature } => Self::pre_check(from, to, signature),
+				Call::migrate_multisig { who, others, threshold, to, signature } => {
+					let mut members = others.to_owned();
+
+					members.push(who.to_owned());
+
+					let multisig = multisig_of(&members, *threshold);
+
+					Self::pre_check(&multisig, to, signature)
+				},
+				Call::complete_multisig_migration { multisig, submitter, signature } => {
+					let Some(multisig_info) = <Multisigs<T>>::get(multisig) else {
+						return InvalidTransaction::Custom(E_ACCOUNT_NOT_FOUND).into();
+					};
+
+					if !multisig_info.members.iter().any(|(a, _)| a == submitter) {
+						return InvalidTransaction::Custom(E_NOT_MULTISIG_MEMBER).into();
+					}
+
+					Self::pre_check_signature(multisig, &multisig_info.to, signature)
+				},
+				_ => InvalidTransaction::Call.into(),
+			}
+		}
+	}
+	impl<T> Pallet<T>
+	where
+		T: Config,
+	{
+		fn pre_check(
+			from: &AccountId32,
+			to: &AccountId20,
+			signature: &Signature,
+		) -> TransactionValidity {
+			if !<Accounts<T>>::contains_key(from) {
+				return InvalidTransaction::Custom(E_ACCOUNT_NOT_FOUND).into();
+			}
+			if <frame_system::Account<T>>::contains_key(to) {
+				return InvalidTransaction::Custom(E_ACCOUNT_ALREADY_EXISTED).into();
+			}
+
+			Self::pre_check_signature(from, to, signature)
+		}
+
+		fn pre_check_signature(
+			from: &AccountId32,
+			to: &AccountId20,
+			signature: &Signature,
+		) -> TransactionValidity {
+			let message = sr25519_signable_message(T::Version::get().spec_name.as_ref(), to);
+
+			if verify_sr25519_signature(from, &message, signature) {
+				ValidTransaction::with_tag_prefix("account-migration")
+					.and_provides(from)
+					.priority(100)
+					.longevity(TransactionLongevity::max_value())
+					.propagate(true)
+					.build()
+			} else {
+				InvalidTransaction::Custom(E_INVALID_SIGNATURE).into()
+			}
+		}
+
+		fn migrate_inner(from: AccountId32, to: AccountId20) -> DispatchResult {
 			let account = <Accounts<T>>::take(&from)
-				.ok_or("[pallet::account-migration] already checked in `pre_dispatch`; qed")?;
+				.expect("[pallet::account-migration] already checked in `pre_dispatch`; qed");
 
 			<frame_system::Account<T>>::insert(to, account);
 
@@ -266,45 +430,6 @@ pub mod pallet {
 
 			Ok(())
 		}
-
-		// TODO: migrate multi-sig
-	}
-	#[pallet::validate_unsigned]
-	impl<T: Config> ValidateUnsigned for Pallet<T> {
-		type Call = Call<T>;
-
-		fn validate_unsigned(_source: TransactionSource, call: &Self::Call) -> TransactionValidity {
-			// The migration destination was already taken by someone.
-			const E_ACCOUNT_ALREADY_EXISTED: u8 = 0;
-			// The migration source was not exist.
-			const E_ACCOUNT_NOT_FOUND: u8 = 1;
-			// Invalid signature.
-			const E_INVALID_SIGNATURE: u8 = 2;
-
-			let Call::migrate { from, to, signature } = call else {
-				return InvalidTransaction::Call.into();
-			};
-
-			if !<Accounts<T>>::contains_key(from) {
-				return InvalidTransaction::Custom(E_ACCOUNT_NOT_FOUND).into();
-			}
-			if <frame_system::Account<T>>::contains_key(to) {
-				return InvalidTransaction::Custom(E_ACCOUNT_ALREADY_EXISTED).into();
-			}
-
-			let message = sr25519_signable_message(T::Version::get().spec_name.as_ref(), to);
-
-			if verify_sr25519_signature(from, &message, signature) {
-				ValidTransaction::with_tag_prefix("account-migration")
-					.and_provides(from)
-					.priority(100)
-					.longevity(TransactionLongevity::max_value())
-					.propagate(true)
-					.build()
-			} else {
-				InvalidTransaction::Custom(E_INVALID_SIGNATURE).into()
-			}
-		}
 	}
 }
 pub use pallet::*;
@@ -332,6 +457,14 @@ pub enum ExistenceReason {
 	DepositRefunded,
 }
 
+#[allow(missing_docs)]
+#[derive(Encode, Decode, TypeInfo, RuntimeDebug)]
+pub struct Multisig {
+	to: AccountId20,
+	members: Vec<(AccountId32, bool)>,
+	threshold: u16,
+}
+
 /// Build a Darwinia account migration message.
 pub fn sr25519_signable_message(spec_name: &[u8], account_id_20: &AccountId20) -> Vec<u8> {
 	[
@@ -350,7 +483,8 @@ pub fn sr25519_signable_message(spec_name: &[u8], account_id_20: &AccountId20) -
 	.concat()
 }
 
-fn verify_sr25519_signature(
+/// Verify the Sr25519 signature.
+pub fn verify_sr25519_signature(
 	public_key: &AccountId32,
 	message: &[u8],
 	signature: &Signature,
@@ -364,4 +498,13 @@ fn verify_sr25519_signature(
 	};
 
 	signature.verify(message, public_key)
+}
+
+// https://github.com/paritytech/substrate/blob/3bc3742d5c0c5269353d7809d9f8f91104a93273/frame/multisig/src/lib.rs#L525
+fn multisig_of(members: &[AccountId32], threshold: u16) -> AccountId32 {
+	let entropy = (b"modlpy/utilisuba", members, threshold).using_encoded(hashing::blake2_256);
+
+	Decode::decode(&mut TrailingZeroInput::new(entropy.as_ref())).expect(
+		"[pallet::account-migration] infinite length input; no invalid inputs for type; qed",
+	)
 }
