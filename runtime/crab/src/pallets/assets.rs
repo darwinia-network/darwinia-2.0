@@ -37,6 +37,7 @@ impl pallet_assets::Config for Runtime {
 	type Balance = Balance;
 	#[cfg(feature = "runtime-benchmarks")]
 	type BenchmarkHelper = ();
+	type CallbackHandle = ();
 	type CreateOrigin = AsEnsureOriginWithArg<EnsureSignedBy<IsInVec<Creators>, AccountId>>;
 	type Currency = Balances;
 	type Extra = ();
