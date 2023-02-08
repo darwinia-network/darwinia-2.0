@@ -117,7 +117,7 @@ where
 // --- System & Balances & Assets ---
 
 #[test]
-fn solo_chain_substrate_account_adjust() {
+fn solo_chain_substrate_account() {
 	run_test(|tester| {
 		// the purest account
 		{
@@ -192,7 +192,7 @@ fn solo_chain_substrate_account_adjust() {
 }
 
 #[test]
-fn solo_chain_substrate_account_adjust_with_remaining_balance() {
+fn solo_chain_substrate_account_with_remaining_balance() {
 	run_test(|tester| {
 		let addr = "0xfe129f56cc498227acacc4231f70ae15a2f4e8f9ccfa51f4de268c75516fa350";
 
@@ -211,7 +211,7 @@ fn solo_chain_substrate_account_adjust_with_remaining_balance() {
 }
 
 #[test]
-fn combine_solo_account_with_para_account() {
+fn combine_solo_and_para_account() {
 	run_test(|tester| {
 		let addr = "0x2a997fbf3423723ab73fae76567b320de6979664cb3287c0e6ce24099d0eff68";
 
@@ -236,7 +236,7 @@ fn combine_solo_account_with_para_account() {
 }
 
 #[test]
-fn evm_account_adjust() {
+fn evm_account() {
 	run_test(|tester| {
 		let addr = "0x64766d3a00000000000000aef71b03670f1c52cd3d8efc2ced3ad68ad91e33f3";
 
@@ -283,7 +283,7 @@ fn evm_account_adjust() {
 }
 
 #[test]
-fn evm_contract_account_adjust_sufficients() {
+fn evm_contract_account_sufficients() {
 	run_test(|tester| {
 		let addr = "0x64766d3a000000000000000050f880c35c31c13bfd9cbb7d28aafaeca3abd2d0";
 		let solo_account = tester.solo_accounts.get(addr).unwrap();
@@ -390,7 +390,7 @@ fn asset_metadata() {
 }
 
 #[test]
-fn identities_reservation_adjust() {
+fn identities_reservation() {
 	run_test(|tester| {
 		{
 			// https://crab.subscan.io/account/5CXHjmXetspzSTWci8UKXnPjBeJGpibitrWX7fDDMqbggyap
@@ -429,7 +429,7 @@ fn identities_reservation_adjust() {
 }
 
 #[test]
-fn special_accounts_adjust() {
+fn special_accounts() {
 	run_test(|tester| {
 		{
 			// sibling:2023
@@ -544,7 +544,7 @@ fn special_accounts_adjust() {
 // --- EVM & Ethereum ---
 
 #[test]
-fn evm_code_migrate() {
+fn evm_code() {
 	run_test(|tester| {
 		{
 			let addr = "0x0050f880c35c31c13bfd9cbb7d28aafaeca3abd2";
@@ -567,7 +567,7 @@ fn evm_code_migrate() {
 }
 
 #[test]
-fn precompiles_code_should_work() {
+fn precompiles_code() {
 	run_test(|tester| {
 		let addrs = ["001", "009", "400", "402", "600", "601"];
 
@@ -579,7 +579,7 @@ fn precompiles_code_should_work() {
 }
 
 #[test]
-fn evm_account_storage_migrate() {
+fn evm_contract_account_storage() {
 	run_test(|tester| {
 		// https://crab.subscan.io/account/0x0050f880c35c31c13bfd9cbb7d28aafaeca3abd2
 		let addr =
@@ -647,7 +647,7 @@ fn evm_account_storage_migrate() {
 // --- Staking ---
 
 #[test]
-fn deposit_items_migrate() {
+fn stake_deposit_items() {
 	run_test(|tester| {
 		// https://crab.subscan.io/account/5Dfh9agy74KFmdYqxNGEWae9fE9pdzYnyCUJKqK47Ac64zqM
 		let addr = array_bytes::hex2array_unchecked::<_, 32>(
@@ -686,7 +686,7 @@ fn deposit_items_migrate() {
 }
 
 #[test]
-fn ledgers_staked_value_migrate() {
+fn stake_ledgers_values() {
 	run_test(|tester| {
 		// https://crab.subscan.io/account/5Dfh9agy74KFmdYqxNGEWae9fE9pdzYnyCUJKqK47Ac64zqM
 		let addr = array_bytes::hex2array_unchecked::<_, 32>(
@@ -718,7 +718,7 @@ fn ledgers_staked_value_migrate() {
 }
 
 #[test]
-fn ledgers_unbondings_migrate() {
+fn stake_ledgers_unbonding() {
 	run_test(|tester| {
 		// https://crab.subscan.io/account/5FGL7pMZFZK4zWX2y3CRABeqMpMjBq77LhfYipWoBAT9gJsa
 		let addr = array_bytes::hex2array_unchecked::<_, 32>(
@@ -753,7 +753,7 @@ fn ledgers_unbondings_migrate() {
 }
 
 #[test]
-fn ring_pool_migrate() {
+fn stake_ring_pool() {
 	run_test(|tester| {
 		let mut ring_pool = u128::default();
 		tester.solo_state.get_value(b"Staking", b"RingPool", "", &mut ring_pool);
@@ -767,7 +767,7 @@ fn ring_pool_migrate() {
 }
 
 #[test]
-fn kton_pool_migrate() {
+fn stake_kton_pool() {
 	run_test(|tester| {
 		let mut kton_pool = u128::default();
 		tester.solo_state.get_value(b"Staking", b"KtonPool", "", &mut kton_pool);
@@ -782,7 +782,7 @@ fn kton_pool_migrate() {
 }
 
 #[test]
-fn elapsed_time_migrate() {
+fn stake_elapsed_time() {
 	run_test(|tester| {
 		let mut elapsed_time = u64::default();
 		tester.solo_state.get_value(b"Staking", b"LivingTime", "", &mut elapsed_time);
@@ -797,8 +797,9 @@ fn elapsed_time_migrate() {
 }
 
 // --- Vesting ---
+
 #[test]
-fn vesting_info_adjust() {
+fn vesting_info() {
 	run_test(|tester| {
 		// https://crab.subscan.io/account/5EFJA3K6uRfkLxqjhHyrkJoQjfhmhyVyVEG5XtPPBM6yCCxM
 		let addr = array_bytes::hex2array_unchecked::<_, 32>(
@@ -816,7 +817,7 @@ fn vesting_info_adjust() {
 		assert_ne!(vesting_info.starting_block, 0);
 
 		// after migrate
-		
+
 		let mut m_vesting_info = VestingInfo::default();
 		tester.shell_state.get_value(
 			b"AccountMigration",
@@ -834,7 +835,7 @@ fn vesting_info_adjust() {
 // --- Identity ---
 
 #[test]
-fn identities_adjust() {
+fn identities() {
 	run_test(|tester| {
 		// https://crab.subscan.io/account/5Ct3V8cbYgJiUoQQhYMyyWChL5YwJnZ4yak7MKegNkpPptAP
 		let addr = array_bytes::hex2array_unchecked::<_, 32>(
@@ -876,7 +877,7 @@ fn identities_adjust() {
 }
 
 #[test]
-fn registrars_adjust() {
+fn registrars() {
 	run_test(|tester| {
 		let mut rs: Vec<Option<RegistrarInfo<[u8; 32]>>> = Vec::new();
 		tester.solo_state.get_value(b"Identity", b"Registrars", "", &mut rs);
