@@ -16,10 +16,9 @@
 // You should have received a copy of the GNU General Public License
 // along with Darwinia. If not, see <https://www.gnu.org/licenses/>.
 
-// darwinia
-use dc_primitives::*;
+pub use dc_primitives::*;
+
 // substrate
-use frame_support::traits::GenesisBuild;
 use sp_io::TestExternalities;
 
 pub struct Dummy;
@@ -38,11 +37,11 @@ impl darwinia_staking::Stake for Dummy {
 	type AccountId = AccountId;
 	type Item = Balance;
 
-	fn stake(who: &Self::AccountId, item: Self::Item) -> sp_runtime::DispatchResult {
+	fn stake(_: &Self::AccountId, _: Self::Item) -> sp_runtime::DispatchResult {
 		Ok(())
 	}
 
-	fn unstake(who: &Self::AccountId, item: Self::Item) -> sp_runtime::DispatchResult {
+	fn unstake(_: &Self::AccountId, _: Self::Item) -> sp_runtime::DispatchResult {
 		Ok(())
 	}
 }
@@ -52,6 +51,20 @@ impl frame_support::traits::UnixTime for Dummy {
 	}
 }
 
+#[sp_version::runtime_version]
+pub const VERSION: sp_version::RuntimeVersion = sp_version::RuntimeVersion {
+	spec_name: sp_runtime::create_runtime_str!("Darwinia2"),
+	impl_name: sp_runtime::create_runtime_str!("DarwiniaOfficialRust"),
+	authoring_version: 0,
+	spec_version: 6_0_0_0,
+	impl_version: 0,
+	apis: sp_version::create_apis_vec!([]),
+	transaction_version: 0,
+	state_version: 0,
+};
+frame_support::parameter_types! {
+	pub const Version: sp_version::RuntimeVersion = VERSION;
+}
 impl frame_system::Config for Runtime {
 	type AccountData = pallet_balances::AccountData<Balance>;
 	type AccountId = AccountId;
@@ -76,7 +89,7 @@ impl frame_system::Config for Runtime {
 	type RuntimeOrigin = RuntimeOrigin;
 	type SS58Prefix = ();
 	type SystemWeightInfo = ();
-	type Version = ();
+	type Version = Version;
 }
 
 impl pallet_balances::Config for Runtime {
@@ -189,11 +202,5 @@ frame_support::construct_runtime!(
 );
 
 pub fn new_test_ext() -> TestExternalities {
-	let mut ext = TestExternalities::from(
-		frame_system::GenesisConfig::default().build_storage::<Runtime>().unwrap(),
-	);
-
-	ext.execute_with(|| {});
-
-	ext
+	frame_system::GenesisConfig::default().build_storage::<Runtime>().unwrap().into()
 }

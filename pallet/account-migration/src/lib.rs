@@ -72,14 +72,14 @@ pub mod pallet {
 
 	const KTON_ID: u64 = 1026;
 
-	// The migration destination was already taken by someone.
-	const E_ACCOUNT_ALREADY_EXISTED: u8 = 0;
-	// The migration source was not exist.
-	const E_ACCOUNT_NOT_FOUND: u8 = 1;
-	// Invalid signature.
-	const E_INVALID_SIGNATURE: u8 = 2;
-	// The account is not a member of the multisig.
-	const E_NOT_MULTISIG_MEMBER: u8 = 4;
+	/// The migration destination was already taken by someone.
+	pub const E_ACCOUNT_ALREADY_EXISTED: u8 = 0;
+	/// The migration source was not exist.
+	pub const E_ACCOUNT_NOT_FOUND: u8 = 1;
+	/// Invalid signature.
+	pub const E_INVALID_SIGNATURE: u8 = 2;
+	/// The account is not a member of the multisig.
+	pub const E_NOT_MULTISIG_MEMBER: u8 = 4;
 
 	#[pallet::pallet]
 	pub struct Pallet<T>(PhantomData<T>);
@@ -205,11 +205,7 @@ pub mod pallet {
 		) -> DispatchResult {
 			ensure_none(origin)?;
 
-			let mut members = others;
-
-			members.push(who);
-
-			let multisig = multisig_of(&members, threshold);
+			let (members, multisig) = multisig_of(who, others, threshold);
 
 			if threshold < 2 {
 				Self::migrate_inner(multisig, to)?;
@@ -243,7 +239,7 @@ pub mod pallet {
 		) -> DispatchResult {
 			ensure_none(origin)?;
 
-			let mut multisig_info = <Multisigs<T>>::get(&multisig)
+			let mut multisig_info = <Multisigs<T>>::take(&multisig)
 				.expect("[pallet::account-migration] already checked in `pre_dispatch`; qed");
 
 			// Set the status to `true`.
@@ -273,15 +269,17 @@ pub mod pallet {
 
 		fn validate_unsigned(_source: TransactionSource, call: &Self::Call) -> TransactionValidity {
 			match call {
-				Call::migrate { from, to, signature } => Self::pre_check(from, to, signature),
+				Call::migrate { from, to, signature } => {
+					Self::pre_check_existing(from, to)?;
+
+					Self::pre_check_signature(from, to, signature)
+				},
 				Call::migrate_multisig { who, others, threshold, to, signature } => {
-					let mut members = others.to_owned();
+					let (_, multisig) = multisig_of(who.to_owned(), others.to_owned(), *threshold);
 
-					members.push(who.to_owned());
+					Self::pre_check_existing(&multisig, to)?;
 
-					let multisig = multisig_of(&members, *threshold);
-
-					Self::pre_check(&multisig, to, signature)
+					Self::pre_check_signature(who, to, signature)
 				},
 				Call::complete_multisig_migration { multisig, submitter, signature } => {
 					let Some(multisig_info) = <Multisigs<T>>::get(multisig) else {
@@ -292,7 +290,7 @@ pub mod pallet {
 						return InvalidTransaction::Custom(E_NOT_MULTISIG_MEMBER).into();
 					}
 
-					Self::pre_check_signature(multisig, &multisig_info.to, signature)
+					Self::pre_check_signature(submitter, &multisig_info.to, signature)
 				},
 				_ => InvalidTransaction::Call.into(),
 			}
@@ -302,19 +300,18 @@ pub mod pallet {
 	where
 		T: Config,
 	{
-		fn pre_check(
+		fn pre_check_existing(
 			from: &AccountId32,
 			to: &AccountId20,
-			signature: &Signature,
-		) -> TransactionValidity {
+		) -> Result<(), TransactionValidityError> {
 			if !<Accounts<T>>::contains_key(from) {
-				return InvalidTransaction::Custom(E_ACCOUNT_NOT_FOUND).into();
+				Err(InvalidTransaction::Custom(E_ACCOUNT_NOT_FOUND))?;
 			}
 			if <frame_system::Account<T>>::contains_key(to) {
-				return InvalidTransaction::Custom(E_ACCOUNT_ALREADY_EXISTED).into();
+				Err(InvalidTransaction::Custom(E_ACCOUNT_ALREADY_EXISTED))?;
 			}
 
-			Self::pre_check_signature(from, to, signature)
+			Ok(())
 		}
 
 		fn pre_check_signature(
@@ -460,9 +457,9 @@ pub enum ExistenceReason {
 #[allow(missing_docs)]
 #[derive(Encode, Decode, TypeInfo, RuntimeDebug)]
 pub struct Multisig {
-	to: AccountId20,
-	members: Vec<(AccountId32, bool)>,
-	threshold: u16,
+	pub to: AccountId20,
+	pub members: Vec<(AccountId32, bool)>,
+	pub threshold: u16,
 }
 
 /// Build a Darwinia account migration message.
@@ -500,11 +497,27 @@ pub fn verify_sr25519_signature(
 	signature.verify(message, public_key)
 }
 
-// https://github.com/paritytech/substrate/blob/3bc3742d5c0c5269353d7809d9f8f91104a93273/frame/multisig/src/lib.rs#L525
-fn multisig_of(members: &[AccountId32], threshold: u16) -> AccountId32 {
-	let entropy = (b"modlpy/utilisuba", members, threshold).using_encoded(hashing::blake2_256);
+/// Calculate the multisig account.
+pub fn multisig_of(
+	who: AccountId32,
+	others: Vec<AccountId32>,
+	threshold: u16,
+) -> (Vec<AccountId32>, AccountId32) {
+	// https://github.com/paritytech/substrate/blob/3bc3742d5c0c5269353d7809d9f8f91104a93273/frame/multisig/src/lib.rs#L525
+	fn multisig_of_inner(members: &[AccountId32], threshold: u16) -> AccountId32 {
+		let entropy = (b"modlpy/utilisuba", members, threshold).using_encoded(hashing::blake2_256);
 
-	Decode::decode(&mut TrailingZeroInput::new(entropy.as_ref())).expect(
-		"[pallet::account-migration] infinite length input; no invalid inputs for type; qed",
-	)
+		Decode::decode(&mut TrailingZeroInput::new(entropy.as_ref())).expect(
+			"[pallet::account-migration] infinite length input; no invalid inputs for type; qed",
+		)
+	}
+
+	let mut members = others;
+
+	members.push(who);
+	members.sort();
+
+	let multisig = multisig_of_inner(&members, threshold);
+
+	(members, multisig)
 }
