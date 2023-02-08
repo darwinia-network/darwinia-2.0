@@ -648,13 +648,11 @@ cumulus_pallet_parachain_system::register_validate_block! {
 #[cfg(test)]
 mod tests {
 	// darwinia
-	use super::{Runtime, WeightPerGas};
-	// substrate
-	use frame_support::dispatch::DispatchClass;
+	use super::*;
 
 	#[test]
 	fn configured_base_extrinsic_weight_is_evm_compatible() {
-		let min_ethereum_transaction_weight = frame_support::weights::WeightPerGas::get() * 21_000;
+		let min_ethereum_transaction_weight = WeightPerGas::get() * 21_000;
 		let base_extrinsic = <Runtime as frame_system::Config>::BlockWeights::get()
 			.get(frame_support::dispatch::DispatchClass::Normal)
 			.base_extrinsic;
