@@ -442,11 +442,99 @@ fn special_accounts_adjust() {
 			let para_account_2 = tester.para_accounts.get(test_addr_2).unwrap();
 			assert_ne!(para_account_2.data.free, 0);
 
+			// sibling:2004
+			// https://crab-parachain.subscan.io/account/5Eg2fntJpc4bfLRHXnmBUav7hms6NC6vowNAEBDnYSfeMPCw
+			let test_addr_3 = "0x7369626cd4070000000000000000000000000000000000000000000000000000";
+			let para_account_3 = tester.para_accounts.get(test_addr_3).unwrap();
+			assert_ne!(para_account_3.data.free, 0);
+
 			// after migrate
+
 			let migrated_account_1 = tester.shell_system_accounts.get(&test_addr_1[..42]).unwrap();
 			assert_eq!(migrated_account_1.data.free, para_account_1.data.free);
 			let migrated_account_2 = tester.shell_system_accounts.get(&test_addr_2[..42]).unwrap();
 			assert_eq!(migrated_account_2.data.free, para_account_2.data.free);
+			let migrated_account_3 = tester.shell_system_accounts.get(&test_addr_3[..42]).unwrap();
+			assert_eq!(migrated_account_3.data.free, para_account_3.data.free);
+		}
+
+		{
+			// PalletId(da/paais)
+			let test_addr_1 = "0x6d6f646c64612f70616169730000000000000000000000000000000000000000";
+			let para_account_1 = tester.para_accounts.get(test_addr_1).unwrap();
+			assert!(para_account_1.providers > 1);
+
+			// PalletId(PotStake)
+			let test_addr_2 = "0x6d6f646c506f745374616b650000000000000000000000000000000000000000";
+			let para_account_2 = tester.para_accounts.get(test_addr_2).unwrap();
+			assert_eq!(para_account_2.data.free, 1);
+
+			// PalletId(da/ethrl)
+			let test_addr_3 = "0x6d6f646c64612f657468726c0000000000000000000000000000000000000000";
+			let solo_account_3 = tester.solo_accounts.get(test_addr_3).unwrap();
+			assert_ne!(solo_account_3.data.free, 0);
+
+			// PalletId(da/trsry)
+			let test_addr_4 = "0x6d6f646c64612f74727372790000000000000000000000000000000000000000";
+			let solo_account_4 = tester.solo_accounts.get(test_addr_4).unwrap();
+			let para_account_4 = tester.para_accounts.get(test_addr_4).unwrap();
+			assert_ne!(solo_account_4.data.free, 0);
+			assert_ne!(para_account_4.data.free, 0);
+
+			// PalletId(py/trsry)
+			let test_addr_5 = "0x6d6f646c70792f74727372790000000000000000000000000000000000000000";
+			let solo_account_5 = tester.solo_accounts.get(test_addr_5).unwrap();
+			assert_ne!(solo_account_5.data.free, 0);
+			assert_ne!(solo_account_5.data.free_kton_or_misc_frozen, 0);
+
+			// after migrate
+
+			let migrated_account_1 = tester.shell_system_accounts.get(&test_addr_1[..42]).unwrap();
+			assert_eq!(migrated_account_1.providers, 1);
+
+			let migrated_account_2 = tester.shell_system_accounts.get(&test_addr_2[..42]).unwrap();
+			assert_eq!(migrated_account_2.data.free, para_account_2.data.free);
+
+			let migrated_account_3 = tester.shell_system_accounts.get(&test_addr_3[..42]).unwrap();
+			assert_eq!(migrated_account_3.data.free, solo_account_3.data.free * GWEI);
+
+			let migrated_account_4 = tester.shell_system_accounts.get(&test_addr_4[..42]).unwrap();
+			assert_eq!(
+				migrated_account_4.data.free,
+				solo_account_4.data.free * GWEI + para_account_4.data.free
+			);
+
+			let migrated_account_5 = tester.shell_system_accounts.get(&test_addr_5[..42]).unwrap();
+			assert_eq!(migrated_account_5.data.free, solo_account_5.data.free * GWEI);
+			assert_eq!(migrated_account_5.data.free_kton_or_misc_frozen, 0);
+			let migrate_addr = array_bytes::hex2array_unchecked::<_, 20>(&test_addr_5[..42]);
+			let mut asset_account = AssetAccount::default();
+			tester.shell_state.get_value(
+				b"Assets",
+				b"Account",
+				&format!(
+					"{}{}",
+					blake2_128_concat_to_string(KTON_ID.encode()),
+					blake2_128_concat_to_string(migrate_addr.encode()),
+				),
+				&mut asset_account,
+			);
+			assert_eq!(asset_account.balance, solo_account_5.data.free_kton_or_misc_frozen * GWEI);
+		}
+
+		{
+			let test_addr = "0x0000000000000000000000000000000000000000000000000000000000000000";
+			let solo_account = tester.solo_accounts.get(test_addr).unwrap();
+			assert_ne!(solo_account.data.free, 0);
+			assert_ne!(solo_account.data.reserved, 0);
+
+			// after migrate
+
+			let migrated_account = tester.shell_system_accounts.get(&test_addr[..42]).unwrap();
+			assert_eq!(
+				migrated_account.data.free,
+				(solo_account.data.free + solo_account.data.reserved) * GWEI
+			);
 		}
 	});
 }
