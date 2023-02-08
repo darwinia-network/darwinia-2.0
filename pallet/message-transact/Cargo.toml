@@ -40,7 +40,7 @@ pallet-bridge-dispatch = { git = "https://github.com/darwinia-network/darwinia-m
 
 # frontier
 fp-self-contained = { git = "https://github.com/darwinia-network/frontier", branch = "polkadot-v0.9.36" }
-pallet-ethereum  = {  git = "https://github.com/darwinia-network/frontier", branch = "polkadot-v0.9.36" }
+pallet-ethereum   = { git = "https://github.com/darwinia-network/frontier", branch = "polkadot-v0.9.36" }
 
 # moonbeam
 precompile-utils = { git = "https://github.com/darwinia-network/moonbeam", branch = "polkadot-v0.9.36", features = ["testing"] }

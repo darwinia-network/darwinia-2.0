@@ -39,7 +39,7 @@ impl darwinia_deposit::SimpleAsset for KtonAsset {
 			Err(<pallet_assets::Error<Runtime>>::BalanceLow)?;
 		}
 
-		Assets::burn(RuntimeOrigin::signed(ROOT), (asset_id).into(), *who, amount)
+		Assets::burn(RuntimeOrigin::signed(ROOT), asset_id.into(), *who, amount)
 	}
 }
 
