@@ -426,6 +426,31 @@ fn identities_reservation_adjust() {
 	});
 }
 
+#[test]
+fn special_accounts_adjust() {
+	run_test(|tester| {
+		{
+			// sibling:2023
+			// https://crab-parachain.subscan.io/account/5Eg2fntNdR73Xc3d8jr1954TYnT173qFgSZmDhMTn2K4ewsT
+			let test_addr_1 = "0x7369626ce7070000000000000000000000000000000000000000000000000000";
+			let para_account_1 = tester.para_accounts.get(test_addr_1).unwrap();
+			assert_ne!(para_account_1.data.free, 0);
+
+			// sibling:2000
+			// https://crab-parachain.subscan.io/account/5Eg2fntJ27qsari4FGrGhrMqKFDRnkNSR6UshkZYBGXmSuC8
+			let test_addr_2 = "0x7369626cd0070000000000000000000000000000000000000000000000000000";
+			let para_account_2 = tester.para_accounts.get(test_addr_2).unwrap();
+			assert_ne!(para_account_2.data.free, 0);
+
+			// after migrate
+			let migrated_account_1 = tester.shell_system_accounts.get(&test_addr_1[..42]).unwrap();
+			assert_eq!(migrated_account_1.data.free, para_account_1.data.free);
+			let migrated_account_2 = tester.shell_system_accounts.get(&test_addr_2[..42]).unwrap();
+			assert_eq!(migrated_account_2.data.free, para_account_2.data.free);
+		}
+	});
+}
+
 // --- EVM & Ethereum ---
 
 #[test]
