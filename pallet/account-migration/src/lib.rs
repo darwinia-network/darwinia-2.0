@@ -201,7 +201,7 @@ pub mod pallet {
 		#[pallet::weight(0)]
 		pub fn migrate_multisig(
 			origin: OriginFor<T>,
-			who: AccountId32,
+			submitter: AccountId32,
 			others: Vec<AccountId32>,
 			threshold: u16,
 			to: AccountId20,
@@ -209,7 +209,7 @@ pub mod pallet {
 		) -> DispatchResult {
 			ensure_none(origin)?;
 
-			let (members, multisig) = multisig_of(who.clone(), others, threshold);
+			let (members, multisig) = multisig_of(submitter.clone(), others, threshold);
 
 			if threshold < 2 {
 				Self::migrate_inner(multisig, to)?;
@@ -221,7 +221,7 @@ pub mod pallet {
 				// Because the `_signature` was already been verified in `pre_dispatch`.
 				members
 					.iter_mut()
-					.find(|(a, _)| a == &who)
+					.find(|(who, _)| who == &submitter)
 					.expect("[pallet::account-migration] `who` must be existed; qed")
 					.1 = true;
 
@@ -260,7 +260,7 @@ pub mod pallet {
 			multisig_info
 				.members
 				.iter_mut()
-				.find(|(a, _)| a == &submitter)
+				.find(|(who, _)| who == &submitter)
 				.expect("[pallet::account-migration] already checked in `pre_dispatch`; qed")
 				.1 = true;
 
@@ -286,19 +286,34 @@ pub mod pallet {
 
 					Self::pre_check_signature(from, to, signature)
 				},
-				Call::migrate_multisig { who, others, threshold, to, signature } => {
-					let (_, multisig) = multisig_of(who.to_owned(), others.to_owned(), *threshold);
+				Call::migrate_multisig { submitter, others, threshold, to, signature } => {
+					let (_, multisig) =
+						multisig_of(submitter.to_owned(), others.to_owned(), *threshold);
 
 					Self::pre_check_existing(&multisig, to)?;
 
-					Self::pre_check_signature(who, to, signature)
+					Self::pre_check_signature(submitter, to, signature)
 				},
 				Call::complete_multisig_migration { multisig, submitter, signature } => {
 					let Some(multisig_info) = <Multisigs<T>>::get(multisig) else {
 						return InvalidTransaction::Custom(E_ACCOUNT_NOT_FOUND).into();
 					};
+					let mut is_member = false;
 
-					if !multisig_info.members.iter().any(|(a, _)| a == submitter) {
+					for (who, ok) in multisig_info.members.iter() {
+						if who == submitter {
+							// Reject duplicative submission.
+							if *ok {
+								return InvalidTransaction::Custom(E_DUPLICATIVE_SUBMISSION).into();
+							}
+
+							is_member = true;
+
+							break;
+						}
+					}
+
+					if !is_member {
 						return InvalidTransaction::Custom(E_NOT_MULTISIG_MEMBER).into();
 					}
 

@@ -110,7 +110,7 @@ fn migrate_multisig_should_work() {
 		let signature = a.sign(&message);
 
 		assert_ok!(AccountMigration::pre_dispatch(&Call::migrate_multisig {
-			who: a.public().0.into(),
+			submitter: a.public().0.into(),
 			others: vec![b.public().0.into(), c.public().0.into()],
 			threshold: 2,
 			to: to.clone(),
