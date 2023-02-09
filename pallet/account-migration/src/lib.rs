@@ -222,7 +222,7 @@ pub mod pallet {
 				members
 					.iter_mut()
 					.find(|(a, _)| a == &who)
-					.expect("[pallet::account-migration] `members` will never be empty; qed")
+					.expect("[pallet::account-migration] `who` must be existed; qed")
 					.1 = true;
 
 				<Multisigs<T>>::insert(multisig, Multisig { migrate_to: to, members, threshold });
