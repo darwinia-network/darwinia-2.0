@@ -78,6 +78,8 @@ pub mod pallet {
 	pub const E_ACCOUNT_NOT_FOUND: u8 = 1;
 	/// Invalid signature.
 	pub const E_INVALID_SIGNATURE: u8 = 2;
+	/// Duplicative submission.
+	pub const E_DUPLICATIVE_SUBMISSION: u8 = 3;
 	/// The account is not a member of the multisig.
 	pub const E_NOT_MULTISIG_MEMBER: u8 = 4;
 
@@ -117,6 +119,8 @@ pub mod pallet {
 		ExceedMaxVestings,
 		/// Exceed maximum deposit count.
 		ExceedMaxDeposits,
+		/// The migration destination was already taken by someone.
+		AccountAlreadyExisted,
 	}
 
 	/// [`frame_system::Account`] data.
@@ -242,6 +246,13 @@ pub mod pallet {
 
 			let mut multisig_info = <Multisigs<T>>::take(&multisig)
 				.expect("[pallet::account-migration] already checked in `pre_dispatch`; qed");
+
+			// Kill the storage, if the `migrate_to` was created during the migration.
+			//
+			// Require to redo the `migrate_multisig` operation.
+			if <frame_system::Account<T>>::contains_key(multisig_info.migrate_to) {
+				Err(<Error<T>>::AccountAlreadyExisted)?;
+			}
 
 			// Set the status to `true`.
 			//
