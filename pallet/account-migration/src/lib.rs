@@ -205,7 +205,7 @@ pub mod pallet {
 		) -> DispatchResult {
 			ensure_none(origin)?;
 
-			let (members, multisig) = multisig_of(who, others, threshold);
+			let (members, multisig) = multisig_of(who.clone(), others, threshold);
 
 			if threshold < 2 {
 				Self::migrate_inner(multisig, to)?;
@@ -216,7 +216,8 @@ pub mod pallet {
 				//
 				// Because the `_signature` was already been verified in `pre_dispatch`.
 				members
-					.last_mut()
+					.iter_mut()
+					.find(|(a, _)| a == &who)
 					.expect("[pallet::account-migration] `members` will never be empty; qed")
 					.1 = true;
 
