@@ -82,6 +82,7 @@ impl pallet_evm::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type WeightPerGas = ();
 	type WithdrawOrigin = pallet_evm::EnsureAddressNever<sp_core::H160>;
+	type Oncreate = ();
 }
 
 impl darwinia_message_gadget::Config for Runtime {}

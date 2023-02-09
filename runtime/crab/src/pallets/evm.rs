@@ -186,6 +186,7 @@ impl pallet_evm::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type WeightPerGas = WeightPerGas;
 	type WithdrawOrigin = pallet_evm::EnsureAddressNever<AccountId>;
+	type OnCreate = ();
 }
 
 fn addr(a: u64) -> H160 {

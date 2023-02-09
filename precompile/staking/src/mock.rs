@@ -175,6 +175,7 @@ impl pallet_evm::Config for TestRuntime {
 	type RuntimeEvent = RuntimeEvent;
 	type WeightPerGas = WeightPerGas;
 	type WithdrawOrigin = pallet_evm::EnsureAddressNever<AccountId>;
+	type OnCreate = ();
 }
 
 frame_support::parameter_types! {
