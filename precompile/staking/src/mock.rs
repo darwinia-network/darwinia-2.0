@@ -169,13 +169,13 @@ impl pallet_evm::Config for TestRuntime {
 	type FindAuthor = ();
 	type GasWeightMapping = pallet_evm::FixedGasWeightMapping<Self>;
 	type OnChargeTransaction = ();
+	type OnCreate = ();
 	type PrecompilesType = TestPrecompiles<Self>;
 	type PrecompilesValue = PrecompilesValue;
 	type Runner = pallet_evm::runner::stack::Runner<Self>;
 	type RuntimeEvent = RuntimeEvent;
 	type WeightPerGas = WeightPerGas;
 	type WithdrawOrigin = pallet_evm::EnsureAddressNever<AccountId>;
-	type OnCreate = ();
 }
 
 frame_support::parameter_types! {

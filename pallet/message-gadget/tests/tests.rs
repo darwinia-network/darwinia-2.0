@@ -76,13 +76,13 @@ impl pallet_evm::Config for Runtime {
 	type FindAuthor = ();
 	type GasWeightMapping = pallet_evm::FixedGasWeightMapping<Self>;
 	type OnChargeTransaction = ();
+	type Oncreate = ();
 	type PrecompilesType = ();
 	type PrecompilesValue = ();
 	type Runner = pallet_evm::runner::stack::Runner<Self>;
 	type RuntimeEvent = RuntimeEvent;
 	type WeightPerGas = ();
 	type WithdrawOrigin = pallet_evm::EnsureAddressNever<sp_core::H160>;
-	type Oncreate = ();
 }
 
 impl darwinia_message_gadget::Config for Runtime {}
