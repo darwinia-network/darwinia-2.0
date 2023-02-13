@@ -21,6 +21,7 @@ members = [
 [workspace.dependencies]
 # crates.io
 array-bytes = { version = "6.0" }
+static_assertions = { version = "1.1" }
 codec       = { package = "parity-scale-codec", version = "3.3", default-features = false, features = ["derive"] }
 scale-info  = { version = "2.3", default-features = false, features = ["derive"] }
 
