@@ -1,10 +1,10 @@
 [package]
 name        = "darwinia-common-runtime"
 description = "Darwinia Common Runtime"
+readme      = "README.md"
 authors     = { workspace = true }
 edition     = { workspace = true }
 version     = { workspace = true }
-
 
 [dependencies]
 # crates.io

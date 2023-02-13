@@ -1,10 +1,10 @@
 [package]
 name        = "darwinia-ecdsa-authority"
 description = "Relayer Authorities Protocal Implementation"
+readme      = "README.md"
 authors     = { workspace = true }
 edition     = { workspace = true }
 version     = { workspace = true }
-
 
 [dependencies]
 # crates.io

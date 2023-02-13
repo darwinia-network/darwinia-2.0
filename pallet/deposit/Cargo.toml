@@ -1,10 +1,10 @@
 [package]
 name        = "darwinia-deposit"
 description = "Darwinia deposit mechanism implementation."
+readme      = "README.md"
 authors     = { workspace = true }
 edition     = { workspace = true }
 version     = { workspace = true }
-
 
 [dependencies]
 # crates.io

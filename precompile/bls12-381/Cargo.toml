@@ -1,10 +1,10 @@
 [package]
 name        = "darwinia-precompile-bls12-381"
 description = "BLS12-381 implementation for EVM pallet."
+readme      = "README.md"
 authors     = { workspace = true }
 edition     = { workspace = true }
 version     = { workspace = true }
-
 
 [dependencies]
 # crates.io

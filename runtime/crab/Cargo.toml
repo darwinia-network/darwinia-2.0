@@ -1,10 +1,10 @@
 [package]
 name        = "crab-runtime"
 description = "Crab runtime."
+readme      = "README.md"
 authors     = { workspace = true }
 edition     = { workspace = true }
 version     = { workspace = true }
-
 
 [build-dependencies]
 substrate-wasm-builder = { workspace = true }
