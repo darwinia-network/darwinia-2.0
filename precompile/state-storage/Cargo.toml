@@ -1,13 +1,10 @@
 [package]
-authors     = ["Darwinia Network <hello@darwinia.network>"]
-description = "State storage precompile for EVM pallet."
-edition     = "2021"
-homepage    = "https://darwinia.network"
-license     = "GPL-3.0"
 name        = "darwinia-precompile-state-storage"
-readme      = "README.md"
-repository  = "https://github.com/darwinia-network/darwinia"
-version     = "6.0.0"
+description = "State storage precompile for EVM pallet."
+authors     = { workspace = true }
+edition     = { workspace = true }
+version     = { workspace = true }
+
 
 [dependencies]
 # frontier

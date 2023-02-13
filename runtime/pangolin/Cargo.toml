@@ -1,13 +1,10 @@
 [package]
-authors     = ["Darwinia Network <hello@darwinia.network>"]
-description = "Pangolin runtime."
-edition     = "2021"
-homepage    = "https://darwinia.network"
-license     = "GPL-3.0"
 name        = "pangolin-runtime"
-readme      = "README.md"
-repository  = "https://github.com/darwinia-network/darwinia"
-version     = "6.0.0"
+description = "Pangolin runtime."
+authors     = { workspace = true }
+edition     = { workspace = true }
+version     = { workspace = true }
+
 
 [build-dependencies]
 substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36" }

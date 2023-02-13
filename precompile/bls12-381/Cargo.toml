@@ -1,13 +1,10 @@
 [package]
-authors     = ["Darwinia Network <hello@darwinia.network>"]
-description = "State storage precompiles for EVM pallet."
-edition     = "2021"
-homepage    = "https://darwinia.network"
-license     = "GPL-3.0"
 name        = "darwinia-precompile-bls12-381"
-readme      = "README.md"
-repository  = "https://github.com/darwinia-network/darwinia"
-version     = "6.0.0"
+description = "State storage precompiles for EVM pallet."
+authors     = { workspace = true }
+edition     = { workspace = true }
+version     = { workspace = true }
+
 
 [dependencies]
 # crates.io
