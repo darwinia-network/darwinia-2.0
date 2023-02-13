@@ -10,13 +10,13 @@ version     = { workspace = true }
 primitive-types = { version = "0.12", default-features = false }
 
 # darwinia
-dc-types = { path = "../types" }
+dc-types = { workspace = true }
 
 # github
 substrate-fixed = { default-features = false, git = "https://github.com/encointer/substrate-fixed" }
 
 [dev-dependencies]
-sp-arithmetic = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36" }
+sp-arithmetic = { workspace = true }
 
 [features]
 default = ["std"]

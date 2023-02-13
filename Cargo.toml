@@ -18,6 +18,49 @@ members = [
 	"runtime/*",
 ]
 
+[workspace.dependencies]
+# crates.io
+array-bytes = { version = "6.0" }
+codec       = { package = "parity-scale-codec", version = "3.3", default-features = false, features = ["derive"] }
+scale-info  = { version = "2.3", default-features = false, features = ["derive"] }
+# darwinia
+dc-types = { path = "core/types" }
+darwinia-deposit = { default-features = false, path = "pallet/deposit" }
+darwinia-staking = { default-features = false, path = "pallet/staking" }
+dc-primitives    = { default-features = false, path = "core/primitives" }
+dc-inflation     = { default-features = false, path = "core/inflation" }
+
+# darwinia-messages-substrate
+bp-message-dispatch    = { default-features = false, git = "https://github.com/darwinia-network/darwinia-messages-substrate", branch = "polkadot-v0.9.36" }
+bp-runtime             = { default-features = false, git = "https://github.com/darwinia-network/darwinia-messages-substrate", branch = "polkadot-v0.9.36" }
+pallet-bridge-dispatch = { default-features = false, git = "https://github.com/darwinia-network/darwinia-messages-substrate", branch = "polkadot-v0.9.36" }
+
+# frontier
+fp-ethereum = { default-features = false, git = "https://github.com/darwinia-network/frontier", branch = "polkadot-v0.9.36" }
+fp-evm      = { default-features = false, git = "https://github.com/darwinia-network/frontier", branch = "polkadot-v0.9.36" }
+pallet-evm  = { default-features = false, git = "https://github.com/darwinia-network/frontier", branch = "polkadot-v0.9.36" }
+fp-self-contained = { default-features = false, git = "https://github.com/darwinia-network/frontier", branch = "polkadot-v0.9.36" }
+pallet-ethereum   = { default-features = false, git = "https://github.com/darwinia-network/frontier", branch = "polkadot-v0.9.36" }
+
+# moonbeam
+account = { default-features = false, git = "https://github.com/darwinia-network/moonbeam", branch = "polkadot-v0.9.36" }
+precompile-utils = { git = "https://github.com/darwinia-network/moonbeam", branch = "polkadot-v0.9.36" }
+# substrate
+sp-core    = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36" }
+sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36" }
+sp-arithmetic = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36" }
+frame-support   = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36" }
+frame-system    = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36" }
+pallet-assets   = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36" }
+pallet-balances = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36" }
+pallet-identity = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36" }
+pallet-vesting  = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36" }
+sp-io           = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36" }
+sp-std          = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36" }
+sp-keyring      = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36" }
+sp-version      = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36" }
+pallet-timestamp = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36" }
+
 [patch."https://github.com/paritytech/substrate"]
 beefy-gadget                                  = { git = "https://github.com/darwinia-network/substrate", branch = "polkadot-v0.9.36" }
 beefy-gadget-rpc                              = { git = "https://github.com/darwinia-network/substrate", branch = "polkadot-v0.9.36" }
