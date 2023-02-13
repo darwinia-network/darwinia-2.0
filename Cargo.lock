@@ -2392,6 +2392,7 @@ dependencies = [
  "dc-primitives",
  "frame-support",
  "frame-system",
+ "pallet-assets",
  "pallet-collective",
  "parity-scale-codec",
  "smallvec",

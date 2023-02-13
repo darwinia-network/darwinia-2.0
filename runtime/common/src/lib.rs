@@ -160,3 +160,11 @@ macro_rules! impl_self_contained_call {
 		}
 	};
 }
+
+/// Helper for pallet-assets benchmarking
+pub struct BenchmarkHelper;
+impl pallet_assets::BenchmarkHelper<codec::Compact<u64>> for BenchmarkHelper {
+    fn create_asset_id_parameter(id: u32) -> codec::Compact<u64> {
+          u64::from(id).into()
+    }
+}
