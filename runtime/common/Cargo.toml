@@ -5,9 +5,10 @@ authors     = { workspace = true }
 edition     = { workspace = true }
 version     = { workspace = true }
 
+
 [dependencies]
 # crates.io
-codec    = { workspace = true, package = "parity-scale-codec" }
+codec    = { package = "parity-scale-codec", workspace = true }
 smallvec = { version = "1.10" }
 
 # darwinia

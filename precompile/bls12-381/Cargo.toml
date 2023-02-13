@@ -5,6 +5,7 @@ authors     = { workspace = true }
 edition     = { workspace = true }
 version     = { workspace = true }
 
+
 [dependencies]
 # crates.io
 milagro_bls = { default-features = false, git = "https://github.com/darwinia-network/milagro_bls" }
@@ -21,7 +22,7 @@ sp-std        = { workspace = true }
 
 [dev-dependencies]
 # crates.io
-codec      = { workspace = true, package = "parity-scale-codec" }
+codec      = { package = "parity-scale-codec", workspace = true }
 scale-info = { workspace = true }
 
 # moonbeam

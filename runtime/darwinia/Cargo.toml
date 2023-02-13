@@ -5,16 +5,17 @@ authors     = { workspace = true }
 edition     = { workspace = true }
 version     = { workspace = true }
 
+
 [build-dependencies]
 substrate-wasm-builder = { workspace = true }
 
 [dependencies]
 # crates.io
-codec             = { package = "parity-scale-codec", workspace = true }
+codec             = { workspace = true, package = "parity-scale-codec" }
 scale-info        = { workspace = true }
 static_assertions = { workspace = true }
 # crates.io optional
-array-bytes = { workspace = true, optional = true }
+array-bytes = { optional = true, workspace = true }
 
 # cumulus
 cumulus-pallet-aura-ext         = { workspace = true }

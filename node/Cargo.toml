@@ -5,6 +5,7 @@ authors     = { workspace = true }
 edition     = { workspace = true }
 version     = { workspace = true }
 
+
 [build-dependencies]
 substrate-build-script-utils = { workspace = true }
 
@@ -13,7 +14,7 @@ substrate-build-script-utils = { workspace = true }
 array-bytes = { workspace = true }
 async-trait = { version = "0.1" }
 clap        = { version = "4.0", features = ["derive"] }
-codec       = { package = "parity-scale-codec", version = "3.3" }
+codec       = { package = "parity-scale-codec", workspace = true }
 futures     = { version = "0.3" }
 jsonrpsee   = { version = "0.16", features = ["server"] }
 log         = { version = "0.4" }

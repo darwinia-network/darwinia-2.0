@@ -5,9 +5,10 @@ authors     = { workspace = true }
 edition     = { workspace = true }
 version     = { workspace = true }
 
+
 [dependencies]
 # crates.io
-codec      = { workspace = true, package = "parity-scale-codec" }
+codec      = { package = "parity-scale-codec", workspace = true }
 ethereum   = { version = "0.14", default-features = false, features = ["with-codec"] }
 scale-info = { workspace = true }
 
@@ -25,9 +26,9 @@ sp-std        = { workspace = true }
 
 [dev-dependencies]
 array-bytes  = { workspace = true }
-libsecp256k1 = { version = "0.5", features = ["static-context", "hmac"] }
+libsecp256k1 = { workspace = true }
 rlp          = { version = "0.5" }
-sha3         = { version = "0.9" }
+sha3         = { workspace = true }
 
 # darwinia
 bp-message-dispatch    = { workspace = true, features = ["std"] }

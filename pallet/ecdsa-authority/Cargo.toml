@@ -5,9 +5,10 @@ authors     = { workspace = true }
 edition     = { workspace = true }
 version     = { workspace = true }
 
+
 [dependencies]
 # crates.io
-codec      = { workspace = true, package = "parity-scale-codec" }
+codec      = { package = "parity-scale-codec", workspace = true }
 ethabi     = { version = "17.0", default-features = false }
 scale-info = { workspace = true }
 
@@ -24,7 +25,7 @@ sp-std        = { workspace = true}
 
 [dev-dependencies]
 array-bytes  = { workspace = true }
-libsecp256k1 = { version = "0.7" }
+libsecp256k1 = { workspace = true }
 sp-version   = { workspace = true }
 
 [features]
