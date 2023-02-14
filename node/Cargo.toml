@@ -108,6 +108,7 @@ fast-runtime = [
 	"crab-runtime?/fast-runtime",
 	"darwinia-runtime?/fast-runtime",
 	"pangolin-runtime?/fast-runtime",
+	"pangoro-runtime?/fast-runtime",
 ]
 
 runtime-benchmarks = [
@@ -115,6 +116,7 @@ runtime-benchmarks = [
 	"crab-runtime?/runtime-benchmarks",
 	"darwinia-runtime?/runtime-benchmarks",
 	"pangolin-runtime?/runtime-benchmarks",
+	"pangoro-runtime?/runtime-benchmarks",
 
 	# polkadot
 	"polkadot-cli/runtime-benchmarks",
@@ -125,6 +127,7 @@ try-runtime = [
 	"crab-runtime?/try-runtime",
 	"darwinia-runtime?/try-runtime",
 	"pangolin-runtime?/try-runtime",
+	"pangoro-runtime?/try-runtime",
 
 	# substrate
 	"try-runtime-cli/try-runtime",
