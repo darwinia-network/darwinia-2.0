@@ -40,7 +40,7 @@ use sp_core::{crypto::UncheckedInto, H160};
 pub type ChainSpec = sc_service::GenericChainSpec<GenesisConfig, Extensions>;
 
 fn properties() -> Properties {
-	super::properties("PRING", 42)
+	super::properties("ORING", 42)
 }
 
 // Generate the session keys from individual elements.
@@ -52,8 +52,8 @@ fn session_keys(keys: AuraId) -> SessionKeys {
 
 pub fn development_config() -> ChainSpec {
 	ChainSpec::from_genesis(
-		"Pangolin2 Development",
-		"pangolin2-development",
+		"Pangoro2 Development",
+		"pangoro2-development",
 		ChainType::Development,
 		move || {
 			testnet_genesis(
@@ -89,8 +89,8 @@ pub fn development_config() -> ChainSpec {
 
 pub fn local_config() -> ChainSpec {
 	ChainSpec::from_genesis(
-		"Pangolin2 Local",
-		"pangolin2-local",
+		"Pangoro2 Local",
+		"pangoro2-local",
 		ChainType::Local,
 		move || {
 			testnet_genesis(
@@ -136,8 +136,8 @@ pub fn local_config() -> ChainSpec {
 
 pub fn genesis_config() -> ChainSpec {
 	ChainSpec::from_genesis(
-		"Pangolin2",
-		"pangolin2",
+		"Pangoro2",
+		"pangoro2",
 		ChainType::Live,
 		move || {
 			GenesisConfig {
