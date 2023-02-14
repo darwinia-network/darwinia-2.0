@@ -72,7 +72,7 @@ pub fn development_config() -> ChainSpec {
 					array_bytes::hex_n_into_unchecked(ETHAN),
 					array_bytes::hex_n_into_unchecked(FAITH),
 				],
-				2105.into(),
+				2046.into(),
 			)
 		},
 		Vec::new(),
@@ -82,7 +82,7 @@ pub fn development_config() -> ChainSpec {
 		Some(properties()),
 		Extensions {
 			relay_chain: "rococo-local".into(), // You MUST set this to the correct network!
-			para_id: 2105,
+			para_id: 2046,
 		},
 	)
 }
@@ -119,7 +119,7 @@ pub fn local_config() -> ChainSpec {
 					array_bytes::hex_n_into_unchecked(ETHAN),
 					array_bytes::hex_n_into_unchecked(FAITH),
 				],
-				2105.into(),
+				2046.into(),
 			)
 		},
 		Vec::new(),
@@ -129,7 +129,7 @@ pub fn local_config() -> ChainSpec {
 		Some(properties()),
 		Extensions {
 			relay_chain: "rococo-local".into(), // You MUST set this to the correct network!
-			para_id: 2105,
+			para_id: 2046,
 		},
 	)
 }
@@ -144,7 +144,7 @@ pub fn genesis_config() -> ChainSpec {
 				// System stuff.
 				system: SystemConfig { code: WASM_BINARY.unwrap().to_vec() },
 				parachain_system: Default::default(),
-				parachain_info: ParachainInfoConfig { parachain_id: 2105.into() },
+				parachain_info: ParachainInfoConfig { parachain_id: 2046.into() },
 
 				// Monetary stuff.
 				balances: BalancesConfig {
@@ -250,7 +250,7 @@ pub fn genesis_config() -> ChainSpec {
 		Some(properties()),
 		Extensions {
 			relay_chain: "rococo".into(), // You MUST set this to the correct network!
-			para_id: 2105,
+			para_id: 2046,
 		},
 	)
 }
