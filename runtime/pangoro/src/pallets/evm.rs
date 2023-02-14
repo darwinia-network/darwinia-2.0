@@ -25,7 +25,7 @@ const WEIGHT_PER_GAS: u64 = 40_000;
 
 frame_support::parameter_types! {
 	pub BlockGasLimit: sp_core::U256 = sp_core::U256::from(NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT.ref_time() / WEIGHT_PER_GAS);
-	pub PrecompilesValue: PangolinPrecompiles<Runtime> = PangolinPrecompiles::<_>::new();
+	pub PrecompilesValue: PangoroPrecompiles<Runtime> = PangoroPrecompiles::<_>::new();
 	pub WeightPerGas: frame_support::weights::Weight = frame_support::weights::Weight::from_ref_time(WEIGHT_PER_GAS);
 }
 
@@ -80,8 +80,8 @@ impl darwinia_precompile_assets::AccountToAssetId<AccountId, AssetId> for AssetI
 	}
 }
 
-pub struct PangolinPrecompiles<R>(sp_std::marker::PhantomData<R>);
-impl<R> PangolinPrecompiles<R>
+pub struct PangoroPrecompiles<R>(sp_std::marker::PhantomData<R>);
+impl<R> PangoroPrecompiles<R>
 where
 	R: pallet_evm::Config,
 {
@@ -110,7 +110,7 @@ where
 		]
 	}
 }
-impl<R> pallet_evm::PrecompileSet for PangolinPrecompiles<R>
+impl<R> pallet_evm::PrecompileSet for PangoroPrecompiles<R>
 where
 	R: pallet_evm::Config,
 {
@@ -180,7 +180,7 @@ impl pallet_evm::Config for Runtime {
 	type FindAuthor = FindAuthorTruncated<Aura>;
 	type GasWeightMapping = pallet_evm::FixedGasWeightMapping<Self>;
 	type OnChargeTransaction = ();
-	type PrecompilesType = PangolinPrecompiles<Self>;
+	type PrecompilesType = PangoroPrecompiles<Self>;
 	type PrecompilesValue = PrecompilesValue;
 	type Runner = pallet_evm::runner::stack::Runner<Self>;
 	type RuntimeEvent = RuntimeEvent;

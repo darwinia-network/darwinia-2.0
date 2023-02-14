@@ -227,7 +227,7 @@ pub fn genesis_config() -> ChainSpec {
 				evm: EvmConfig {
 					accounts: {
 						BTreeMap::from_iter(
-							PangolinPrecompiles::<Runtime>::used_addresses().iter().map(|p| {
+							PangoroPrecompiles::<Runtime>::used_addresses().iter().map(|p| {
 								(
 									p.to_owned(),
 									GenesisAccount {
@@ -330,7 +330,7 @@ fn testnet_genesis(
 		evm: EvmConfig {
 			accounts: {
 				BTreeMap::from_iter(
-					PangolinPrecompiles::<Runtime>::used_addresses()
+					PangoroPrecompiles::<Runtime>::used_addresses()
 						.iter()
 						.map(|p| {
 							(
