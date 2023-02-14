@@ -113,6 +113,7 @@ impl pallet_assets::Config for Runtime {
 	type Balance = Balance;
 	type CreateOrigin =
 		frame_support::traits::AsEnsureOriginWithArg<frame_system::EnsureSigned<AccountId>>;
+	type CallbackHandle = ();
 	type Currency = Balances;
 	type Extra = ();
 	type ForceOrigin = frame_system::EnsureSigned<AccountId>;
