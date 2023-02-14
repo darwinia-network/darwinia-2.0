@@ -65,3 +65,7 @@ std = [
 ]
 
 test = []
+
+runtime-benchmarks = [
+	"pallet-assets/runtime-benchmarks"
+]
