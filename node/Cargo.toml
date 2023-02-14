@@ -36,6 +36,7 @@ crab-runtime     = { optional = true, workspace = true }
 darwinia-runtime = { optional = true, workspace = true }
 dc-primitives    = { workspace = true }
 pangolin-runtime = { optional = true, workspace = true }
+pangoro-runtime  = { optional = true, workspace = true }
 
 # frontier
 fc-cli          = { workspace = true }
@@ -134,6 +135,7 @@ all-natives = [
 	"crab-native",
 	"darwinia-native",
 	"pangolin-native",
+	"pangoro-native",
 ]
 crab-native = [
 	# darwinia
@@ -152,6 +154,13 @@ darwinia-native = [
 pangolin-native = [
 	# darwinia
 	"pangolin-runtime",
+
+	# polkadot
+	"polkadot-cli/rococo-native",
+]
+pangoro-native = [
+	# darwinia
+	"pangoro-runtime",
 
 	# polkadot
 	"polkadot-cli/rococo-native",
