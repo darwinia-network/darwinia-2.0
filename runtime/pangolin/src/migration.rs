@@ -5,8 +5,8 @@ use crate::*;
 pub struct CustomOnRuntimeUpgrade;
 impl frame_support::traits::OnRuntimeUpgrade for CustomOnRuntimeUpgrade {
 	#[cfg(feature = "try-runtime")]
-	fn pre_upgrade() -> Result<(), &'static str> {
-		Ok(())
+	fn pre_upgrade() -> Result<sp_std::vec::Vec<u8>, &'static str> {
+		Ok(sp_std::vec::Vec::new())
 	}
 
 	#[cfg(feature = "try-runtime")]
