@@ -88,7 +88,7 @@ where
 			None,
 			None,
 			None,
-			vec![],
+			Vec::new(),
 			false,
 			false,
 			<T as pallet_evm::Config>::config(),
