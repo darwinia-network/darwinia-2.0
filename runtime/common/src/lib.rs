@@ -205,7 +205,7 @@ macro_rules! impl_self_contained_call {
 	};
 }
 
-/// Helper for pallet-assets benchmarking
+/// Helper for pallet-assets benchmarking.
 #[cfg(feature = "runtime-benchmarks")]
 pub struct AssetsBenchmarkHelper;
 #[cfg(feature = "runtime-benchmarks")]
