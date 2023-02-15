@@ -16,7 +16,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Darwinia. If not, see <https://www.gnu.org/licenses/>.
 
-//! Darwinia runtime.
+//! Pangoro runtime.
 
 #![cfg_attr(not(feature = "std"), no_std)]
 #![recursion_limit = "256"]

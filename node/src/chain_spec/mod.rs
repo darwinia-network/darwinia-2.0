@@ -103,12 +103,11 @@ impl Extensions {
 	}
 }
 
-fn properties(token_symbol: &str, ss58_format: u16) -> Properties {
+fn properties(token_symbol: &str) -> Properties {
 	let mut properties = Properties::new();
 
 	properties.insert("tokenSymbol".into(), token_symbol.into());
 	properties.insert("tokenDecimals".into(), 18.into());
-	properties.insert("ss58Format".into(), ss58_format.into());
 
 	properties
 }
