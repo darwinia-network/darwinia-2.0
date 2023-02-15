@@ -163,7 +163,6 @@ frame_benchmarking::define_benchmarks! {
 	[pallet_balances, Balances]
 	[pallet_session, SessionBench::<Runtime>]
 	[pallet_timestamp, Timestamp]
-	[pallet_collator_selection, CollatorSelection]
 	[cumulus_pallet_xcmp_queue, XcmpQueue]
 }
 
@@ -529,7 +528,7 @@ sp_api::impl_runtime_apis! {
 
 	#[cfg(feature = "try-runtime")]
 	impl frame_try_runtime::TryRuntime<Block> for Runtime {
-		fn on_runtime_upgrade(checks: bool) -> (Weight, frame_support::weights::Weight) {
+		fn on_runtime_upgrade(checks: frame_try_runtime::UpgradeCheckSelect) -> (Weight, Weight) {
 			// substrate
 			use frame_support::log;
 
