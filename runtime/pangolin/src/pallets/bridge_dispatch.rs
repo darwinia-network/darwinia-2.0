@@ -28,11 +28,11 @@ impl bp_message_dispatch::CallValidate<AccountId, RuntimeOrigin, RuntimeCall> fo
 		call: &RuntimeCall,
 	) -> Result<(), &'static str> {
 		match call {
-			RuntimeCall::MessageTransact(pangoro_message_transact::Call::message_transact {
+			RuntimeCall::MessageTransact(darwinia_message_transact::Call::message_transact {
 				transaction: tx,
 			}) => {
 				let total_payment =
-					pangoro_message_transact::total_payment::<Runtime>((&**tx).into());
+					darwinia_message_transact::total_payment::<Runtime>((&**tx).into());
 				let relayer =
 					pallet_evm::Pallet::<Runtime>::account_basic(&sp_core::H160(relayer_account.0))
 						.0;
@@ -50,14 +50,14 @@ impl bp_message_dispatch::CallValidate<AccountId, RuntimeOrigin, RuntimeCall> fo
 		call: &RuntimeCall,
 	) -> Result<(), sp_runtime::transaction_validity::TransactionValidityError> {
 		match call {
-			RuntimeCall::MessageTransact(pangoro_message_transact::Call::message_transact {
+			RuntimeCall::MessageTransact(darwinia_message_transact::Call::message_transact {
 				transaction: tx,
 			}) => match origin.caller {
 				OriginCaller::MessageTransact(
-					pangoro_message_transact::LcmpEthOrigin::MessageTransact(id),
+					darwinia_message_transact::LcmpEthOrigin::MessageTransact(id),
 				) => {
 					let total_payment =
-						pangoro_message_transact::total_payment::<Runtime>((&**tx).into());
+						darwinia_message_transact::total_payment::<Runtime>((&**tx).into());
 					pallet_balances::Pallet::<Runtime>::transfer(
 						frame_system::RawOrigin::Signed(*relayer_account).into(),
 						id.into(),
@@ -86,9 +86,9 @@ impl bp_message_dispatch::IntoDispatchOrigin<AccountId, RuntimeCall, RuntimeOrig
 {
 	fn into_dispatch_origin(id: &AccountId, call: &RuntimeCall) -> RuntimeOrigin {
 		match call {
-			RuntimeCall::MessageTransact(pangoro_message_transact::Call::message_transact {
+			RuntimeCall::MessageTransact(darwinia_message_transact::Call::message_transact {
 				..
-			}) => pangoro_message_transact::LcmpEthOrigin::MessageTransact(sp_core::H160(id.0))
+			}) => darwinia_message_transact::LcmpEthOrigin::MessageTransact(sp_core::H160(id.0))
 				.into(),
 			_ => frame_system::RawOrigin::Signed(*id).into(),
 		}

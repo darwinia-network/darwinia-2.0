@@ -133,12 +133,12 @@ impl ChainWithMessages for Pangoro {
 }
 impl BridgedChainWithMessages for Pangoro {
 	fn maximal_extrinsic_size() -> u32 {
-		bp_pangoro::PangoroLike::max_extrinsic_size()
+		bp_pangoro::DarwiniaLike::max_extrinsic_size()
 	}
 
 	fn verify_dispatch_weight(_message_payload: &[u8], payload_weight: &Weight) -> bool {
 		let upper_limit = target::maximal_incoming_message_dispatch_weight(
-			bp_pangoro::PangoroLike::max_extrinsic_weight(),
+			bp_pangoro::DarwiniaLike::max_extrinsic_weight(),
 		);
 		payload_weight.all_lte(upper_limit)
 	}

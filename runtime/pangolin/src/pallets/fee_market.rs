@@ -57,7 +57,7 @@ frame_support::parameter_types! {
 	pub const AssignedRelayerSlashRatio: sp_runtime::Permill = sp_runtime::Permill::from_percent(20);
 }
 
-impl pallet_fee_market::Config<WithDarwiniaFeeMarket> for Runtime {
+impl pallet_fee_market::Config<WithPangoroFeeMarket> for Runtime {
 	type AssignedRelayerSlashRatio = AssignedRelayerSlashRatio;
 	type CollateralPerOrder = ConstU128<{ 50 * UNIT }>;
 	type ConfirmRelayersRewardRatio = ConfirmRelayersRewardRatio;
