@@ -33,61 +33,61 @@ use bridge_runtime_common::{
 };
 use darwinia_common_runtime::*;
 
-/// Message delivery proof for Darwinia -> Crab messages.
-pub type ToCrabMessagesDeliveryProof = FromBridgedChainMessagesDeliveryProof<bp_crab::Hash>;
-/// Message proof for Crab -> Darwinia messages.
-pub type FromCrabMessagesProof = FromBridgedChainMessagesProof<bp_crab::Hash>;
+/// Message delivery proof for Pangoro -> Pangolin messages.
+pub type ToPangolinMessagesDeliveryProof = FromBridgedChainMessagesDeliveryProof<bp_pangolin::Hash>;
+/// Message proof for Pangolin -> Pangoro messages.
+pub type FromPangolinMessagesProof = FromBridgedChainMessagesProof<bp_pangolin::Hash>;
 
-/// Message payload for Darwinia -> Crab messages.
-pub type ToCrabMessagePayload = FromThisChainMessagePayload<WithCrabMessageBridge>;
-/// Message payload for Crab -> Darwinia messages.
-pub type FromCrabMessagePayload = FromBridgedChainMessagePayload<WithCrabMessageBridge>;
+/// Message payload for Pangoro -> Pangolin messages.
+pub type ToPangolinMessagePayload = FromThisChainMessagePayload<WithPangolinMessageBridge>;
+/// Message payload for Pangolin -> Pangoro messages.
+pub type FromPangolinMessagePayload = FromBridgedChainMessagePayload<WithPangolinMessageBridge>;
 
-/// Message verifier for Darwinia -> Crab messages.
-pub type ToCrabMessageVerifier<R> =
-	FromThisChainMessageVerifier<WithCrabMessageBridge, R, WithCrabFeeMarket>;
+/// Message verifier for Pangoro -> Pangolin messages.
+pub type ToPangolinMessageVerifier<R> =
+	FromThisChainMessageVerifier<WithPangolinMessageBridge, R, WithPangolinFeeMarket>;
 
-/// Encoded Crab Call as it comes from Crab.
-pub type FromCrabEncodedCall = FromBridgedChainEncodedMessageCall<RuntimeCall>;
+/// Encoded Pangolin Call as it comes from Pangolin.
+pub type FromPangolinEncodedCall = FromBridgedChainEncodedMessageCall<RuntimeCall>;
 
-/// Call-dispatch based message dispatch for Crab -> Darwinia messages.
-pub type FromCrabMessageDispatch =
-	FromBridgedChainMessageDispatch<WithCrabMessageBridge, Runtime, Balances, WithCrabDispatch>;
+/// Call-dispatch based message dispatch for Pangolin -> Pangoro messages.
+pub type FromPangolinMessageDispatch =
+	FromBridgedChainMessageDispatch<WithPangolinMessageBridge, Runtime, Balances, WithPangolinDispatch>;
 
 pub const INITIAL_CRAB_TO_DARWINIA_CONVERSION_RATE: FixedU128 =
 	FixedU128::from_inner(FixedU128::DIV);
 
 frame_support::parameter_types! {
-	/// Darwinia to Crab conversion rate. Initially we treate both tokens as equal.
-	pub storage CrabToDarwiniaConversionRate: FixedU128 = INITIAL_CRAB_TO_DARWINIA_CONVERSION_RATE;
+	/// Pangoro to Pangolin conversion rate. Initially we treate both tokens as equal.
+	pub storage PangolinToPangoroConversionRate: FixedU128 = INITIAL_CRAB_TO_DARWINIA_CONVERSION_RATE;
 }
 
 #[derive(Clone, PartialEq, Eq, Encode, Decode, RuntimeDebug, TypeInfo)]
-pub enum DarwiniaToCrabParameter {
-	/// The conversion formula we use is: `CrabTokens = DarwiniaTokens *
+pub enum PangoroToPangolinParameter {
+	/// The conversion formula we use is: `PangolinTokens = PangoroTokens *
 	/// conversion_rate`.
-	CrabToDarwiniaConversionRate(FixedU128),
+	PangolinToPangoroConversionRate(FixedU128),
 }
-impl Parameter for DarwiniaToCrabParameter {
+impl Parameter for PangoroToPangolinParameter {
 	fn save(&self) {
 		match *self {
-			DarwiniaToCrabParameter::CrabToDarwiniaConversionRate(ref conversion_rate) =>
-				CrabToDarwiniaConversionRate::set(conversion_rate),
+			PangoroToPangolinParameter::PangolinToPangoroConversionRate(ref conversion_rate) =>
+				PangolinToPangoroConversionRate::set(conversion_rate),
 		}
 	}
 }
 
-pub type ToCrabMaximalOutboundPayloadSize =
+pub type ToPangolinMaximalOutboundPayloadSize =
 	bridge_runtime_common::messages::source::FromThisChainMaximalOutboundPayloadSize<
-		WithCrabMessageBridge,
+		WithPangolinMessageBridge,
 	>;
 
-/// Crab <-> Darwinia message bridge.
+/// Pangolin <-> Pangoro message bridge.
 #[derive(Clone, Copy, RuntimeDebug)]
-pub struct WithCrabMessageBridge;
-impl MessageBridge for WithCrabMessageBridge {
-	type BridgedChain = Crab;
-	type ThisChain = Darwinia;
+pub struct WithPangolinMessageBridge;
+impl MessageBridge for WithPangolinMessageBridge {
+	type BridgedChain = Pangolin;
+	type ThisChain = Pangoro;
 
 	const BRIDGED_CHAIN_ID: bp_runtime::ChainId = CRAB_CHAIN_ID;
 	const BRIDGED_MESSAGES_PALLET_NAME: &'static str =
@@ -97,15 +97,15 @@ impl MessageBridge for WithCrabMessageBridge {
 }
 
 #[derive(Clone, Copy, RuntimeDebug)]
-pub struct Darwinia;
-impl ChainWithMessages for Darwinia {
-	type AccountId = bp_darwinia::AccountId;
-	type Balance = bp_darwinia::Balance;
-	type Hash = bp_darwinia::Hash;
-	type Signature = bp_darwinia::Signature;
-	type Signer = bp_darwinia::AccountPublic;
+pub struct Pangoro;
+impl ChainWithMessages for Pangoro {
+	type AccountId = bp_pangoro::AccountId;
+	type Balance = bp_pangoro::Balance;
+	type Hash = bp_pangoro::Hash;
+	type Signature = bp_pangoro::Signature;
+	type Signer = bp_pangoro::AccountPublic;
 }
-impl ThisChainWithMessages for Darwinia {
+impl ThisChainWithMessages for Pangoro {
 	type RuntimeCall = RuntimeCall;
 	type RuntimeOrigin = RuntimeOrigin;
 
@@ -119,58 +119,58 @@ impl ThisChainWithMessages for Darwinia {
 }
 
 #[derive(Clone, Copy, RuntimeDebug)]
-pub struct Crab;
-impl ChainWithMessages for Crab {
-	type AccountId = bp_crab::AccountId;
-	type Balance = bp_crab::Balance;
-	type Hash = bp_crab::Hash;
-	type Signature = bp_crab::Signature;
-	type Signer = bp_crab::AccountPublic;
+pub struct Pangolin;
+impl ChainWithMessages for Pangolin {
+	type AccountId = bp_pangolin::AccountId;
+	type Balance = bp_pangolin::Balance;
+	type Hash = bp_pangolin::Hash;
+	type Signature = bp_pangolin::Signature;
+	type Signer = bp_pangolin::AccountPublic;
 }
-impl BridgedChainWithMessages for Crab {
+impl BridgedChainWithMessages for Pangolin {
 	fn maximal_extrinsic_size() -> u32 {
-		bp_crab::DarwiniaLike::max_extrinsic_size()
+		bp_pangolin::PangoroLike::max_extrinsic_size()
 	}
 
 	fn verify_dispatch_weight(_message_payload: &[u8], payload_weight: &Weight) -> bool {
 		let upper_limit = target::maximal_incoming_message_dispatch_weight(
-			bp_crab::DarwiniaLike::max_extrinsic_weight(),
+			bp_pangolin::PangoroLike::max_extrinsic_weight(),
 		);
 		payload_weight.all_lte(upper_limit)
 	}
 }
-impl TargetHeaderChain<ToCrabMessagePayload, <Self as ChainWithMessages>::AccountId> for Crab {
+impl TargetHeaderChain<ToPangolinMessagePayload, <Self as ChainWithMessages>::AccountId> for Pangolin {
 	type Error = &'static str;
-	type MessagesDeliveryProof = ToCrabMessagesDeliveryProof;
+	type MessagesDeliveryProof = ToPangolinMessagesDeliveryProof;
 
-	fn verify_message(payload: &ToCrabMessagePayload) -> Result<(), Self::Error> {
-		source::verify_chain_message::<WithCrabMessageBridge>(payload)
+	fn verify_message(payload: &ToPangolinMessagePayload) -> Result<(), Self::Error> {
+		source::verify_chain_message::<WithPangolinMessageBridge>(payload)
 	}
 
 	fn verify_messages_delivery_proof(
 		proof: Self::MessagesDeliveryProof,
-	) -> Result<(LaneId, InboundLaneData<bp_crab::AccountId>), Self::Error> {
+	) -> Result<(LaneId, InboundLaneData<bp_pangolin::AccountId>), Self::Error> {
 		source::verify_messages_delivery_proof_from_parachain::<
-			WithCrabMessageBridge,
-			bp_crab::Header,
+			WithPangolinMessageBridge,
+			bp_pangolin::Header,
 			Runtime,
-			WithKusamaParachainsInstance,
+			WithRococoParachainsInstance,
 		>(ParaId(2105), proof)
 	}
 }
-impl SourceHeaderChain<<Self as ChainWithMessages>::Balance> for Crab {
+impl SourceHeaderChain<<Self as ChainWithMessages>::Balance> for Pangolin {
 	type Error = &'static str;
-	type MessagesProof = FromCrabMessagesProof;
+	type MessagesProof = FromPangolinMessagesProof;
 
 	fn verify_messages_proof(
 		proof: Self::MessagesProof,
 		messages_count: u32,
 	) -> Result<ProvedMessages<Message<<Self as ChainWithMessages>::Balance>>, Self::Error> {
 		target::verify_messages_proof_from_parachain::<
-			WithCrabMessageBridge,
-			bp_crab::Header,
+			WithPangolinMessageBridge,
+			bp_pangolin::Header,
 			Runtime,
-			WithKusamaParachainsInstance,
+			WithRococoParachainsInstance,
 		>(ParaId(2105), proof, messages_count)
 	}
 }
