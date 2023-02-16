@@ -29,13 +29,6 @@ frame_support::parameter_types! {
 	pub WeightPerGas: frame_support::weights::Weight = frame_support::weights::Weight::from_ref_time(WEIGHT_PER_GAS);
 }
 
-pub struct FixedGasPrice;
-impl pallet_evm::FeeCalculator for FixedGasPrice {
-	fn min_gas_price() -> (sp_core::U256, frame_support::weights::Weight) {
-		(sp_core::U256::from(GWEI), frame_support::weights::Weight::zero())
-	}
-}
-
 // TODO: Integrate to the upstream repo
 pub struct FromH160;
 impl<T> pallet_evm::AddressMapping<T> for FromH160
@@ -44,14 +37,6 @@ where
 {
 	fn into_account_id(address: sp_core::H160) -> T {
 		address.into()
-	}
-}
-
-pub struct AssetIdConverter;
-impl darwinia_precompile_assets::AccountToAssetId<AccountId, AssetId> for AssetIdConverter {
-	fn account_to_asset_id(account_id: AccountId) -> AssetId {
-		let addr: sp_core::H160 = account_id.into();
-		addr.to_low_u64_be()
 	}
 }
 

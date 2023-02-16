@@ -21,7 +21,6 @@ use crate::*;
 
 impl pallet_aura::Config for Runtime {
 	type AuthorityId = sp_consensus_aura::sr25519::AuthorityId;
-	// type AuthorityId = sp_core::ecdsa::Public;
 	type DisabledValidators = ();
 	type MaxAuthorities = ConstU32<100_000>;
 }

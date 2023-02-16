@@ -12,10 +12,14 @@ codec    = { package = "parity-scale-codec", workspace = true }
 smallvec = { version = "1.10" }
 
 # darwinia
-dc-primitives = { workspace = true }
+darwinia-precompile-assets = { workspace = true }
+dc-primitives              = { workspace = true }
 
 # darwinia-messages-substrate
 bp-darwinia-core = { workspace = true }
+
+# frontier
+pallet-evm = { workspace = true }
 
 # moonbeam
 account = { workspace = true }
@@ -44,10 +48,14 @@ std = [
 	"codec/std",
 
 	# darwinia
+	"darwinia-precompile-assets/std",
 	"dc-primitives/std",
 
 	# darwinia-messages-substrate
 	"bp-darwinia-core/std",
+
+	# frontier
+	"pallet-evm/std",
 
 	# moonbeam
 	"account/std",
