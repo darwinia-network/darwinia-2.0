@@ -54,12 +54,12 @@ pub type FromPangolinEncodedCall = FromBridgedChainEncodedMessageCall<RuntimeCal
 pub type FromPangolinMessageDispatch =
 	FromBridgedChainMessageDispatch<WithPangolinMessageBridge, Runtime, Balances, WithPangolinDispatch>;
 
-pub const INITIAL_CRAB_TO_DARWINIA_CONVERSION_RATE: FixedU128 =
+pub const INITIAL_PANGOLIN_TO_PANGORO_CONVERSION_RATE: FixedU128 =
 	FixedU128::from_inner(FixedU128::DIV);
 
 frame_support::parameter_types! {
 	/// Pangoro to Pangolin conversion rate. Initially we treate both tokens as equal.
-	pub storage PangolinToPangoroConversionRate: FixedU128 = INITIAL_CRAB_TO_DARWINIA_CONVERSION_RATE;
+	pub storage PangolinToPangoroConversionRate: FixedU128 = INITIAL_PANGOLIN_TO_PANGORO_CONVERSION_RATE;
 }
 
 #[derive(Clone, PartialEq, Eq, Encode, Decode, RuntimeDebug, TypeInfo)]
@@ -89,11 +89,11 @@ impl MessageBridge for WithPangolinMessageBridge {
 	type BridgedChain = Pangolin;
 	type ThisChain = Pangoro;
 
-	const BRIDGED_CHAIN_ID: bp_runtime::ChainId = CRAB_CHAIN_ID;
+	const BRIDGED_CHAIN_ID: bp_runtime::ChainId = PANGOLIN_CHAIN_ID;
 	const BRIDGED_MESSAGES_PALLET_NAME: &'static str =
-		bridge_runtime_common::pallets::WITH_DARWINIA_MESSAGES_PALLET_NAME;
+		bridge_runtime_common::pallets::WITH_PANGORO_MESSAGES_PALLET_NAME;
 	const RELAYER_FEE_PERCENT: u32 = 10;
-	const THIS_CHAIN_ID: bp_runtime::ChainId = DARWINIA_CHAIN_ID;
+	const THIS_CHAIN_ID: bp_runtime::ChainId = PANGORO_CHAIN_ID;
 }
 
 #[derive(Clone, Copy, RuntimeDebug)]
@@ -110,7 +110,7 @@ impl ThisChainWithMessages for Pangoro {
 	type RuntimeOrigin = RuntimeOrigin;
 
 	fn is_message_accepted(_send_origin: &Self::RuntimeOrigin, lane: &LaneId) -> bool {
-		*lane == DARWINIA_CRAB_LANE
+		*lane == PANGORO_PANGOLIN_LANE
 	}
 
 	fn maximal_pending_messages_at_outbound_lane() -> MessageNonce {
