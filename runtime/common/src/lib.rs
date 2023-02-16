@@ -79,6 +79,19 @@ impl WeightToFeePolynomial for WeightToFee {
 	}
 }
 
+pub struct DarwiniaFindAuthor<Inner>(sp_std::marker::PhantomData<Inner>);
+impl<Inner> frame_support::traits::FindAuthor<sp_core::H160> for DarwiniaFindAuthor<Inner>
+where
+	Inner: frame_support::traits::FindAuthor<AccountId>,
+{
+	fn find_author<'a, I>(digests: I) -> Option<sp_core::H160>
+	where
+		I: 'a + IntoIterator<Item = (frame_support::ConsensusEngineId, &'a [u8])>,
+	{
+		Inner::find_author(digests).map(Into::into)
+	}
+}
+
 pub struct DealWithFees<R>(sp_std::marker::PhantomData<R>);
 impl<R> frame_support::traits::OnUnbalanced<pallet_balances::NegativeImbalance<R>>
 	for DealWithFees<R>

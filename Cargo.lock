@@ -2395,6 +2395,7 @@ dependencies = [
  "pallet-treasury",
  "parity-scale-codec",
  "smallvec",
+ "sp-core",
  "sp-io",
  "sp-runtime",
  "sp-std",
