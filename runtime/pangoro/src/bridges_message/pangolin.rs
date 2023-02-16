@@ -51,8 +51,12 @@ pub type ToPangolinMessageVerifier<R> =
 pub type FromPangolinEncodedCall = FromBridgedChainEncodedMessageCall<RuntimeCall>;
 
 /// Call-dispatch based message dispatch for Pangolin -> Pangoro messages.
-pub type FromPangolinMessageDispatch =
-	FromBridgedChainMessageDispatch<WithPangolinMessageBridge, Runtime, Balances, WithPangolinDispatch>;
+pub type FromPangolinMessageDispatch = FromBridgedChainMessageDispatch<
+	WithPangolinMessageBridge,
+	Runtime,
+	Balances,
+	WithPangolinDispatch,
+>;
 
 pub const INITIAL_PANGOLIN_TO_PANGORO_CONVERSION_RATE: FixedU128 =
 	FixedU128::from_inner(FixedU128::DIV);
@@ -139,7 +143,9 @@ impl BridgedChainWithMessages for Pangolin {
 		payload_weight.all_lte(upper_limit)
 	}
 }
-impl TargetHeaderChain<ToPangolinMessagePayload, <Self as ChainWithMessages>::AccountId> for Pangolin {
+impl TargetHeaderChain<ToPangolinMessagePayload, <Self as ChainWithMessages>::AccountId>
+	for Pangolin
+{
 	type Error = &'static str;
 	type MessagesDeliveryProof = ToPangolinMessagesDeliveryProof;
 
