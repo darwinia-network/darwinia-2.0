@@ -170,6 +170,8 @@ frame_support::construct_runtime! {
 frame_benchmarking::define_benchmarks! {
 	[frame_system, SystemBench::<Runtime>]
 	[pallet_balances, Balances]
+	[pallet_bridge_grandpa, BridgeKusamaGrandpa]
+	[pallet_fee_market, CrabFeeMarket]
 	[pallet_session, SessionBench::<Runtime>]
 	[pallet_timestamp, Timestamp]
 	[cumulus_pallet_xcmp_queue, XcmpQueue]
