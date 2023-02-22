@@ -193,7 +193,6 @@ frame_benchmarking::define_benchmarks! {
 	[pallet_timestamp, Timestamp]
 	// Bridge
 	[pallet_bridge_grandpa, BridgeMoonbaseGrandpa]
-	[pallet_bridge_parachains, BridgeMoonbaseParachain]
 	[pallet_fee_market, PangoroFeeMarket]
 }
 
