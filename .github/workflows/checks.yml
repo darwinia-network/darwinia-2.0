@@ -66,7 +66,7 @@ jobs:
           key: sccache-${{ matrix.action }}-${{ env.GITHUB_CACHE_VERSION }}-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: sccache-${{ matrix.action }}-${{ env.GITHUB_CACHE_VERSION }}-
       - name: Action ${{ matrix.action }}
-        run: cargo ${{ matrix.action }} --release --locked --features all-natives
+        run: cargo ${{ matrix.action }} --release --locked -p darwinia --all-features
       - name: Change path
         if: matrix.action != 'test'
         run: mv target/release/darwinia .

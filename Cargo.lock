@@ -2382,6 +2382,7 @@ dependencies = [
  "pallet-assets",
  "pallet-balances",
  "pallet-identity",
+ "pallet-timestamp",
  "pallet-vesting",
  "parity-scale-codec",
  "scale-info",
