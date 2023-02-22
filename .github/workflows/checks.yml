@@ -22,7 +22,7 @@ on:
       - "**.yml"
 
 env:
-  GITHUB_CACHE_VERSION: 0
+  GITHUB_CACHE_VERSION: 1
 
   RUST_BACKTRACE: full
   RUSTC_WRAPPER: sccache
