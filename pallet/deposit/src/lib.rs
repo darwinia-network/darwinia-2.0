@@ -347,7 +347,6 @@ where
 		<pallet_timestamp::Pallet<T> as UnixTime>::now().as_millis()
 	}
 }
-
 impl<T> darwinia_staking::Stake for Pallet<T>
 where
 	T: Config,
