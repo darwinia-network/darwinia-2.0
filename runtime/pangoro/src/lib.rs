@@ -175,6 +175,7 @@ frame_benchmarking::define_benchmarks! {
 	[pallet_session, SessionBench::<Runtime>]
 	[pallet_timestamp, Timestamp]
 	[cumulus_pallet_xcmp_queue, XcmpQueue]
+	[darwinia_deposit, Deposit]
 }
 
 impl_self_contained_call!();

@@ -16,8 +16,9 @@
 // You should have received a copy of the GNU General Public License
 // along with Darwinia. If not, see <https://www.gnu.org/licenses/>.
 
-// darwinia
-use dc_types::{AssetId, Balance, Moment, UNIT};
+pub use crate as darwinia_deposit;
+pub use dc_types::{AssetId, Balance, Moment, UNIT};
+
 // substrate
 use frame_support::traits::GenesisBuild;
 use sp_io::TestExternalities;
@@ -113,7 +114,6 @@ impl darwinia_deposit::Config for Runtime {
 	type MinLockingAmount = frame_support::traits::ConstU128<UNIT>;
 	type Ring = Balances;
 	type RuntimeEvent = RuntimeEvent;
-	type UnixTime = Timestamp;
 }
 
 frame_support::construct_runtime!(
