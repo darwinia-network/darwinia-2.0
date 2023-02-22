@@ -39,7 +39,7 @@ mod benchmarks {
 
 		// The worst case:
 		//
-		// Calculate the deposit id.
+		// Calculate the last deposit's id.
 		(0..max_deposits - 1).for_each(|_| {
 			<Pallet<T>>::lock(RawOrigin::Signed(a.clone()).into(), UNIT, MAX_LOCKING_MONTHS)
 				.unwrap()
