@@ -107,7 +107,7 @@ jobs:
             { chain: crab-dev, compare-with: "https://rpc.polkadot.io" },
             {
               chain: pangolin-dev,
-              compare-with: "https://pangolin-rpc.darwinia.netowrk",
+              compare-with: "https://pangolin-rpc.darwinia.network",
             },
           ]
     needs: [basic-checks]
