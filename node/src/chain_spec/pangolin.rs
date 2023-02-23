@@ -261,8 +261,9 @@ pub fn genesis_config() -> ChainSpec {
 	)
 }
 
-pub fn config() -> ChainSpec {
-	unimplemented!("TODO")
+#[tokio::main]
+pub async fn config() -> ChainSpec {
+	super::config("pangolin2.json")
 }
 
 fn testnet_genesis(
