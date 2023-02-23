@@ -12,7 +12,7 @@ describe("Test balances", () => {
 
 	let init_from;
 	let init_to;
-	it("Account has correct balance", async function () {
+	step("Account has correct balance", async function () {
 		init_from = await web3.eth.getBalance(FAITH);
 		init_to = await web3.eth.getBalance(TO);
 
