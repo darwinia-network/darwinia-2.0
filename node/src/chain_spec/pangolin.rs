@@ -261,8 +261,7 @@ pub fn genesis_config() -> ChainSpec {
 	)
 }
 
-#[tokio::main]
-pub async fn config() -> ChainSpec {
+pub fn config() -> ChainSpec {
 	load_config("pangolin2.json")
 }
 
