@@ -263,7 +263,7 @@ pub fn genesis_config() -> ChainSpec {
 
 #[tokio::main]
 pub async fn config() -> ChainSpec {
-	super::config("pangolin2.json")
+	load_config("pangolin2.json")
 }
 
 fn testnet_genesis(

@@ -125,7 +125,7 @@ fn get_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Public
 		.public()
 }
 
-fn config<G, E>(name: &'static str) -> GenericChainSpec<G, E>
+fn load_config<G, E>(name: &'static str) -> GenericChainSpec<G, E>
 where
 	E: DeserializeOwned,
 {
