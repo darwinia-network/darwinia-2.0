@@ -1,8 +1,8 @@
-[env]
-WASM_BUILD_WORKSPACE_HINT = "${CARGO_MAKE_WORKING_DIRECTORY}"
-
 [config]
 default_to_workspace = false
+
+[env]
+WASM_BUILD_WORKSPACE_HINT = "${CARGO_MAKE_WORKING_DIRECTORY}"
 
 [tasks.fmt]
 args          = ["fmt"]
