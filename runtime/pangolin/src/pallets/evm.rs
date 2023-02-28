@@ -19,15 +19,13 @@
 // darwinia
 use crate::*;
 // frontier
-use fp_evm::weight_per_gas;
 use pallet_evm::Precompile;
 
 const BLOCK_GAS_LIMIT: u64 = 10_000_000;
-
 frame_support::parameter_types! {
 	pub BlockGasLimit: sp_core::U256 = sp_core::U256::from(BLOCK_GAS_LIMIT);
 	pub PrecompilesValue: PangolinPrecompiles<Runtime> = PangolinPrecompiles::<_>::new();
-	pub WeightPerGas: frame_support::weights::Weight = frame_support::weights::Weight::from_ref_time(weight_per_gas(BLOCK_GAS_LIMIT, NORMAL_DISPATCH_RATIO, WEIGHT_MILLISECS_PER_BLOCK));
+	pub WeightPerGas: frame_support::weights::Weight = frame_support::weights::Weight::from_ref_time(fp_evm::weight_per_gas(BLOCK_GAS_LIMIT, NORMAL_DISPATCH_RATIO, WEIGHT_MILLISECS_PER_BLOCK));
 }
 
 // TODO: Integrate to the upstream repo
