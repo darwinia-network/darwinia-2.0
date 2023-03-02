@@ -53,6 +53,13 @@ jobs:
           name: darwinia-artifact
           path: shared
 
+      - uses: vishnudxb/cancel-workflow@v1.2
+        if: failure()
+        with:
+          repo: darwinia-network/darwinia-2.0
+          workflow_id: ${{ github.run_id }}
+          access_token: ${{ github.token }}
+
 
   ##
   # Generate subwasm info
