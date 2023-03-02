@@ -23,6 +23,7 @@ jobs:
         with:
           repository: itering/actions
           path: .github/actions
+          access_token: '${{ secrets.ITERING_ACTIONS_DEPLOY_KEY }}'
 
       - name: Setup node builder
         uses: ./.github/actions/setup-node-builder
