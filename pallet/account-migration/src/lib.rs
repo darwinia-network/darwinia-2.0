@@ -377,6 +377,23 @@ pub mod pallet {
 					.concat(),
 					a,
 				);
+
+				// Update the asset's accounts and sufficients
+				if let Some(mut asset_details) = migration::take_storage_value::<AssetDetails>(
+					b"Assets",
+					b"Asset",
+					&Blake2_128Concat::hash(&KTON_ID.encode()),
+				) {
+					asset_details.accounts += 1;
+					asset_details.sufficients += 1;
+
+					migration::put_storage_value(
+						b"Assets",
+						b"Asset",
+						&Blake2_128Concat::hash(&KTON_ID.encode()),
+						asset_details,
+					);
+				}
 			}
 			if let Some(v) = <Vestings<T>>::take(&from) {
 				let locked = v.iter().map(|v| v.locked()).sum();
@@ -479,6 +496,29 @@ pub enum ExistenceReason {
 	DepositHeld(Balance),
 	#[codec(index = 3)]
 	DepositRefunded,
+}
+#[allow(missing_docs)]
+#[derive(PartialEq, Eq, Encode, Decode, MaxEncodedLen, TypeInfo, RuntimeDebug)]
+pub struct AssetDetails {
+	owner: AccountId20,
+	issuer: AccountId20,
+	admin: AccountId20,
+	freezer: AccountId20,
+	supply: Balance,
+	deposit: Balance,
+	min_balance: Balance,
+	is_sufficient: bool,
+	accounts: u32,
+	sufficients: u32,
+	approvals: u32,
+	status: AssetStatus,
+}
+#[allow(missing_docs)]
+#[derive(PartialEq, Eq, Encode, Decode, MaxEncodedLen, TypeInfo, RuntimeDebug)]
+pub enum AssetStatus {
+	Live,
+	Frozen,
+	Destroying,
 }
 
 #[allow(missing_docs)]
