@@ -1,0 +1,51 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  pull_request:
+
+env:
+  DOCKER_REGISTRY: ghcr.io
+
+
+jobs:
+  build-package:
+    name: Build package [linux]
+    runs-on: ubuntu-latest
+    container:
+      image: ubuntu:18.04
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install dependencies
+        run: |
+          apt update -y
+          apt install --no-install-recommends -y \
+            ca-certificates curl git python3-pip \
+            clang make gcc g++ libssl-dev pkg-config protobuf-compiler
+          pip3 install --upgrade pip
+          pip3 install cmake --upgrade
+
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+
+      - name: Build
+        run: cargo build --release --locked -p darwinia --features all-natives
+
+      - name: Collect shared
+        run: |
+          mkdir -p shared
+          tar cjSf \
+            shared/darwinia2-x86_64-linux-gnu.tar.bz2 \
+            -C \
+            target/release \
+            darwinia
+      - name: Upload shared
+        uses: actions/upload-artifact@v2
+        with:
+          name: darwinia-artifact
+          path: shared
