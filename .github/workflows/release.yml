@@ -108,8 +108,8 @@ jobs:
           RUNTIME_DIR=runtime/${{ matrix.runtime }}
           cargo build \
             --manifest-path runtime/${{ matrix.runtime }}/Cargo.toml \
-            --features on-chain-release-build \
-            --release
+            --release \
+            # --features on-chain-release-build # not have this feature currently
 
       - name: Collect shared
         run: |
