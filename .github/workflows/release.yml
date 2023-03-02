@@ -61,7 +61,7 @@ jobs:
     name: Generate subwasm info
     runs-on: ubuntu-latest
     container:
-      image: ubuntu:18.04
+      image: ubuntu:22.04
     strategy:
       matrix:
         runtime:
@@ -135,7 +135,7 @@ jobs:
       - uses: vishnudxb/cancel-workflow@v1.2
         if: failure()
         with:
-          repo: darwinia-network/darwinia
+          repo: darwinia-network/darwinia-2.0
           workflow_id: ${{ github.run_id }}
           access_token: ${{ github.token }}
 
