@@ -380,11 +380,8 @@ fn asset_creation() {
 			.filter(|(k, a)| {
 				a.data.free_kton_or_misc_frozen != 0
 					|| a.data.reserved_kton_or_fee_frozen != 0
-					|| tester
-						.solo_remaining_kton
-						.get(k.as_str())
-						.map(|i| *i as u32)
-						.unwrap_or_default() != 0
+					|| tester.solo_remaining_kton.get(k.as_str()).map(|i| *i).unwrap_or_default()
+						!= 0
 			})
 			.count();
 		assert_eq!(
