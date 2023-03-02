@@ -19,15 +19,14 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - uses: actions/checkout@v3
-        with:
-          repository: itering/actions
-          path: .github/actions
-          persist-credentials: false
-          ssh-key: "${{ secrets.ITERING_ACTIONS_DEPLOY_KEY }}"
-
-      - name: Setup node builder
-        uses: ./.github/actions/setup-node-builder
+      - name: Install dependencies
+        run: |
+          apt update -y
+          apt install --no-install-recommends -y \
+            ca-certificates curl git python3-pip \
+            clang make gcc g++ libssl-dev pkg-config protobuf-compiler
+          pip3 install --upgrade pip
+          pip3 install cmake --upgrade
 
       - name: Install Rust toolchain
         uses: actions-rs/toolchain@v1
