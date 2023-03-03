@@ -83,8 +83,10 @@ jobs:
         run: |
           apt update -y
           apt install --no-install-recommends -y \
-            git curl ca-certificates \
-            make gcc g++ clang
+            ca-certificates curl git python3-pip \
+            clang make gcc g++ libssl-dev pkg-config protobuf-compiler
+          pip3 install --upgrade pip
+          pip3 install cmake --upgrade
 
       - name: Install subwasm
         env:
