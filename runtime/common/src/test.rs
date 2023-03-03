@@ -46,7 +46,7 @@ macro_rules! impl_account_migration_tests {
 			}
 
 			// This struct is private in `pallet-assets`.
-			#[derive(Encode)]
+			#[derive(Encode, Decode)]
 			struct AssetAccount {
 				balance: u128,
 				is_frozen: bool,
@@ -249,6 +249,18 @@ macro_rules! impl_account_migration_tests {
 					assert_eq!(pre_asset_details.owner, asset_details.owner);
 					assert_eq!(pre_asset_details.supply, asset_details.supply);
 					assert_eq!(pre_asset_details.status, asset_details.status);
+
+					let actual_accounts = migration::storage_key_iter_with_suffix::<
+						AccountId,
+						AssetAccount,
+						Blake2_128Concat,
+					>(
+						b"Assets",
+						b"Account",
+						&Blake2_128Concat::hash(&(AssetIds::PKton as u64).encode()),
+					)
+					.count();
+					assert_eq!(actual_accounts as u32, asset_details.accounts);
 				});
 			}
 
