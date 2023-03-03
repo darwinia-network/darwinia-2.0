@@ -89,7 +89,7 @@ impl frame_support::traits::OnRuntimeUpgrade for CustomOnRuntimeUpgrade {
 			)
 			.count();
 
-		let asset_detail = migration::get_storage_value::<AssetDetails>(
+		let asset_detail = get_storage_value::<AssetDetails>(
 			MODULE,
 			ASSET_ITEM,
 			&Blake2_128Concat::hash(&(AssetIds::PKton as u64).encode()),
