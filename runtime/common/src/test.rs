@@ -256,7 +256,7 @@ macro_rules! impl_account_migration_tests {
 					>(
 						b"Assets",
 						b"Account",
-						&Blake2_128Concat::hash(&(AssetIds::PKton as u64).encode()),
+						&Blake2_128Concat::hash(&(KTON_ID as u64).encode()),
 					)
 					.count();
 					assert_eq!(actual_accounts as u32, asset_details.accounts);
