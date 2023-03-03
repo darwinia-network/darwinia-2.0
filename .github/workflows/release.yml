@@ -36,6 +36,12 @@ jobs:
         with:
           toolchain: nightly
 
+      - name: Cache target
+        uses: actions/cache@v2
+        with:
+          path: target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
       - name: Build
         run: cargo build --release --locked -p darwinia --features all-natives
 
@@ -53,6 +59,9 @@ jobs:
         with:
           name: darwinia-artifact
           path: shared
+
+      - name: Optimize cache
+        run: .github/shrink-cache.sh || exit 0
 
       - uses: vishnudxb/cancel-workflow@v1.2
         if: failure()
