@@ -1,3 +1,21 @@
+// This file is part of Darwinia.
+//
+// Copyright (C) 2018-2023 Darwinia Network
+// SPDX-License-Identifier: GPL-3.0
+//
+// Darwinia is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Darwinia is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Darwinia. If not, see <https://www.gnu.org/licenses/>.
+
 // darwinia
 #[allow(unused_imports)]
 use crate::*;
@@ -11,14 +29,14 @@ use frame_support::{
 };
 
 #[derive(Encode, Decode)]
-pub struct AssetAccount {
+struct AssetAccount {
 	balance: Balance,
 	is_frozen: bool,
 	reason: ExistenceReason,
 	extra: (),
 }
 #[derive(Encode, Decode)]
-pub enum ExistenceReason {
+enum ExistenceReason {
 	#[codec(index = 0)]
 	Consumer,
 	#[codec(index = 1)]
@@ -50,6 +68,10 @@ enum AssetStatus {
 	Destroying,
 }
 
+const MODULE: &[u8] = b"Assets";
+const ASSET_ITEM: &[u8] = b"Asset";
+const ACCOUNT_ITEM: &[u8] = b"Account";
+
 pub struct CustomOnRuntimeUpgrade;
 impl frame_support::traits::OnRuntimeUpgrade for CustomOnRuntimeUpgrade {
 	#[cfg(feature = "try-runtime")]
@@ -61,15 +83,15 @@ impl frame_support::traits::OnRuntimeUpgrade for CustomOnRuntimeUpgrade {
 	fn post_upgrade(_state: Vec<u8>) -> Result<(), &'static str> {
 		let actual_accounts =
 			storage_key_iter_with_suffix::<AccountId, AssetAccount, Blake2_128Concat>(
-				b"Assets",
-				b"Account",
+				MODULE,
+				ACCOUNT_ITEM,
 				&Blake2_128Concat::hash(&(AssetIds::PKton as u64).encode()),
 			)
 			.count();
 
 		let asset_detail = migration::get_storage_value::<AssetDetails>(
-			b"Assets",
-			b"Asset",
+			MODULE,
+			ASSET_ITEM,
 			&Blake2_128Concat::hash(&(AssetIds::PKton as u64).encode()),
 		)
 		.unwrap();
@@ -89,22 +111,22 @@ fn migrate() -> frame_support::weights::Weight {
 
 	let actual_accounts =
 		storage_key_iter_with_suffix::<AccountId, AssetAccount, Blake2_128Concat>(
-			b"Assets",
-			b"Account",
+			MODULE,
+			ACCOUNT_ITEM,
 			&Blake2_128Concat::hash(&(AssetIds::PKton as u64).encode()),
 		)
 		.count();
 	if let Some(mut asset_details) = take_storage_value::<AssetDetails>(
-		b"Assets",
-		b"Asset",
+		MODULE,
+		ASSET_ITEM,
 		&Blake2_128Concat::hash(&(AssetIds::PKton as u64).encode()),
 	) {
 		asset_details.accounts = actual_accounts as u32;
 		asset_details.sufficients = actual_accounts as u32;
 
 		put_storage_value(
-			b"Assets",
-			b"Asset",
+			MODULE,
+			ASSET_ITEM,
 			&Blake2_128Concat::hash(&(AssetIds::PKton as u64).encode()),
 			asset_details,
 		);

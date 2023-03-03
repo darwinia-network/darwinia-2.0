@@ -53,7 +53,6 @@ macro_rules! impl_account_migration_tests {
 				reason: ExistenceReason<u128>,
 				extra: (),
 			}
-
 			// This struct is private in `pallet-assets`.
 			#[derive(PartialEq, Eq, Encode, Decode, Debug)]
 			struct AssetDetails {
