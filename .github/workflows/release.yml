@@ -226,8 +226,8 @@ jobs:
       - name: Prepare deploy folder
         run: |
           mkdir -p deploy
-          mv darwinia-x86_64-linux-gnu.tar.zst deploy/
-          mv darwinia-x86_64-linux-gnu.tar.bz2 deploy/
+          mv shared/darwinia-x86_64-linux-gnu.tar.zst deploy/
+          mv shared/darwinia-x86_64-linux-gnu.tar.bz2 deploy/
           mv shared/*-runtime/*.compact.compressed.* deploy/
 
       - name: Hash file
