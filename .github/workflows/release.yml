@@ -47,6 +47,7 @@ jobs:
             -C \
             target/release \
             darwinia
+          tar cf shared/darwinia-x86_64-linux-gnu.tar.zst -C target/release darwinia -I pzstd
       - name: Upload shared
         uses: actions/upload-artifact@v2
         with:
@@ -174,13 +175,10 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
           registry: ${{ env.DOCKER_REGISTRY }}
 
-      ##
-      # Uploading artifacts does not retain the file permissions,
-      # binaries should regain the executive permission before packing.
-      # See: https://github.com/actions/upload-artifact#permission-loss
-      ##
-      - name: Set execute permission
-        run: chmod +x shared/darwinia # REQUIRED, see above
+      - name: Extract shared
+        run: |
+          mkdir -p dist
+          tar -xvf shared/darwinia2-x86_64-linux-gnu.tar.bz2 -C dist/
 
       - name: Publish docker image
         uses: docker/build-push-action@v3
@@ -218,9 +216,6 @@ jobs:
 
       - name: Prepare deploy folder
         run: |
-          chmod +x shared/darwinia # REQUIRED, same as Docker image
-          tar cf darwinia-x86_64-linux-gnu.tar.zst -C shared darwinia -I pzstd
-          tar cjSf darwinia-x86_64-linux-gnu.tar.bz2 -C shared darwinia
           mkdir -p deploy
           mv darwinia-x86_64-linux-gnu.tar.zst deploy/
           mv darwinia-x86_64-linux-gnu.tar.bz2 deploy/
