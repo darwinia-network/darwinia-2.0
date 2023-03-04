@@ -48,12 +48,8 @@ jobs:
       - name: Collect shared
         run: |
           mkdir -p shared
-          tar cjSf \
-            shared/darwinia2-x86_64-linux-gnu.tar.bz2 \
-            -C \
-            target/release \
-            darwinia
-          tar cf shared/darwinia-x86_64-linux-gnu.tar.zst -C target/release darwinia -I zstd
+          tar cjSf shared/darwinia2-x86_64-linux-gnu.tar.bz2 -C target/release darwinia
+          tar cf shared/darwinia2-x86_64-linux-gnu.tar.zst -C target/release darwinia -I zstd
       - name: Upload shared
         uses: actions/upload-artifact@v2
         with:
@@ -226,8 +222,8 @@ jobs:
       - name: Prepare deploy folder
         run: |
           mkdir -p deploy
-          mv shared/darwinia-x86_64-linux-gnu.tar.zst deploy/
-          mv shared/darwinia-x86_64-linux-gnu.tar.bz2 deploy/
+          mv shared/darwinia2-x86_64-linux-gnu.tar.zst deploy/
+          mv shared/darwinia2-x86_64-linux-gnu.tar.bz2 deploy/
           mv shared/*-runtime/*.compact.compressed.* deploy/
 
       - name: Hash file
