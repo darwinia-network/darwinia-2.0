@@ -1,4 +1,4 @@
-Darwinia
+Darwinia2
 ===
 
 | Network  |         Native Runtime         | Upgrade Priority |

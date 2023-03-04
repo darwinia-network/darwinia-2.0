@@ -3,23 +3,23 @@ on:
   push:
     branches:
       - main
-    # paths:
-    #   - "**.rs"
-    #   - "**.toml"
-    #   - "**lock"
-    #   - "**.json"
-    #   - "**.yml"
-  # pull_request:
-  #   types: [opened, synchronize, ready_for_review]
-  #   branches:
-  #     - main
-  #   paths:
-  #     - "**.rs"
-  #     - "**.ts"
-  #     - "**.toml"
-  #     - "**lock"
-  #     - "**.json"
-  #     - "**.yml"
+    paths:
+      - "**.rs"
+      - "**.toml"
+      - "**lock"
+      - "**.json"
+      - "**.yml"
+  pull_request:
+    types: [opened, synchronize, ready_for_review]
+    branches:
+      - main
+    paths:
+      - "**.rs"
+      - "**.ts"
+      - "**.toml"
+      - "**lock"
+      - "**.json"
+      - "**.yml"
 
 env:
   GITHUB_CACHE_VERSION: 1
