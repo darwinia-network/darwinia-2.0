@@ -367,22 +367,24 @@ pub mod pallet {
 			<frame_system::Account<T>>::insert(to, account);
 
 			if let Some(a) = <KtonAccounts<T>>::take(&from) {
+				let encoded_kton_id = KTON_ID.encode();
+
 				migration::put_storage_value(
 					b"Assets",
 					b"Account",
 					&[
-						Blake2_128Concat::hash(&KTON_ID.encode()),
+						Blake2_128Concat::hash(&encoded_kton_id),
 						Blake2_128Concat::hash(&to.encode()),
 					]
 					.concat(),
 					a,
 				);
 
-				// Update the asset's accounts and sufficients
+				// Update the asset's accounts and sufficients.
 				if let Some(mut asset_details) = migration::take_storage_value::<AssetDetails>(
 					b"Assets",
 					b"Asset",
-					&Blake2_128Concat::hash(&KTON_ID.encode()),
+					&Blake2_128Concat::hash(&encoded_kton_id),
 				) {
 					asset_details.accounts += 1;
 					asset_details.sufficients += 1;
@@ -390,7 +392,7 @@ pub mod pallet {
 					migration::put_storage_value(
 						b"Assets",
 						b"Asset",
-						&Blake2_128Concat::hash(&KTON_ID.encode()),
+						&Blake2_128Concat::hash(&encoded_kton_id),
 						asset_details,
 					);
 				}

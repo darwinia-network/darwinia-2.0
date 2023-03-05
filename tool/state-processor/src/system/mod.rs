@@ -312,12 +312,12 @@ fn new_kton_account(
 	account_info: &mut AccountInfo,
 	asset_details: &mut AssetDetails,
 	balance: Balance,
-	update_assets: bool,
+	update_ref_counter: bool,
 ) -> AssetAccount {
 	// https://github.com/paritytech/substrate/blob/3bc3742d5c0c5269353d7809d9f8f91104a93273/frame/assets/src/functions.rs#L75
 	account_info.sufficients += 1;
 
-	if update_assets {
+	if update_ref_counter {
 		asset_details.accounts += 1;
 		asset_details.sufficients += 1;
 	}

@@ -54,7 +54,7 @@ macro_rules! impl_account_migration_tests {
 				extra: (),
 			}
 			// This struct is private in `pallet-assets`.
-			#[derive(PartialEq, Eq, Encode, Decode, Debug)]
+			#[derive(PartialEq, Eq, Encode, Decode)]
 			struct AssetDetails {
 				owner: AccountId,
 				issuer: AccountId,
@@ -70,7 +70,7 @@ macro_rules! impl_account_migration_tests {
 				status: AssetStatus,
 			}
 			// This struct is private in `pallet-assets`.
-			#[derive(PartialEq, Eq, Encode, Decode, Debug)]
+			#[derive(PartialEq, Eq, Encode, Decode)]
 			enum AssetStatus {
 				Live,
 				Frozen,

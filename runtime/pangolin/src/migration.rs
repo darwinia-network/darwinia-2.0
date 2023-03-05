@@ -68,9 +68,9 @@ enum AssetStatus {
 	Destroying,
 }
 
-const MODULE: &[u8] = b"Assets";
-const ASSET_ITEM: &[u8] = b"Asset";
-const ACCOUNT_ITEM: &[u8] = b"Account";
+const ASSETS: &[u8] = b"Assets";
+const ASSETS_ASSET: &[u8] = b"Asset";
+const ASSETS_ACCOUNT: &[u8] = b"Account";
 
 pub struct CustomOnRuntimeUpgrade;
 impl frame_support::traits::OnRuntimeUpgrade for CustomOnRuntimeUpgrade {
@@ -83,21 +83,22 @@ impl frame_support::traits::OnRuntimeUpgrade for CustomOnRuntimeUpgrade {
 	fn post_upgrade(_state: Vec<u8>) -> Result<(), &'static str> {
 		let actual_accounts =
 			storage_key_iter_with_suffix::<AccountId, AssetAccount, Blake2_128Concat>(
-				MODULE,
-				ACCOUNT_ITEM,
+				ASSETS,
+				ASSETS_ACCOUNT,
 				&Blake2_128Concat::hash(&(AssetIds::PKton as u64).encode()),
 			)
 			.count();
 
 		let asset_detail = get_storage_value::<AssetDetails>(
-			MODULE,
-			ASSET_ITEM,
+			ASSETS,
+			ASSETS_ASSET,
 			&Blake2_128Concat::hash(&(AssetIds::PKton as u64).encode()),
 		)
 		.unwrap();
 
 		assert_eq!(actual_accounts as u32, asset_detail.accounts);
 		assert_eq!(actual_accounts as u32, asset_detail.sufficients);
+
 		Ok(())
 	}
 
@@ -111,22 +112,22 @@ fn migrate() -> frame_support::weights::Weight {
 
 	let actual_accounts =
 		storage_key_iter_with_suffix::<AccountId, AssetAccount, Blake2_128Concat>(
-			MODULE,
-			ACCOUNT_ITEM,
+			ASSETS,
+			ASSETS_ACCOUNT,
 			&Blake2_128Concat::hash(&(AssetIds::PKton as u64).encode()),
 		)
 		.count();
 	if let Some(mut asset_details) = take_storage_value::<AssetDetails>(
-		MODULE,
-		ASSET_ITEM,
+		ASSETS,
+		ASSETS_ASSET,
 		&Blake2_128Concat::hash(&(AssetIds::PKton as u64).encode()),
 	) {
 		asset_details.accounts = actual_accounts as u32;
 		asset_details.sufficients = actual_accounts as u32;
 
 		put_storage_value(
-			MODULE,
-			ASSET_ITEM,
+			ASSETS,
+			ASSETS_ASSET,
 			&Blake2_128Concat::hash(&(AssetIds::PKton as u64).encode()),
 			asset_details,
 		);
