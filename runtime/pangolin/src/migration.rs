@@ -108,8 +108,6 @@ impl frame_support::traits::OnRuntimeUpgrade for CustomOnRuntimeUpgrade {
 }
 
 fn migrate() -> frame_support::weights::Weight {
-	frame_support::migration::move_pallet(b"Evm", b"EVM");
-
 	let actual_accounts =
 		storage_key_iter_with_suffix::<AccountId, AssetAccount, Blake2_128Concat>(
 			ASSETS,
