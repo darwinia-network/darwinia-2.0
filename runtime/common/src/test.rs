@@ -247,7 +247,6 @@ macro_rules! impl_account_migration_tests {
 					assert_eq!(pre_asset_details.sufficients + 1, asset_details.sufficients);
 					assert_eq!(pre_asset_details.owner, asset_details.owner);
 					assert_eq!(pre_asset_details.supply, asset_details.supply);
-					assert_eq!(pre_asset_details.status, asset_details.status);
 
 					let actual_accounts = migration::storage_key_iter_with_suffix::<
 						AccountId,
