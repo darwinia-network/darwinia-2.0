@@ -101,13 +101,13 @@ extend  = "common-run"
 # Build for runtime benchmarks.
 [tasks.build-bench]
 command = "cargo"
-env     = { "FEATURES" = "all-natives runtime-benchmarks" }
+env     = { "FEATURES" = "all-natives,runtime-benchmarks" }
 extend  = "common-build"
 
 # Build for try runtime.
 [tasks.build-trt]
 command = "cargo"
-env     = { "FEATURES" = "all-natives try-runtime" }
+env     = { "FEATURES" = "all-natives,try-runtime" }
 extend  = "common-build"
 
 # Build for testnets.
