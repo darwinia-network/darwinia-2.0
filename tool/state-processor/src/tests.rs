@@ -104,7 +104,7 @@ where
 }
 
 fn get_last_40(key: &str, _: &str) -> String {
-	format!("0x{}", &key[key.len() - 40..])
+	get_last_n(key, 40)
 }
 
 fn run_test<T>(test: T)
