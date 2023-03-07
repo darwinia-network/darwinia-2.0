@@ -73,11 +73,10 @@ impl<S> Processor<S> {
 				let staking_k = format!("{staking_ik}{hash_k}");
 				let mut consumers = 1;
 				let mut staked_deposits = Vec::default();
+				let mut deposit_ring = Balance::default();
 
 				if !v.deposit_items.is_empty() {
 					consumers += 1;
-
-					let mut deposit_ring = Balance::default();
 
 					self.shell_state.insert_raw_key_value(
 						deposit_k,
@@ -109,20 +108,31 @@ impl<S> Processor<S> {
 				self.shell_state.insert_raw_key_value(
 					staking_k,
 					Ledger {
-						staked_ring: v.active,
+						// Decoupling staking and deposit.
+						staked_ring: v.active - deposit_ring,
 						staked_kton: v.active_kton,
 						staked_deposits,
 						unstaking_ring: v
 							.ring_staking_lock
 							.unbondings
 							.into_iter()
-							.map(|u| (u.amount, u.until))
+							.filter_map(
+								// Clear the expired unbondings.
+								//
+								// Since we don't add any lock here.
+								|u| if u.until == 0 { None } else { Some((u.amount, u.until)) },
+							)
 							.collect(),
 						unstaking_kton: v
 							.kton_staking_lock
 							.unbondings
 							.into_iter()
-							.map(|u| (u.amount, u.until))
+							.filter_map(
+								// Clear the expired unbondings.
+								//
+								// Since we don't add any lock here.
+								|u| if u.until == 0 { None } else { Some((u.amount, u.until)) },
+							)
 							.collect(),
 						unstaking_deposits: Default::default(),
 					},
