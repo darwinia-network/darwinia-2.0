@@ -17,6 +17,8 @@ impl<S> Processor<S> {
 		let mut era_reward_points = <Map<EraRewardPoints>>::default();
 		let mut eras_validator_reward = <Map<Balance>>::default();
 		let mut eras_validator_prefs = <Map<ValidatorPrefs>>::default();
+		let mut total_staked = Balance::default();
+		let mut total_deposit = Balance::default();
 
 		log::info!("take solo `Staking::Ledger`, `Staking::RingPool`, `Staking::KtonPool` and `Staking::LivingTime`");
 		self.solo_state
@@ -103,6 +105,19 @@ impl<S> Processor<S> {
 
 				ring_pool += v.active;
 				kton_pool += v.active_kton;
+				total_deposit += deposit_ring;
+				total_staked += v.active - deposit_ring;
+				total_staked += v
+					.ring_staking_lock
+					.unbondings
+					.iter()
+					.filter_map(
+						// Clear the expired unbondings.
+						//
+						// Since we don't add any lock here.
+						|u| if u.until == 0 { None } else { Some(u.amount) },
+					)
+					.sum::<Balance>();
 
 				self.shell_state.inc_consumers_by(&array_bytes::bytes2hex("", v.stash), consumers);
 				self.shell_state.insert_raw_key_value(
@@ -147,6 +162,8 @@ impl<S> Processor<S> {
 		log::info!("`ring_pool_storage({ring_pool_storage})`");
 		log::info!("        `kton_pool({kton_pool})`");
 		log::info!("`kton_pool_storage({kton_pool_storage})`");
+		log::info!("`total_deposit({total_deposit})`");
+		log::info!("` total_staked({total_staked})`");
 
 		log::info!("set `Staking::RingPool` and `Staking::KtonPool`");
 		self.shell_state.insert_value(b"Staking", b"RingPool", "", ring_pool).insert_value(
