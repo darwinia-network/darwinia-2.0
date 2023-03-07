@@ -8177,6 +8177,7 @@ dependencies = [
  "darwinia-ecdsa-authority",
  "darwinia-message-gadget",
  "darwinia-message-transact",
+ "darwinia-precompile-ark-bls12-381",
  "darwinia-precompile-assets",
  "darwinia-precompile-bls12-381",
  "darwinia-precompile-deposit",

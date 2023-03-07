@@ -12,9 +12,10 @@ use ark_ec::{
 };
 use ark_ff::{field_hashers::DefaultFieldHasher, Zero};
 use ark_serialize::*;
+use ark_std::vec::Vec;
+use core::ops::Neg;
 use sha2::Sha256;
 use sp_std::borrow::Borrow;
-use std::ops::Neg;
 
 /// Domain Separation Tag for signatures on G2
 pub const DST_G2: &[u8] = b"BLS_SIG_BLS12381G2_XMD:SHA-256_SSWU_RO_POP_";
