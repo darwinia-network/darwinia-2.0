@@ -8541,6 +8541,7 @@ dependencies = [
  "sp-storage",
  "sp-timestamp",
  "sp-transaction-pool",
+ "westend-runtime",
 ]
 
 [[package]]
@@ -9501,6 +9502,7 @@ dependencies = [
  "thiserror",
  "tracing-gum",
  "westend-runtime",
+ "westend-runtime-constants",
 ]
 
 [[package]]

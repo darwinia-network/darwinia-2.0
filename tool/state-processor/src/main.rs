@@ -30,7 +30,7 @@ pub type Result<T> = anyhow::Result<T>;
 fn main() -> Result<()> {
 	std::env::set_var(
 		"RUST_LOG",
-		std::env::var("RUST_LOG").unwrap_or("state_processor=info".into()),
+		std::env::var("RUST_LOG").unwrap_or_else(|_| "state_processor=info".into()),
 	);
 	pretty_env_logger::init();
 

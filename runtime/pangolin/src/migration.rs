@@ -39,17 +39,15 @@ impl frame_support::traits::OnRuntimeUpgrade for CustomOnRuntimeUpgrade {
 
 fn migrate() -> frame_support::weights::Weight {
 	<darwinia_account_migration::Ledgers<Runtime>>::translate(
-		|k, mut v: Option<darwinia_staking::Ledger<Runtime>>| {
-			if let Some(v) = v.as_mut() {
-				if let Some(ds) = <darwinia_account_migration::Deposits<Runtime>>::get(k) {
-					v.staked_ring -= ds.into_iter().map(|d| d.value).sum::<Balance>();
-				}
-
-				v.unstaking_ring.retain(|u| u.1 == 0);
-				v.unstaking_kton.retain(|u| u.1 == 0);
+		|k, mut v: darwinia_staking::Ledger<Runtime>| {
+			if let Some(ds) = <darwinia_account_migration::Deposits<Runtime>>::get(k) {
+				v.staked_ring -= ds.into_iter().map(|d| d.value).sum::<Balance>();
 			}
 
-			v
+			v.unstaking_ring.retain(|u| u.1 != 0);
+			v.unstaking_kton.retain(|u| u.1 != 0);
+
+			Some(v)
 		},
 	);
 
