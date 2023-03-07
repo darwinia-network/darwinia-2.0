@@ -19,14 +19,20 @@
 // darwinia
 #[allow(unused_imports)]
 use crate::*;
+// substrate
+#[allow(unused_imports)]
+use frame_support::log;
+
+#[cfg(feature = "try-runtime")]
+const ERROR_ACCOUNT: &str = "0x48900703a1bce72568051075f8e9dcf1d8ba61a2bab3cdfe96de1e701f891c2f";
 
 pub struct CustomOnRuntimeUpgrade;
 impl frame_support::traits::OnRuntimeUpgrade for CustomOnRuntimeUpgrade {
 	#[cfg(feature = "try-runtime")]
 	fn pre_upgrade() -> Result<Vec<u8>, &'static str> {
-		let a = array_bytes::hex_n_into_unchecked::<_, sp_runtime::AccountId32, 32>(
-			"0x48900703a1bce72568051075f8e9dcf1d8ba61a2bab3cdfe96de1e701f891c2f",
-		);
+		log::info!("Pre-check account: {ERROR_ACCOUNT}");
+
+		let a = array_bytes::hex_n_into_unchecked::<_, sp_runtime::AccountId32, 32>(ERROR_ACCOUNT);
 
 		assert_eq!(
 			AccountMigration::ledger_of(&a).unwrap().staked_ring,
@@ -38,9 +44,9 @@ impl frame_support::traits::OnRuntimeUpgrade for CustomOnRuntimeUpgrade {
 
 	#[cfg(feature = "try-runtime")]
 	fn post_upgrade(_state: Vec<u8>) -> Result<(), &'static str> {
-		let a = array_bytes::hex_n_into_unchecked::<_, sp_runtime::AccountId32, 32>(
-			"0x48900703a1bce72568051075f8e9dcf1d8ba61a2bab3cdfe96de1e701f891c2f",
-		);
+		log::info!("Post-check account: {ERROR_ACCOUNT}");
+
+		let a = array_bytes::hex_n_into_unchecked::<_, sp_runtime::AccountId32, 32>(ERROR_ACCOUNT);
 
 		assert_eq!(
 			AccountMigration::ledger_of(&a).unwrap().staked_ring,
