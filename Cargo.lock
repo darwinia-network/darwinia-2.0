@@ -2643,7 +2643,6 @@ dependencies = [
  "precompile-utils",
  "rand 0.8.5",
  "sha2 0.10.6",
- "sp-io",
  "sp-std",
 ]
 

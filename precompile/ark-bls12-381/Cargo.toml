@@ -26,7 +26,6 @@ precompile-utils = { workspace = true }
 
 # substrate
 sp-std = { workspace = true }
-sp-io  = { workspace = true }
 
 [dev-dependencies]
 rand = "0.8.5"
@@ -53,6 +52,5 @@ std = [
 
 	# substrate
 	"sp-std/std",
-	"sp-io/std"
 ]
 
