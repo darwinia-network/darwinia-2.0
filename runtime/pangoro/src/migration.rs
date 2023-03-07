@@ -69,8 +69,8 @@ fn migrate() -> frame_support::weights::Weight {
 					v.staked_ring -= ds.into_iter().map(|d| d.value).sum::<Balance>();
 				}
 
-				v.unstaking_ring.retain(|u| u.1 == 0);
-				v.unstaking_kton.retain(|u| u.1 == 0);
+				v.unstaking_ring.retain(|u| u.1 != 0);
+				v.unstaking_kton.retain(|u| u.1 != 0);
 			}
 
 			v
