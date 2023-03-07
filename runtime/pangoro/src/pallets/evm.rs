@@ -118,6 +118,9 @@ where
 			// [2048..) reserved for the experimental precompiles.
 			a if a == addr(2048) =>
 				Some(<darwinia_precompile_bls12_381::BLS12381<Runtime>>::execute(handle)),
+			// Test only
+			a if a == addr(2047) =>
+				Some(<darwinia_precompile_ark_bls12_381::ARKBLS12381<Runtime>>::execute(handle)),
 			_ => None,
 		}
 	}

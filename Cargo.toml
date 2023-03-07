@@ -57,6 +57,7 @@ darwinia-message-gadget           = { default-features = false, path = "pallet/m
 darwinia-message-transact         = { default-features = false, path = "pallet/message-transact" }
 darwinia-precompile-assets        = { default-features = false, path = "precompile/assets" }
 darwinia-precompile-bls12-381     = { default-features = false, path = "precompile/bls12-381" }
+darwinia-precompile-ark-bls12-381 = { default-features = false, path = "precompile/ark-bls12-381" }
 darwinia-precompile-deposit       = { default-features = false, path = "precompile/deposit" }
 darwinia-precompile-staking       = { default-features = false, path = "precompile/staking" }
 darwinia-precompile-state-storage = { default-features = false, path = "precompile/state-storage" }
