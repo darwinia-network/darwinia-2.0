@@ -24,7 +24,7 @@ pub struct CustomOnRuntimeUpgrade;
 impl frame_support::traits::OnRuntimeUpgrade for CustomOnRuntimeUpgrade {
 	#[cfg(feature = "try-runtime")]
 	fn pre_upgrade() -> Result<Vec<u8>, &'static str> {
-		let a = array_bytes::hex2array_unchecked::<_, 20>(
+		let a = array_bytes::hex_n_into_unchecked::<_, sp_runtime::AccountId32, 32>(
 			"0x48900703a1bce72568051075f8e9dcf1d8ba61a2bab3cdfe96de1e701f891c2f",
 		);
 
@@ -38,7 +38,7 @@ impl frame_support::traits::OnRuntimeUpgrade for CustomOnRuntimeUpgrade {
 
 	#[cfg(feature = "try-runtime")]
 	fn post_upgrade(_state: Vec<u8>) -> Result<(), &'static str> {
-		let a = array_bytes::hex2array_unchecked::<_, 20>(
+		let a = array_bytes::hex_n_into_unchecked::<_, sp_runtime::AccountId32, 32>(
 			"0x48900703a1bce72568051075f8e9dcf1d8ba61a2bab3cdfe96de1e701f891c2f",
 		);
 
