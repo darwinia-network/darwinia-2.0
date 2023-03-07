@@ -8,14 +8,14 @@ version.workspace = true
 
 [dependencies]
 # crates.io
-sha2 = { version = "0.10.6",  default-features = false }
+sha2 = { workspace = true }
 
 # arkworks
-ark-bls12-381 = { default-features = false, version = "0.4.0", features = ["curve"] }
-ark-serialize = { default-features = false, version = "0.4.1", features = ["derive"]}
-ark-std       = { default-features = false, ersion  = "0.4.0" }
-ark-ec        = { default-features = false, ersion  = "0.4.1" }
-ark-ff        = { default-features = false, ersion  = "0.4.1" }
+ark-bls12-381 = { workspace = true }
+ark-serialize = { workspace = true }
+ark-std       = { workspace = true }
+ark-ec        = { workspace = true }
+ark-ff        = { workspace = true }
 
 # frontier
 pallet-evm = { workspace = true }
@@ -39,14 +39,14 @@ std = [
 
 	# arkworks
 	"ark-bls12-381/std",
-	"ark-std/std",
-	"ark-ff/std",
-	"ark-ec/std",
 	"ark-serialize/std",
+	"ark-std/std",
+	"ark-ec/std",
+	"ark-ff/std",
 
 	# frontier
-	"fp-evm/std",
 	"pallet-evm/std",
+	"fp-evm/std",
 
 	# moonbeam
 	"precompile-utils/std",
