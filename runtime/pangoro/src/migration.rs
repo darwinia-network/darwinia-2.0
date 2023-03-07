@@ -24,7 +24,7 @@ use crate::*;
 use frame_support::log;
 
 #[cfg(feature = "try-runtime")]
-const ERROR_ACCOUNT: &str = "0x48900703a1bce72568051075f8e9dcf1d8ba61a2bab3cdfe96de1e701f891c2f";
+const ERROR_ACCOUNT: &str = "0xa847fbb7ce32a41fbea2216c7073752bb13dd6bfae44bc0f726e020452c2105b";
 
 pub struct CustomOnRuntimeUpgrade;
 impl frame_support::traits::OnRuntimeUpgrade for CustomOnRuntimeUpgrade {
@@ -35,8 +35,21 @@ impl frame_support::traits::OnRuntimeUpgrade for CustomOnRuntimeUpgrade {
 		let a = array_bytes::hex_n_into_unchecked::<_, sp_runtime::AccountId32, 32>(ERROR_ACCOUNT);
 
 		assert_eq!(
-			AccountMigration::ledger_of(&a).unwrap().staked_ring,
-			52_500_000_000_000_000_000_u128
+			AccountMigration::ledger_of(&a).unwrap(),
+			darwinia_staking::Ledger::<Runtime> {
+				staked_ring: 3_190_000_000_000_000_000_000,
+				staked_kton: 9_000_000_000_000_000,
+				staked_deposits: frame_support::BoundedVec::truncate_from(vec![0, 1, 2]),
+				unstaking_ring: frame_support::BoundedVec::truncate_from(vec![(
+					10_000_000_000_000_000_000,
+					0
+				)]),
+				unstaking_kton: frame_support::BoundedVec::truncate_from(vec![(
+					1_000_000_000_000_000,
+					0
+				)]),
+				unstaking_deposits: frame_support::BoundedVec::default()
+			}
 		);
 
 		Ok(Vec::new())
@@ -49,8 +62,20 @@ impl frame_support::traits::OnRuntimeUpgrade for CustomOnRuntimeUpgrade {
 		let a = array_bytes::hex_n_into_unchecked::<_, sp_runtime::AccountId32, 32>(ERROR_ACCOUNT);
 
 		assert_eq!(
-			AccountMigration::ledger_of(&a).unwrap().staked_ring,
-			2_500_000_000_000_000_000_u128
+			AccountMigration::ledger_of(&a).unwrap(),
+			darwinia_staking::Ledger::<Runtime> {
+				staked_ring: 3_190_000_000_000_000_000_000
+					- AccountMigration::deposit_of(&a)
+						.unwrap()
+						.into_iter()
+						.map(|d| d.value)
+						.sum::<Balance>(),
+				staked_kton: 9_000_000_000_000_000,
+				staked_deposits: frame_support::BoundedVec::truncate_from(vec![0, 1, 2]),
+				unstaking_ring: frame_support::BoundedVec::default(),
+				unstaking_kton: frame_support::BoundedVec::default(),
+				unstaking_deposits: frame_support::BoundedVec::default()
+			}
 		);
 
 		Ok(())

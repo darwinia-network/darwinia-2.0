@@ -1,7 +1,7 @@
 [profile.release]
 panic = "unwind"
 
-[profile.release-inc]
+[profile.inc]
 incremental = true
 inherits    = "release"
 
