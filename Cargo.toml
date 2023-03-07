@@ -1,6 +1,10 @@
 [profile.release]
 panic = "unwind"
 
+[profile.inc]
+incremental = true
+inherits    = "release"
+
 [workspace]
 members = [
 	"core/*",

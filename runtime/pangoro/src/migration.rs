@@ -20,84 +20,64 @@
 #[allow(unused_imports)]
 use crate::*;
 // substrate
-use codec::{Decode, Encode};
-use frame_support::{
-	migration::{
-		get_storage_value, put_storage_value, storage_key_iter_with_suffix, take_storage_value,
-	},
-	Blake2_128Concat, StorageHasher,
-};
+#[allow(unused_imports)]
+use frame_support::log;
 
-#[derive(Encode, Decode)]
-struct AssetAccount {
-	balance: Balance,
-	is_frozen: bool,
-	reason: ExistenceReason,
-	extra: (),
-}
-#[derive(Encode, Decode)]
-enum ExistenceReason {
-	#[codec(index = 0)]
-	Consumer,
-	#[codec(index = 1)]
-	Sufficient,
-	#[codec(index = 2)]
-	DepositHeld(Balance),
-	#[codec(index = 3)]
-	DepositRefunded,
-}
-#[derive(Encode, Decode)]
-struct AssetDetails {
-	owner: AccountId,
-	issuer: AccountId,
-	admin: AccountId,
-	freezer: AccountId,
-	supply: Balance,
-	deposit: Balance,
-	min_balance: Balance,
-	is_sufficient: bool,
-	accounts: u32,
-	sufficients: u32,
-	approvals: u32,
-	status: AssetStatus,
-}
-#[derive(Encode, Decode)]
-enum AssetStatus {
-	Live,
-	Frozen,
-	Destroying,
-}
-
-const ASSETS: &[u8] = b"Assets";
-const ASSETS_ASSET: &[u8] = b"Asset";
-const ASSETS_ACCOUNT: &[u8] = b"Account";
+#[cfg(feature = "try-runtime")]
+const ERROR_ACCOUNT: &str = "0xa847fbb7ce32a41fbea2216c7073752bb13dd6bfae44bc0f726e020452c2105b";
 
 pub struct CustomOnRuntimeUpgrade;
 impl frame_support::traits::OnRuntimeUpgrade for CustomOnRuntimeUpgrade {
 	#[cfg(feature = "try-runtime")]
 	fn pre_upgrade() -> Result<Vec<u8>, &'static str> {
+		log::info!("Pre-check account: {ERROR_ACCOUNT}");
+
+		let a = array_bytes::hex_n_into_unchecked::<_, sp_runtime::AccountId32, 32>(ERROR_ACCOUNT);
+
+		assert_eq!(
+			AccountMigration::ledger_of(&a).unwrap(),
+			darwinia_staking::Ledger::<Runtime> {
+				staked_ring: 3_190_000_000_000_000_000_000,
+				staked_kton: 9_000_000_000_000_000,
+				staked_deposits: frame_support::BoundedVec::truncate_from(vec![0, 1, 2]),
+				unstaking_ring: frame_support::BoundedVec::truncate_from(vec![(
+					10_000_000_000_000_000_000,
+					0
+				)]),
+				unstaking_kton: frame_support::BoundedVec::truncate_from(vec![(
+					1_000_000_000_000_000,
+					0
+				)]),
+				unstaking_deposits: frame_support::BoundedVec::default()
+			}
+		);
+
 		Ok(Vec::new())
 	}
 
 	#[cfg(feature = "try-runtime")]
 	fn post_upgrade(_state: Vec<u8>) -> Result<(), &'static str> {
-		let actual_accounts =
-			storage_key_iter_with_suffix::<AccountId, AssetAccount, Blake2_128Concat>(
-				ASSETS,
-				ASSETS_ACCOUNT,
-				&Blake2_128Concat::hash(&(AssetIds::OKton as u64).encode()),
-			)
-			.count();
+		log::info!("Post-check account: {ERROR_ACCOUNT}");
 
-		let asset_detail = get_storage_value::<AssetDetails>(
-			ASSETS,
-			ASSETS_ASSET,
-			&Blake2_128Concat::hash(&(AssetIds::OKton as u64).encode()),
-		)
-		.unwrap();
+		let a = array_bytes::hex_n_into_unchecked::<_, sp_runtime::AccountId32, 32>(ERROR_ACCOUNT);
 
-		assert_eq!(actual_accounts as u32, asset_detail.accounts);
-		assert_eq!(actual_accounts as u32, asset_detail.sufficients);
+		assert_eq!(
+			AccountMigration::ledger_of(&a).unwrap(),
+			darwinia_staking::Ledger::<Runtime> {
+				staked_ring: 3_190_000_000_000_000_000_000
+					- AccountMigration::deposit_of(&a)
+						.unwrap()
+						.into_iter()
+						.map(|d| d.value)
+						.sum::<Balance>(),
+				staked_kton: 9_000_000_000_000_000,
+				staked_deposits: frame_support::BoundedVec::truncate_from(vec![0, 1, 2]),
+				unstaking_ring: frame_support::BoundedVec::default(),
+				unstaking_kton: frame_support::BoundedVec::default(),
+				unstaking_deposits: frame_support::BoundedVec::default()
+			}
+		);
+
 		Ok(())
 	}
 
@@ -107,28 +87,18 @@ impl frame_support::traits::OnRuntimeUpgrade for CustomOnRuntimeUpgrade {
 }
 
 fn migrate() -> frame_support::weights::Weight {
-	let actual_accounts =
-		storage_key_iter_with_suffix::<AccountId, AssetAccount, Blake2_128Concat>(
-			ASSETS,
-			ASSETS_ACCOUNT,
-			&Blake2_128Concat::hash(&(AssetIds::OKton as u64).encode()),
-		)
-		.count();
-	if let Some(mut asset_details) = take_storage_value::<AssetDetails>(
-		ASSETS,
-		ASSETS_ASSET,
-		&Blake2_128Concat::hash(&(AssetIds::OKton as u64).encode()),
-	) {
-		asset_details.accounts = actual_accounts as u32;
-		asset_details.sufficients = actual_accounts as u32;
+	<darwinia_account_migration::Ledgers<Runtime>>::translate(
+		|k, mut v: darwinia_staking::Ledger<Runtime>| {
+			if let Some(ds) = <darwinia_account_migration::Deposits<Runtime>>::get(k) {
+				v.staked_ring -= ds.into_iter().map(|d| d.value).sum::<Balance>();
+			}
 
-		put_storage_value(
-			ASSETS,
-			ASSETS_ASSET,
-			&Blake2_128Concat::hash(&(AssetIds::OKton as u64).encode()),
-			asset_details,
-		);
-	}
+			v.unstaking_ring.retain(|u| u.1 != 0);
+			v.unstaking_kton.retain(|u| u.1 != 0);
+
+			Some(v)
+		},
+	);
 
 	// frame_support::weights::Weight::zero()
 	RuntimeBlockWeights::get().max_block
