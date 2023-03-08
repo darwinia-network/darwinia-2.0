@@ -113,6 +113,12 @@ command = "cargo"
 env     = { "FEATURES" = "all-natives,try-runtime" }
 extend  = "common-build"
 
+# Build for all runtimes.
+[tasks.build-ar]
+command = "cargo"
+env     = { "FEATURES" = "all-natives" }
+extend  = "common-build"
+
 # Build for testnets.
 [tasks.build-tns]
 command = "cargo"
