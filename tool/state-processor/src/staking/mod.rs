@@ -107,17 +107,6 @@ impl<S> Processor<S> {
 				kton_pool += v.active_kton;
 				total_deposit += deposit_ring;
 				total_staked += v.active - deposit_ring;
-				total_staked += v
-					.ring_staking_lock
-					.unbondings
-					.iter()
-					.filter_map(
-						// Clear the expired unbondings.
-						//
-						// Since we don't add any lock here.
-						|u| if u.until == 0 { None } else { Some(u.amount) },
-					)
-					.sum::<Balance>();
 
 				self.shell_state.inc_consumers_by(&array_bytes::bytes2hex("", v.stash), consumers);
 				self.shell_state.insert_raw_key_value(
