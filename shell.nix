@@ -16,7 +16,7 @@ with nixpkgs; pkgs.mkShell {
   ];
   buildInputs = [
     clang
-	rocksdb
+    rocksdb
   ];
 
   RUST_SRC_PATH = "${rust-nightly}/lib/rustlib/src/rust/src";
